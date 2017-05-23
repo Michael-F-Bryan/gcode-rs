@@ -4,6 +4,7 @@ set -ex
 
 dependencies() {
   pip install --user ghp-import
+  pip install --user travis-cargo
 }
 
 main() {
