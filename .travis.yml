@@ -1,7 +1,6 @@
 dist: trusty
 language: rust
-rust:
-  - nightly
+rust: nightly
 services: docker
 sudo: required
 env:
