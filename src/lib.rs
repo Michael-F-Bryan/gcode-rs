@@ -1,4 +1,6 @@
 #![no_std]
+
+// Required because we're using `f32::powi()` in "parser.rs"
 #![feature(core_float)]
 
 #[cfg(test)]
