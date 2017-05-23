@@ -1,6 +1,20 @@
+#!/bin/bash
+
 set -ex
 
+dependencies() {
+  if command -v mdbook; then
+    mdbook --version
+  else
+    cargo install mdbook
+  fi
+
+  pip install --user ghp-import
+}
+
 main() {
+    dependencies
+
     local target=
     if [ $TRAVIS_OS_NAME = linux ]; then
         target=x86_64-unknown-linux-musl

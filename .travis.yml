@@ -1,54 +1,40 @@
-# Based on the "trust" template v0.1.1
-# https://github.com/japaric/trust/tree/v0.1.1
-
 dist: trusty
 language: rust
 services: docker
 sudo: required
-
 env:
   global:
-    # TODO Update this to match the name of your project.
-    - CRATE_NAME=gcode
-
+  - CRATE_NAME=gcode
+  - secure: ZF/51VsnGfSKoxtcXlT+hu8gDj14oIaK4CU0DAV6l2RBQCDNL6zN8W+FFUvmZE2YnIK75dD8zz9z7I09o1hKz0ZXgpWaRW2+xnh2D/1U+UmaYOqItvpSefQnZBxvq9VOzdx/iKN7yLLNZA8BmUFvyu3AsWaEkSsE0RZD0KSvaJqZTO50zGlegjkllWIOlcPKVqlF1amjSMW2PoqykgNvlw1WrgPFCQd2BAA2Xl1LvwOLnUvONCNk1hVJ9hgn4rlu2qRd3xmE9BkRFy8nkJhe72ZexEWsetNNE4l9HsgM9z/lQq933vogRqONZEPrRrRBtaHNBmRYh3aqG4DXxaFz87Rtfz0Cso/OA8Xlf2TEg/eaROh6J+Iy2hwJVu8iq+zKxaTnKFHth2MAILOQM9qLH0qdSiroTQV0ChkAY+nqqMo7Ri9eWgOE4nppCog0dvFPnkoODXE6aj55RQ4lAhTSutwKmp/LVUAHFb4dFOj+JLhvi1bSDQC3EOTu63kPAveK7oltiOhSbVQBNs81Yo6LOZR/+LaKKq0Q/k6CZMNPkrEPrCmSvZ6+NtyZvqPIn1QJwQwizsgz010zvAnY5tMn/XD+B+iqE2th/sfa556zvqPUUWVeG32KMAPJ12uShM0futc6/VOHogWniu9BjAL72gliCR1fVVh4uGz81fI+mUo=
 matrix:
-  # TODO These are all the build jobs. Adjust as necessary. Comment out what you
-  # don't need
   include:
-    # Embedded Architectures
-    - env: TARGET=aarch64-unknown-linux-gnu
-      rust: nightly
-    - env: TARGET=armv7-unknown-linux-gnueabihf
-      rust: nightly
-
-    # Desktops
-    - env: TARGET=x86_64-unknown-linux-gnu
-      rust: nightly
-    - env: TARGET=x86_64-apple-darwin
-      os: osx
-      rust: nightly
-
+  - env: TARGET=aarch64-unknown-linux-gnu
+    rust: nightly
+  - env: TARGET=armv7-unknown-linux-gnueabihf
+    rust: nightly
+  - env: TARGET=x86_64-unknown-linux-gnu
+    rust: nightly
+  - env: TARGET=x86_64-apple-darwin
+    os: osx
+    rust: nightly
 before_install: set -e
-
 install:
-  - sh ci/install.sh
-  - source ~/.cargo/env || true
-
+- sh ci/install.sh
+- source ~/.cargo/env || true
 script:
-  - bash ci/script.sh
-
-after_script: set +e
-
-cache: cargo
+- bash ci/script.sh
+after_script:
+- set +e
+- sh ci/deploy.sh
+cache:
+- cargo
+- pip
 before_cache:
-  - chmod -R a+r $HOME/.cargo
-
+- chmod -R a+r $HOME/.cargo
 branches:
   only:
-    # release tags
-    - /^v\d+\.\d+\.\d+.*$/
-    - master
-
+  - "/^v\\d+\\.\\d+\\.\\d+.*$/"
+  - master
 notifications:
   email:
     on_success: never
