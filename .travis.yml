@@ -5,21 +5,21 @@ sudo: required
 env:
   global:
   - CRATE_NAME=gcode
-  - GH_TOKEN=ZF/51VsnGfSKoxtcXlT+hu8gDj14oIaK4CU0DAV6l2RBQCDNL6zN8W+FFUvmZE2YnIK75dD8zz9z7I09o1hKz0ZXgpWaRW2+xnh2D/1U+UmaYOqItvpSefQnZBxvq9VOzdx/iKN7yLLNZA8BmUFvyu3AsWaEkSsE0RZD0KSvaJqZTO50zGlegjkllWIOlcPKVqlF1amjSMW2PoqykgNvlw1WrgPFCQd2BAA2Xl1LvwOLnUvONCNk1hVJ9hgn4rlu2qRd3xmE9BkRFy8nkJhe72ZexEWsetNNE4l9HsgM9z/lQq933vogRqONZEPrRrRBtaHNBmRYh3aqG4DXxaFz87Rtfz0Cso/OA8Xlf2TEg/eaROh6J+Iy2hwJVu8iq+zKxaTnKFHth2MAILOQM9qLH0qdSiroTQV0ChkAY+nqqMo7Ri9eWgOE4nppCog0dvFPnkoODXE6aj55RQ4lAhTSutwKmp/LVUAHFb4dFOj+JLhvi1bSDQC3EOTu63kPAveK7oltiOhSbVQBNs81Yo6LOZR/+LaKKq0Q/k6CZMNPkrEPrCmSvZ6+NtyZvqPIn1QJwQwizsgz010zvAnY5tMn/XD+B+iqE2th/sfa556zvqPUUWVeG32KMAPJ12uShM0futc6/VOHogWniu9BjAL72gliCR1fVVh4uGz81fI+mUo=
+  - secure: KYlhj8S0cH4AT1fkrecOIMmJrvnC3nUDQZ+fTtstVvm+rrV6KqwRqy6WfekRNq3Le6S7SsH5SyyJFfdFFkHVtpUSnYvd2pxy7mrYpgFba/9vJxndJYSqI6TuxJ5tx+HxouCEFVNZg8f1De+RtGayD2f4xOixRbSHQO3kzH2Cz0pzTBMas5cfveImjHwc+abwp/tp0VKgCz/91V698/cDC0RWVX6aUSe3z1lBN/mmnqXLiDLqcT1xlQqq5JJZ2SjCnLoSnwqMPZzWGBIxz9mvqsE9531pgj1YWYUkQGGNLotwdrpkRhTALVTZJBoKcDqN9rAvdIrw32ufJ2RwO6AjBonurCcZwCYzGDxSulyjrXchKN+hPQ/qpz5kwAh8o9vLfExVYP/gKaDTKVAiva8Zdi3tT/8WYhXm2P+UH2U4qFuhgYxr/bi/HIsVqPRgurKtgK0keCHh+h6VqGOpy49Td9r3uCzWdCiC2vawThQEPNl3NF0BhA5mpQkEEtAcO7tKagvptBaZTLP1gxtT1eTcYvWypff4Eo3m1TXFf4dkKk23gblK9UAzdbqrH0WqFWLLyHv+vwCNA6hdV4BfiiS/dseuB/66tQ6so3vwoVcTyPEy9U1cFzCxu64J1OcmTY1h72fToAiBNjoDevzofbZPduQruVYLqZj74e1tvl4xPOM=
 matrix:
-  fast_finish: true
   include:
   - env: TARGET=aarch64-unknown-linux-gnu
     rust: nightly
   - env: TARGET=armv7-unknown-linux-gnueabihf
     rust: nightly
   - env: TARGET=x86_64-unknown-linux-gnu
-  rust: nightly
+    rust: nightly
   - env: TARGET=x86_64-apple-darwin
     rust: nightly
     os: osx
   allow_failures:
-    - os: osx
+  - os: osx
+  fast_finish: true
 before_install: set -e
 install:
 - sh ci/install.sh
