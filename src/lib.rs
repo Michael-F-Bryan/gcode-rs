@@ -6,9 +6,9 @@
 extern crate std;
 
 mod parser;
-mod argument;
+mod commands;
 
-pub use argument::Argument;
+pub use commands::Argument;
 pub use parser::Parser;
 pub use errors::*;
 

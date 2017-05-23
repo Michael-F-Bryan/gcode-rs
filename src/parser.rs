@@ -2,7 +2,7 @@ use core::iter::Peekable;
 use core::num::Float;
 
 use errors::*;
-use argument::Argument;
+use commands::{Argument, G};
 
 
 /// A parser which takes a stream of characters and parses them as gcode
@@ -20,10 +20,11 @@ impl<I> Parser<I>
         Parser { stream: stream.peekable() }
     }
 
-    fn parse_g_code(&mut self) -> Result<u32> {
+    fn parse_g_code(&mut self) -> Result<G> {
         self.expect('G')?;
         let (n, _) = self.parse_integer()?;
-        Ok(n)
+        let g = G::from(n);
+        Ok(g)
     }
 
     /// Parse an integer, returning the integer and its length.
@@ -47,6 +48,14 @@ impl<I> Parser<I>
         Ok((n, counter))
     }
 
+    fn skip_whitespace(&mut self) {
+        while self.stream
+                  .peek()
+                  .map(|&c| is_whitespace(c))
+                  .unwrap_or(false) {
+            let _ = self.stream.next();
+        }
+    }
 
     fn parse_argument(&mut self) -> Result<Argument> {
         macro_rules! consume_and_variant {
@@ -71,12 +80,12 @@ impl<I> Parser<I>
     }
 
     /// Parse a number which **must** contain a decimal point.
-    fn parse_number(&mut self) -> Result<f64> {
+    fn parse_number(&mut self) -> Result<f32> {
         let (integer_part, _) = self.parse_integer()?;
         self.expect('.')?;
 
         match self.parse_integer() {
-            Err(_) => Ok(integer_part as f64),
+            Err(_) => Ok(integer_part as f32),
             Ok((fractional_part, length)) => {
                 Ok(float_from_integers(integer_part, fractional_part, length))
             }
@@ -95,10 +104,18 @@ impl<I> Parser<I>
     }
 }
 
-/// Create a `f64` from its integer part and fractional part.
-fn float_from_integers(integer_part: u32, fractional_part: u32, fractional_length: u32) -> f64 {
-    let n = integer_part as f64;
-    n + (fractional_part as f64 / 10.0.powi(fractional_length as i32))
+/// Create a `f32` from its integer part and fractional part.
+fn float_from_integers(integer_part: u32, fractional_part: u32, fractional_length: u32) -> f32 {
+    let n = integer_part as f32;
+    n + (fractional_part as f32 / 10.0.powi(fractional_length as i32))
+}
+
+/// Check whether a character is a space or tab so it can be skipped.
+fn is_whitespace(c: char) -> bool {
+    match c {
+        ' ' | '\t' => true,
+        _ => false,
+    }
 }
 
 
@@ -126,7 +143,7 @@ mod tests {
 
     parse_test!(parse_integer, parse_integer, "123" => (123, 3));
     parse_test!(parse_integer_part_of_number, parse_integer, "123.456" => (123, 3));
-    parse_test!(reads_a_g_code, parse_g_code, "G90" => 90);
+    parse_test!(reads_a_g_code, parse_g_code, "G90" => G{ code: 90, ..Default::default() });
     parse_test!(reads_a_decimal, parse_number, "12.34" => 12.34);
     parse_test!(reads_a_decimal_with_lots_of_significant_zeroes, parse_number, "12.00001" => 12.00001);
     parse_test!(reads_number_with_only_trailing_dot, parse_number, "12." => 12.0);
