@@ -7,4 +7,5 @@
 A gcode parser designed to turn a stream of characters into valid gcode
 instructions.
 
-Currently requires nightly to compile because
+Currently requires nightly to compile because we use `f32::powi()` which relies
+on the unstable `core::num::Float` trait.

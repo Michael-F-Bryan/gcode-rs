@@ -1,6 +1,6 @@
 #![no_std]
 
-// Required because we're using `f32::powi()` in "parser.rs"
+// Required because we're using `core::num::Float` and `f32::powi()` in "parser.rs"
 #![feature(core_float)]
 
 #[cfg(test)]
@@ -10,8 +10,8 @@ extern crate std;
 mod parser;
 mod commands;
 
-pub use commands::Argument;
-pub use parser::Parser;
+pub use commands::{Argument, G};
+pub use parser::{Parser, Instructions};
 pub use errors::*;
 
 mod errors {

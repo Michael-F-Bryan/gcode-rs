@@ -7,6 +7,14 @@ use commands::{Argument, G};
 
 /// A parser which takes a stream of characters and parses them as gcode
 /// instructions.
+///
+/// The grammar currently being used is roughly as follows:
+///
+/// TODO: Add the language grammmar and use that to direct parser development
+///
+/// ```text
+///
+/// ```
 pub struct Parser<I>
     where I: Iterator<Item = char>
 {
@@ -18,6 +26,10 @@ impl<I> Parser<I>
 {
     pub fn new(stream: I) -> Parser<I> {
         Parser { stream: stream.peekable() }
+    }
+
+    pub fn parse(self) -> Instructions<I> {
+        Instructions { parser: self }
     }
 
     fn parse_g_code(&mut self) -> Result<G> {
@@ -104,6 +116,24 @@ impl<I> Parser<I>
     }
 }
 
+/// An iterator which yields instructions.
+pub struct Instructions<I>
+    where I: Iterator<Item = char>
+{
+    parser: Parser<I>,
+}
+
+impl<I> Iterator for Instructions<I>
+    where I: Iterator<Item = char>
+{
+    type Item = Result<G>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        Some(self.parser.parse_g_code())
+    }
+}
+
+
 /// Create a `f32` from its integer part and fractional part.
 fn float_from_integers(integer_part: u32, fractional_part: u32, fractional_length: u32) -> f32 {
     let n = integer_part as f32;
@@ -117,6 +147,7 @@ fn is_whitespace(c: char) -> bool {
         _ => false,
     }
 }
+
 
 
 #[cfg(test)]
