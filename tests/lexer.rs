@@ -6,9 +6,9 @@ extern crate gcode;
 use gcode::Tokenizer;
 use gcode::{Result, Error};
 
-const PROGRAM_1: &'static str = include_str!("data/program_1.gcode");
-const PROGRAM_2: &'static str = include_str!("data/program_2.gcode");
-const PROGRAMS: [&'static str; 2] = [PROGRAM_1, PROGRAM_2];
+const PROGRAMS: [&'static str; 3] = [include_str!("data/program_1.gcode"),
+                                     include_str!("data/program_2.gcode"),
+                                     include_str!("data/program_3.gcode")];
 
 #[test]
 fn lex_all_programs() {
