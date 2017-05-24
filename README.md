@@ -7,5 +7,12 @@
 A gcode parser designed to turn a stream of characters into valid gcode
 instructions.
 
-Currently requires nightly to compile because we use `f32::powi()` which relies
-on the unstable `core::num::Float` trait.
+
+## Useful Links
+
+- [The thread that kicked this idea off][thread]
+- [Rendered Documentation][docs]
+
+
+[thread]:https://users.rust-lang.org/t/g-code-interpreter/10930
+[docs]: https://michael-f-bryan.github.io/gcode-rs/

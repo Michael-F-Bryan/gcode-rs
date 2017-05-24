@@ -4,6 +4,25 @@ use errors::*;
 use helpers::*;
 
 
+/// A zero-allocation tokenizer.
+///
+/// # Examples
+///
+/// ```rust
+/// use gcode::{Token, Tokenizer};
+/// let should_be = [Token::N,
+///                  Token::Integer(40),
+///                  Token::G,
+///                  Token::Integer(90),
+///                  Token::X,
+///                  Token::Number(1.0)];
+///
+/// let src = "N40 G90 X1.0";
+/// let tokens = Tokenizer::new(src.chars());
+///
+/// assert!(tokens.zip(&should_be)
+///               .all(|(got, &should_be)| got.unwrap() == should_be));
+/// ```
 pub struct Tokenizer<I>
     where I: Iterator<Item = char>
 {
@@ -14,6 +33,7 @@ pub struct Tokenizer<I>
 impl<I> Tokenizer<I>
     where I: Iterator<Item = char>
 {
+    /// Create a new `Tokenizer` from some `char` iterator.
     pub fn new(src: I) -> Self {
         Tokenizer { src: src.peekable() }
     }
@@ -53,7 +73,7 @@ impl<I> Tokenizer<I>
 
         match self.src.peek() {
             Some(&'.') => {}
-            _ => return Err(Error::InvalidNumber),
+            _ => return Ok(Token::Integer(integer_part)),
         }
 
         let _ = self.src.next();
@@ -137,9 +157,12 @@ impl<I> Tokenizer<I>
 }
 
 
+/// A `gcode` token.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[allow(missing_docs)]
 pub enum Token {
     Number(f32),
+    Integer(u32),
 
     G,
     M,
@@ -161,7 +184,7 @@ impl<I> Iterator for Tokenizer<I>
     type Item = Result<Token>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        unimplemented!()
+        self.next_token()
     }
 }
 
@@ -195,12 +218,16 @@ mod tests {
 
     #[test]
     fn tokenize_numbers() {
-        let inputs = [("12.", Token::Number(12.0)),
+        let inputs = [("100000000", Token::Integer(100000000)),
+                      ("0", Token::Integer(0)),
+                      ("12", Token::Integer(12)),
+                      ("12.", Token::Number(12.0)),
                       ("12.34", Token::Number(12.34)),
                       ("00012312.00000001", Token::Number(12312.00000001)),
                       ("12.34.", Token::Number(12.34))];
 
         for &(src, should_be) in &inputs {
+            println!("{} => {:?}", src, should_be);
             let mut tokenizer = Tokenizer::new(src.chars());
             let first = tokenizer.next_token().unwrap().unwrap();
 
