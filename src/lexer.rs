@@ -58,6 +58,8 @@ impl<I> Tokenizer<I>
                     continue;
                 }
 
+                '-' => Ok(Token::Minus),
+
                 other => Err(Error::UnknownToken(other)),
             };
 
@@ -144,10 +146,6 @@ impl<I> Tokenizer<I>
     }
 
     fn skip_comment(&mut self) {
-        let open_paren = self.src.next();
-        debug_assert!(open_paren == Some('('),
-                      "A comment should always start with a '('");
-
         while self.src.peek().map_or(false, |&peek| peek != ')') {
             let _ = self.src.next();
         }
@@ -174,6 +172,8 @@ pub enum Token {
     Z,
     FeedRate,
     R,
+
+    Minus,
 
     Other(char),
 }
