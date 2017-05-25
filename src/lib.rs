@@ -11,11 +11,13 @@ mod parser;
 mod lexer;
 mod helpers;
 
-pub use lexer::{Token, Tokenizer};
+pub use lexer::{Token, Tokenizer, Span};
 pub use parser::Parser;
 pub use errors::*;
 
 mod errors {
+    use super::*;
+
     /// An alias for the `Result` type.
     pub type Result<T> = ::core::result::Result<T, Error>;
 
@@ -23,7 +25,7 @@ mod errors {
     #[derive(Debug, Clone, PartialEq)]
     pub enum Error {
         /// Encountered an unknown token.
-        UnknownToken(char),
+        UnknownToken(char, Span),
         /// Reached the end of input, unexpectedly.
         UnexpectedEOF,
     }

@@ -9,24 +9,16 @@ use helpers::*;
 /// # Examples
 ///
 /// ```rust
-/// use gcode::{Token, Tokenizer};
-/// let should_be = [Token::N,
-///                  Token::Integer(40),
-///                  Token::G,
-///                  Token::Integer(90),
-///                  Token::X,
-///                  Token::Number(1.0)];
-///
+/// use gcode::Tokenizer;
 /// let src = "N40 G90 X1.0";
-/// let tokens = Tokenizer::new(src.chars());
-///
-/// assert!(tokens.zip(&should_be)
-///               .all(|(got, &should_be)| got.unwrap() == should_be));
+/// let tokens: Vec<_> = Tokenizer::new(src.chars()).collect();
 /// ```
 pub struct Tokenizer<I>
     where I: Iterator<Item = char>
 {
     src: Peekable<I>,
+    line: usize,
+    column: usize,
 }
 
 
@@ -35,19 +27,27 @@ impl<I> Tokenizer<I>
 {
     /// Create a new `Tokenizer` from some `char` iterator.
     pub fn new(src: I) -> Self {
-        Tokenizer { src: src.peekable() }
+        Tokenizer {
+            src: src.peekable(),
+            line: 0,
+            column: 0,
+        }
     }
 
-
     fn next_token(&mut self) -> Option<Result<Token>> {
-        while let Some(peek) = self.src.next() {
+        while let Some(peek) = self.next_char() {
             if peek.is_whitespace() {
                 continue;
             }
 
+            let span = Span {
+                line: self.line,
+                column: self.column,
+            };
+
             let tok = match peek {
-                d if d.is_digit(10) || d == '.' => self.tokenize_number(d),
-                a if a.is_alphabetic() => self.tokenize_alpha(a),
+                d if d.is_digit(10) || d == '.' => self.tokenize_number(d, span),
+                a if a.is_alphabetic() => self.tokenize_alpha(a, span),
 
                 ';' => {
                     self.to_end_of_line();
@@ -58,9 +58,20 @@ impl<I> Tokenizer<I>
                     continue;
                 }
 
-                '-' => Ok(Token::Minus),
+                '%' => {
+                    Ok(Token {
+                           kind: TokenKind::Percent,
+                           span: span,
+                       })
+                }
+                '-' => {
+                    Ok(Token {
+                           kind: TokenKind::Minus,
+                           span: span,
+                       })
+                }
 
-                other => Err(Error::UnknownToken(other)),
+                other => Err(Error::UnknownToken(other, span)),
             };
 
             return Some(tok);
@@ -69,29 +80,46 @@ impl<I> Tokenizer<I>
         None
     }
 
-    fn tokenize_number(&mut self, first: char) -> Result<Token> {
+    fn next_char(&mut self) -> Option<char> {
+        let next = self.src.next();
+
+        if let Some(n) = next {
+            self.column += 1;
+            if n == '\n' {
+                self.line += 1;
+                self.column = 0;
+            }
+        }
+
+        next
+    }
+
+    fn tokenize_number(&mut self, first: char, span: Span) -> Result<Token> {
         // TODO: Make clean... pls
         let (integer_part, _) = self.tokenize_integer(first);
 
         match self.src.peek() {
             Some(&'.') => {}
-            _ => return Ok(Token::Integer(integer_part)),
+            _ => {
+                let kind = TokenKind::Integer(integer_part);
+                return Ok(Token { kind, span });
+            }
         }
 
-        let _ = self.src.next();
+        let _ = self.next_char();
 
-        let t = match self.src.peek().cloned() {
+        let kind = match self.src.peek().cloned() {
             Some(d) if d.is_digit(10) => {
-                let next = self.src.next().unwrap();
+                let next = self.next_char().unwrap();
                 let (fractional_part, length) = self.tokenize_integer(next);
 
                 let number = float_from_integers(integer_part, fractional_part, length);
-                Token::Number(number)
+                TokenKind::Number(number)
             }
-            _ => Token::Number(integer_part as f32),
+            _ => TokenKind::Number(integer_part as f32),
         };
 
-        Ok(t)
+        Ok(Token { kind, span })
     }
 
     fn tokenize_integer(&mut self, first: char) -> (u32, u32) {
@@ -105,7 +133,7 @@ impl<I> Tokenizer<I>
             }
 
             // If next() was None, the `while let ...` would never get here
-            let next = self.src.next().unwrap();
+            let next = self.next_char().unwrap();
 
             // TODO: What happens when `n` overflows
             n = n * 10 + next.to_digit(10).unwrap();
@@ -115,42 +143,53 @@ impl<I> Tokenizer<I>
         (n, count)
     }
 
-    fn tokenize_alpha(&mut self, first: char) -> Result<Token> {
-        let t = match first {
-            'G' => Token::G,
-            'M' => Token::M,
-            'T' => Token::T,
-            'N' => Token::N,
+    fn tokenize_alpha(&mut self, first: char, span: Span) -> Result<Token> {
+        let kind = match first {
+            'G' => TokenKind::G,
+            'M' => TokenKind::M,
+            'T' => TokenKind::T,
+            'N' => TokenKind::N,
 
-            'X' => Token::X,
-            'Y' => Token::Y,
-            'Z' => Token::Z,
-            'R' => Token::R,
-            'F' => Token::FeedRate,
+            'X' => TokenKind::X,
+            'Y' => TokenKind::Y,
+            'Z' => TokenKind::Z,
+            'R' => TokenKind::R,
+            'F' => TokenKind::FeedRate,
 
-            other => Token::Other(other),
+            other => TokenKind::Other(other),
         };
 
-        Ok(t)
+        Ok(Token { kind, span })
     }
 
     fn to_end_of_line(&mut self) {
         while let Some(peek) = self.src.peek().cloned() {
             if peek == '\n' {
-                let _ = self.src.next();
+                let _ = self.next_char();
                 break;
             }
 
-            let _ = self.src.next();
+            let _ = self.next_char();
         }
     }
 
     fn skip_comment(&mut self) {
         while self.src.peek().map_or(false, |&peek| peek != ')') {
-            let _ = self.src.next();
+            let _ = self.next_char();
         }
 
-        let _ = self.src.next();
+        let _ = self.next_char();
+    }
+}
+
+
+impl<I> Iterator for Tokenizer<I>
+    where I: Iterator<Item = char>
+{
+    type Item = Result<Token>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_token()
     }
 }
 
@@ -158,7 +197,7 @@ impl<I> Tokenizer<I>
 /// A `gcode` token.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[allow(missing_docs)]
-pub enum Token {
+pub enum TokenKind {
     Number(f32),
     Integer(u32),
 
@@ -174,17 +213,37 @@ pub enum Token {
     R,
 
     Minus,
+    Percent,
 
     Other(char),
 }
 
-impl<I> Iterator for Tokenizer<I>
-    where I: Iterator<Item = char>
-{
-    type Item = Result<Token>;
+/// A representation of a position in source code.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Span {
+    line: usize,
+    column: usize,
+}
 
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next_token()
+impl From<(usize, usize)> for Span {
+    fn from(other: (usize, usize)) -> Self {
+        Span {
+            line: other.0,
+            column: other.1,
+        }
+    }
+}
+
+/// A gcode Token.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Token {
+    kind: TokenKind,
+    span: Span,
+}
+
+impl PartialEq<TokenKind> for Token {
+    fn eq(&self, other: &TokenKind) -> bool {
+        self.kind == *other
     }
 }
 
@@ -195,18 +254,18 @@ mod tests {
 
     #[test]
     fn lex_single_letter_tokens() {
-        let inputs = [("G", Token::G),
-                      ("M", Token::M),
-                      ("T", Token::T),
-                      ("N", Token::N),
+        let inputs = [("G", TokenKind::G),
+                      ("M", TokenKind::M),
+                      ("T", TokenKind::T),
+                      ("N", TokenKind::N),
 
-                      ("X", Token::X),
-                      ("Y", Token::Y),
-                      ("Z", Token::Z),
-                      ("R", Token::R),
-                      ("F", Token::FeedRate),
+                      ("X", TokenKind::X),
+                      ("Y", TokenKind::Y),
+                      ("Z", TokenKind::Z),
+                      ("R", TokenKind::R),
+                      ("F", TokenKind::FeedRate),
 
-                      ("w", Token::Other('w'))];
+                      ("w", TokenKind::Other('w'))];
 
         for &(src, should_be) in &inputs {
             let mut tokenizer = Tokenizer::new(src.chars());
@@ -218,13 +277,13 @@ mod tests {
 
     #[test]
     fn tokenize_numbers() {
-        let inputs = [("100000000", Token::Integer(100000000)),
-                      ("0", Token::Integer(0)),
-                      ("12", Token::Integer(12)),
-                      ("12.", Token::Number(12.0)),
-                      ("12.34", Token::Number(12.34)),
-                      ("00012312.00000001", Token::Number(12312.00000001)),
-                      ("12.34.", Token::Number(12.34))];
+        let inputs = [("100000000", TokenKind::Integer(100000000)),
+                      ("0", TokenKind::Integer(0)),
+                      ("12", TokenKind::Integer(12)),
+                      ("12.", TokenKind::Number(12.0)),
+                      ("12.34", TokenKind::Number(12.34)),
+                      ("00012312.00000001", TokenKind::Number(12312.00000001)),
+                      ("12.34.", TokenKind::Number(12.34))];
 
         for &(src, should_be) in &inputs {
             println!("{} => {:?}", src, should_be);

@@ -9,7 +9,7 @@ pub trait MaybeWhitespace {
 impl MaybeWhitespace for char {
     fn is_whitespace(&self) -> bool {
         match *self {
-            ' ' | '\t' | '\n' => true,
+            '\r' | ' ' | '\t' | '\n' => true,
             _ => false,
         }
     }
