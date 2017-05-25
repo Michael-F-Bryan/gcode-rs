@@ -1,3 +1,5 @@
+//! A module for turning raw gcode into tokens to be processed by the parser.
+
 use core::iter::Peekable;
 
 use errors::*;
@@ -9,7 +11,7 @@ use helpers::*;
 /// # Examples
 ///
 /// ```rust
-/// use gcode::Tokenizer;
+/// use gcode::lexer::Tokenizer;
 /// let src = "N40 G90 X1.0";
 /// let tokens: Vec<_> = Tokenizer::new(src.chars()).collect();
 /// ```
@@ -156,7 +158,10 @@ impl<I> Tokenizer<I>
             'R' => TokenKind::R,
             'F' => TokenKind::FeedRate,
 
-            other => TokenKind::Other(other),
+            other => {
+                debug!("Using escape hatch for character: {}", other);
+                TokenKind::Other(other)
+            }
         };
 
         Ok(Token { kind, span })
@@ -189,7 +194,12 @@ impl<I> Iterator for Tokenizer<I>
     type Item = Result<Token>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.next_token()
+        let t = self.next_token();
+        if let Some(tok) = t.as_ref() {
+            trace!("{:?}", tok);
+        }
+
+        t
     }
 }
 
@@ -198,7 +208,9 @@ impl<I> Iterator for Tokenizer<I>
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum TokenKind {
+    /// A floating point number.
     Number(f32),
+    /// A plain integer.
     Integer(u32),
 
     G,
@@ -215,14 +227,24 @@ pub enum TokenKind {
     Minus,
     Percent,
 
+    /// An escape hatch which matches any other single alphabetic character.
+    ///
+    /// # Note
+    ///
+    /// This probably shouldn't be used outside the crate, if you end up
+    /// matching on a TokenKind::Other chances are you need to amend the
+    /// `TokenKind` definition.
+    #[doc(hidden)]
     Other(char),
 }
 
 /// A representation of a position in source code.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Span {
-    line: usize,
-    column: usize,
+    /// The line number (counting from zero).
+    pub line: usize,
+    /// The column number (counting from zero).
+    pub column: usize,
 }
 
 impl From<(usize, usize)> for Span {

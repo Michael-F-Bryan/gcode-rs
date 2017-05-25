@@ -3,7 +3,7 @@
 
 extern crate gcode;
 
-use gcode::Tokenizer;
+use gcode::lexer::Tokenizer;
 use gcode::Result;
 
 const PROGRAMS: [&'static str; 3] = [include_str!("data/program_1.gcode"),
