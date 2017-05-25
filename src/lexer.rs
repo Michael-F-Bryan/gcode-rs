@@ -1,6 +1,7 @@
 //! A module for turning raw gcode into tokens to be processed by the parser.
 
 use core::iter::Peekable;
+use core::fmt::{self, Display, Formatter};
 
 use errors::*;
 use helpers::*;
@@ -289,6 +290,12 @@ impl From<(usize, usize)> for Span {
             line: other.0,
             column: other.1,
         }
+    }
+}
+
+impl Display for Span {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "line: {}, column: {}", self.line, self.column)
     }
 }
 

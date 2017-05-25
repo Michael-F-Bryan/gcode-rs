@@ -1,11 +1,13 @@
+extern crate env_logger;
 extern crate gcode;
 
 use gcode::lexer::Tokenizer;
 use gcode::parser::BasicParser;
-use gcode::Result;
 
 
 fn main() {
+    env_logger::init().unwrap();
+
     let src = include_str!("../tests/data/program_3.gcode");
 
     let lexer = Tokenizer::new(src.chars());
