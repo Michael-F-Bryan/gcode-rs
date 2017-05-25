@@ -5,3 +5,4 @@ authors = ["Michael-F-Bryan <michaelfbryan@gmail.com>"]
 
 [dependencies]
 log = {version = "^0.3", default_features = false}
+arrayvec = "^0.3"

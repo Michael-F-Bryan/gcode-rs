@@ -204,6 +204,26 @@ impl<I> Iterator for Tokenizer<I>
 }
 
 
+/// A gcode Token.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Token {
+    kind: TokenKind,
+    span: Span,
+}
+
+impl Token {
+    /// Which kind of token is this?
+    pub fn kind(&self) -> TokenKind {
+        self.kind
+    }
+
+    /// Get the location of the token in the source code.
+    pub fn span(&self) -> Span {
+        self.span
+    }
+}
+
+
 /// A `gcode` token.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[allow(missing_docs)]
@@ -238,6 +258,7 @@ pub enum TokenKind {
     Other(char),
 }
 
+
 /// A representation of a position in source code.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Span {
@@ -246,6 +267,7 @@ pub struct Span {
     /// The column number (counting from zero).
     pub column: usize,
 }
+
 
 impl From<(usize, usize)> for Span {
     fn from(other: (usize, usize)) -> Self {
@@ -256,16 +278,18 @@ impl From<(usize, usize)> for Span {
     }
 }
 
-/// A gcode Token.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Token {
-    kind: TokenKind,
-    span: Span,
-}
-
 impl PartialEq<TokenKind> for Token {
     fn eq(&self, other: &TokenKind) -> bool {
         self.kind == *other
+    }
+}
+
+impl From<TokenKind> for Token {
+    fn from(other: TokenKind) -> Self {
+        Token {
+            kind: other,
+            span: Span::default(),
+        }
     }
 }
 

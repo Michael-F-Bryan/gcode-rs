@@ -9,8 +9,9 @@ extern crate std;
 
 #[macro_use]
 extern crate log;
+extern crate arrayvec;
 
-mod parser;
+pub mod parser;
 pub mod lexer;
 mod helpers;
 
@@ -31,5 +32,8 @@ mod errors {
         UnknownToken(char, Span),
         /// Reached the end of input, unexpectedly.
         UnexpectedEOF,
+
+        /// A syntax error and its location.
+        SyntaxError(&'static str, Span),
     }
 }
