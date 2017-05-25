@@ -19,8 +19,12 @@ fn parse_all_programs() {
         let tokenizer = Tokenizer::new(program.chars());
         let tokens = tokenizer.filter_map(|t| t.ok());
 
-        let parsed_commands: Result<Vec<_>> = Parser::new(tokens).collect();
-        parsed_commands.unwrap();
+        let parser = Parser::new(tokens);
+
+        for line in parser {
+            println!("{:?}", line);
+            line.unwrap();
+        }
     }
 }
 

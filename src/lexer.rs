@@ -158,6 +158,8 @@ impl<I> Tokenizer<I>
             'R' => TokenKind::R,
             'F' => TokenKind::FeedRate,
             'O' => TokenKind::O,
+            'S' => TokenKind::S,
+            'H' => TokenKind::H,
 
             other => {
                 debug!("Using escape hatch for character: {}", other);
@@ -234,18 +236,21 @@ pub enum TokenKind {
     /// A plain integer.
     Integer(u32),
 
+    // Command Types
     G,
-    M,
     T,
     N,
-    /// A program number.
     O,
 
+    // arguments
     X,
     Y,
     Z,
     FeedRate,
+    M,
+    S,
     R,
+    H,
 
     Minus,
     Percent,
@@ -304,15 +309,18 @@ mod tests {
     #[test]
     fn lex_single_letter_tokens() {
         let inputs = [("G", TokenKind::G),
-                      ("M", TokenKind::M),
-                      ("T", TokenKind::T),
                       ("N", TokenKind::N),
+                      ("T", TokenKind::T),
+                      ("O", TokenKind::O),
 
                       ("X", TokenKind::X),
                       ("Y", TokenKind::Y),
                       ("Z", TokenKind::Z),
-                      ("R", TokenKind::R),
                       ("F", TokenKind::FeedRate),
+                      ("M", TokenKind::M),
+                      ("S", TokenKind::S),
+                      ("R", TokenKind::R),
+                      ("H", TokenKind::H),
 
                       ("w", TokenKind::Other('w'))];
 
@@ -373,14 +381,5 @@ mod tests {
         let mut tokenizer = Tokenizer::new(src.chars());
         tokenizer.to_end_of_line();
         assert_eq!(tokenizer.src.next(), Some('7'));
-    }
-
-    #[test]
-    fn tokenize_program_number() {
-        let src = "O";
-        let should_be = TokenKind::O;
-
-        let got = Tokenizer::new(src.chars()).next().unwrap().unwrap();
-        assert_eq!(got, should_be);
     }
 }

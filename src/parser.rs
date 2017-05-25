@@ -19,11 +19,11 @@ type ArgBuffer = ArrayVec<[Argument; 10]>;
 /// line ::= command
 ///        | program_number
 ///
-/// program_number ::= O INTEGER
+/// program_number ::= O number
 ///
 /// command ::= line_number command_name args
 ///
-/// command_name ::= command_type INTEGER
+/// command_name ::= command_type number
 ///
 /// command_type ::= G
 ///                | M
@@ -39,15 +39,18 @@ type ArgBuffer = ArrayVec<[Argument; 10]>;
 ///            | F
 ///            | R
 ///
-/// line_number ::= N INTEGER
+/// line_number ::= N number
 ///               | <epsilon>
+///
+/// number ::= MINUS NUMBER
+///          | NUMBER
 /// ```
 ///
 /// I've tried to keep the grammar
 pub struct Parser<I>
     where I: Iterator<Item = Token>
 {
-    stream: Peekable<I>,
+    pub stream: Peekable<I>,
 }
 
 /// Peek at the next token, if its kind isn't one of the specified `$pattern`s,
@@ -57,7 +60,7 @@ macro_rules! lookahead {
         match $self.peek() {
             $( Some($pattern) )|* => {},
             Some(_) => {
-                let next = $self.stream.next().unwrap();
+                let next = $self.stream.peek().unwrap();
                 return Err(Error::SyntaxError($err_msg, next.span()));
             }
             None => return Err(Error::UnexpectedEOF),
@@ -77,27 +80,35 @@ impl<I> Parser<I>
             return Ok(Line::ProgramNumber(n));
         }
 
-        if let Ok(cmd) = self.command() {
-            return Ok(Line::Cmd(cmd));
-        }
-
-        match self.stream.peek() {
-            Some(next) => Err(Error::SyntaxError("Got an invalid line", next.span())),
-            None => Err(Error::UnexpectedEOF),
-        }
-
+        self.command().map(|c| Line::Cmd(c))
     }
 
     fn program_number(&mut self) -> Result<u32> {
         lookahead!(self, "Expected a 'O'", TokenKind::O);
         let _ = self.stream.next();
 
-        lookahead!(self, "Expected a program number", TokenKind::Integer(_));
+        self.number().map(|n| n as u32)
+    }
 
-        match self.stream.next().unwrap().kind() {
-            TokenKind::Integer(n) => Ok(n),
+    fn number(&mut self) -> Result<f32> {
+        // Check for a negative sign, consuming it if we find one
+        let is_negative = match self.peek() {
+            Some(TokenKind::Minus) => {
+                let _ = self.stream.next();
+                true
+            }
+            _ => false,
+        };
+
+        lookahead!(self, "Expected a number", TokenKind::Integer(_) | TokenKind::Number(_));
+
+        let n = match self.stream.next().unwrap().kind() {
+            TokenKind::Number(n) => n,
+            TokenKind::Integer(n) => n as f32,
             _ => unreachable!(),
-        }
+        };
+
+        if is_negative { Ok(-1.0 * n) } else { Ok(n) }
     }
 
     fn command(&mut self) -> Result<Command> {
@@ -130,11 +141,12 @@ impl<I> Parser<I>
     }
 
     fn command_type(&mut self) -> Result<CommandType> {
-        lookahead!(self, "Expected a command type", TokenKind::G | TokenKind::M);
+        lookahead!(self, "Expected a command type", TokenKind::G | TokenKind::M | TokenKind::T);
 
         match self.stream.next().unwrap().kind() {
             TokenKind::G => Ok(CommandType::G),
             TokenKind::M => Ok(CommandType::M),
+            TokenKind::T => Ok(CommandType::T),
             _ => unreachable!(),
         }
     }
@@ -157,13 +169,18 @@ impl<I> Parser<I>
     fn arg_kind(&mut self) -> Result<ArgumentKind> {
         lookahead!(self,
                    "Expected an argument kind",
-                   TokenKind::X | TokenKind::Y | TokenKind::Z | TokenKind::R | TokenKind::FeedRate);
+                   TokenKind::X | TokenKind::Y | TokenKind::Z |
+                   TokenKind::R | TokenKind::M | TokenKind::S |
+                   TokenKind::H | TokenKind::FeedRate);
 
         match self.stream.next().unwrap().kind() {
             TokenKind::X => Ok(ArgumentKind::X),
             TokenKind::Y => Ok(ArgumentKind::Y),
             TokenKind::Z => Ok(ArgumentKind::Z),
             TokenKind::R => Ok(ArgumentKind::R),
+            TokenKind::M => Ok(ArgumentKind::M),
+            TokenKind::S => Ok(ArgumentKind::S),
+            TokenKind::H => Ok(ArgumentKind::H),
             TokenKind::FeedRate => Ok(ArgumentKind::FeedRate),
             _ => unreachable!(),
         }
@@ -171,17 +188,7 @@ impl<I> Parser<I>
 
     fn arg(&mut self) -> Result<Option<Argument>> {
         if let Ok(kind) = self.arg_kind() {
-            // look ahead and check we have a number
-            lookahead!(self, "A command argument must always have an argument value",
-                       TokenKind::Number(_));
-
-            let next = self.stream.next().unwrap();
-
-            let n = match next.kind() {
-                TokenKind::Number(n) => n,
-                _ => unreachable!(),
-            };
-
+            let n = self.number()?;
             Ok(Some(Argument {
                         kind: kind,
                         value: n,
@@ -250,6 +257,9 @@ enum ArgumentKind {
     Z,
 
     R,
+    M,
+    S,
+    H,
     FeedRate,
 }
 
@@ -257,6 +267,7 @@ enum ArgumentKind {
 enum CommandType {
     G,
     M,
+    T,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -364,7 +375,10 @@ mod tests {
         let src = vec![TokenKind::X,
                        TokenKind::Number(3.14),
                        TokenKind::Y,
-                       TokenKind::Number(2.1828)];
+                       TokenKind::Number(2.1828),
+                       TokenKind::M,
+                       TokenKind::Integer(6)];
+
         let mut should_be = ArgBuffer::new();
         should_be.push(Argument {
                            kind: ArgumentKind::X,
@@ -373,6 +387,10 @@ mod tests {
         should_be.push(Argument {
                            kind: ArgumentKind::Y,
                            value: 2.1828,
+                       });
+        should_be.push(Argument {
+                           kind: ArgumentKind::M,
+                           value: 6.0,
                        });
 
         let tokens = src.iter().map(|&k| k.into());
@@ -472,5 +490,105 @@ mod tests {
         let got = parser.program_number().unwrap();
 
         assert_eq!(got, should_be);
+    }
+
+    #[test]
+    fn tool_change_line() {
+        let src = [TokenKind::T,
+                   TokenKind::Integer(1),
+                   TokenKind::M,
+                   TokenKind::Integer(6)];
+        let mut should_be = Command {
+            span: (0, 0).into(),
+            line_number: None,
+            command_type: CommandType::T,
+            command_number: 1,
+            args: ArgBuffer::new(),
+        };
+
+        should_be
+            .args
+            .push(Argument {
+                      kind: ArgumentKind::M,
+                      value: 6.0,
+                  });
+
+        let tokens = src.iter().map(|&t| t.into());
+        let mut parser = Parser::new(tokens);
+
+        let got = parser.command().unwrap();
+
+        assert_eq!(got, should_be);
+    }
+
+    #[test]
+    fn parse_m_arg() {
+        let src = [TokenKind::M, TokenKind::Integer(6)];
+        let should_be = Argument {
+            kind: ArgumentKind::M,
+            value: 6.0,
+        };
+
+        let tokens = src.iter().map(|&t| t.into());
+        let mut parser = Parser::new(tokens);
+
+        let got = parser.arg().unwrap().unwrap();
+
+        assert_eq!(got, should_be);
+    }
+
+    #[test]
+    fn parse_negative_arg() {
+        let src = [TokenKind::X, TokenKind::Minus, TokenKind::Integer(6)];
+        let should_be = Argument {
+            kind: ArgumentKind::X,
+            value: -6.0,
+        };
+
+        let tokens = src.iter().map(|&t| t.into());
+        let mut parser = Parser::new(tokens);
+
+        let got = parser.arg().unwrap().unwrap();
+
+        assert_eq!(got, should_be);
+    }
+
+    #[test]
+    fn spindle_speed() {
+        let src = [TokenKind::S, TokenKind::Integer(600)];
+        let should_be = Argument {
+            kind: ArgumentKind::S,
+            value: 600.0,
+        };
+
+        let tokens = src.iter().map(|&t| t.into());
+        let mut parser = Parser::new(tokens);
+
+        let got = parser.arg().unwrap().unwrap();
+
+        assert_eq!(got, should_be);
+    }
+
+    #[test]
+    fn argument_kinds() {
+        let inputs = vec![(TokenKind::X, ArgumentKind::X),
+                      (TokenKind::Y, ArgumentKind::Y),
+                      (TokenKind::Z, ArgumentKind::Z),
+
+                      (TokenKind::R, ArgumentKind::R),
+                      (TokenKind::M, ArgumentKind::M),
+                      (TokenKind::S, ArgumentKind::S),
+                      (TokenKind::H, ArgumentKind::H),
+                      (TokenKind::FeedRate, ArgumentKind::FeedRate)];
+
+        for (input, should_be) in inputs.into_iter() {
+            println!("{:?} => {:?}", input, should_be);
+
+            let src = [input];
+            let tokens = src.iter().map(|&t| t.into());
+
+            let got = Parser::new(tokens).arg_kind().unwrap();
+            assert_eq!(got, should_be);
+        }
     }
 }
