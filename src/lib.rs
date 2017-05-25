@@ -1,4 +1,32 @@
 //! A crate for parsing gcodes without relying on `std`.
+//!
+//! The crate uses a pipeline pattern and iterators to implement a
+//! zero-allocation lexer and parser.
+//!
+//!
+//! # Pipeline Stages
+//!
+//! The data goes through a series of transformations before it arrives at its
+//! final strongly-typed representation. Each transform uses the [`Iterator`]
+//! trait to lazily evaluate commands, so if you aren't reading from local
+//! memory (i.e. an attached SD card), if you're reading data from a serial
+//! port or other network device you'll probably want to wrap it in some sort
+//! of buffered reader.
+//!
+//!
+//! Stage | Transform           | Transformer     | Description
+//! ------+---------------------+--------+----------------------------------
+//! 1     | char -> [`Token`]   | [`Tokenizer`]   | Lexical analysis (tokenizing)
+//! 2     | Token -> [`Line`]   | [`BasicParser`] | Initial parsing
+//! 3     | Line -> ???         | [`Parser`]      | Type-checking
+//!
+//!
+//! [`Iterator`]: https://doc.rust-lang.org/nightly/core/iter/trait.Iterator.html
+//! [`Tokenizer`]: lexer/struct.Tokenizer.html
+//! [`BasicParser`]: parser/struct.BasicParser.html
+//! [`Parser`]: #
+//! [`Token`]: lexer/struct.Token.html
+//! [`Line`]: parser/enum.Line.html
 
 #![no_std]
 #![deny(missing_docs)]

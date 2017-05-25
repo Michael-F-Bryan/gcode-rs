@@ -1,4 +1,5 @@
-#![allow(missing_docs, dead_code)]
+//! The first stage of parsing which turns tokens into a basic gcode
+//! representation.
 
 use core::iter::Peekable;
 use arrayvec::ArrayVec;
@@ -13,7 +14,10 @@ type ArgBuffer = ArrayVec<[Argument; 10]>;
 /// A parser which takes a stream of characters and parses them as gcode
 /// instructions.
 ///
-/// The grammar currently being used is roughly as follows:
+///
+/// # Grammar
+///
+/// The grammar used has one token of lookahead and is roughly as follows:
 ///
 /// ```text
 /// line ::= command
@@ -45,12 +49,10 @@ type ArgBuffer = ArrayVec<[Argument; 10]>;
 /// number ::= MINUS NUMBER
 ///          | NUMBER
 /// ```
-///
-/// I've tried to keep the grammar
 pub struct BasicParser<I>
     where I: Iterator<Item = Token>
 {
-    pub stream: Peekable<I>,
+    stream: Peekable<I>,
 }
 
 /// Peek at the next token, if its kind isn't one of the specified `$pattern`s,
@@ -71,10 +73,12 @@ macro_rules! lookahead {
 impl<I> BasicParser<I>
     where I: Iterator<Item = Token>
 {
+    /// Create a new `BasicParser` from a token stream.
     pub fn new(stream: I) -> BasicParser<I> {
         BasicParser { stream: stream.peekable() }
     }
 
+    /// Parse the input and get the next line.
     pub fn parse(&mut self) -> Result<Line> {
         let next_span = self.next_span();
 
@@ -240,6 +244,7 @@ impl<I> Iterator for BasicParser<I>
     }
 }
 
+/// A gcode command.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Command {
     span: Span,
@@ -249,7 +254,25 @@ pub struct Command {
     args: ArgBuffer,
 }
 
+impl Command {
+    /// Get the location of the `Command` in source code.
+    pub fn span(&self) -> Span {
+        self.span
+    }
 
+    /// The line number as declared with `N123` (if provided).
+    pub fn line_number(&self) -> Option<u32> {
+        self.line_number
+    }
+
+    /// Loosely-typed representation of the command (e.g. `(G, 90)`).
+    pub fn command(&self) -> (CommandType, u32) {
+        (self.command_type, self.command_number)
+    }
+}
+
+
+/// An argument for a gcode command.
 #[derive(Clone, Debug, PartialEq)]
 struct Argument {
     kind: ArgumentKind,
@@ -272,16 +295,23 @@ enum ArgumentKind {
     J,
 }
 
+/// An enum representing the command type.
 #[derive(Copy, Clone, Debug, PartialEq)]
-enum CommandType {
+pub enum CommandType {
+    /// A general G code.
     G,
+    /// A M code.
     M,
+    /// An instruction to change tools.
     T,
 }
 
+/// A line of gcode.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Line {
+    /// A gcode command.
     Cmd(Command),
+    /// The program number.
     ProgramNumber(u32),
 }
 
