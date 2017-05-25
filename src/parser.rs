@@ -16,7 +16,10 @@ type ArgBuffer = ArrayVec<[Argument; 10]>;
 /// The grammar currently being used is roughly as follows:
 ///
 /// ```text
-/// start ::= command
+/// line ::= command
+///        | program_number
+///
+/// program_number ::= O INTEGER
 ///
 /// command ::= line_number command_name args
 ///
@@ -69,8 +72,32 @@ impl<I> Parser<I>
         Parser { stream: stream.peekable() }
     }
 
-    pub fn parse(&mut self) -> Result<Command> {
-        self.command()
+    pub fn parse(&mut self) -> Result<Line> {
+        if let Ok(n) = self.program_number() {
+            return Ok(Line::ProgramNumber(n));
+        }
+
+        if let Ok(cmd) = self.command() {
+            return Ok(Line::Cmd(cmd));
+        }
+
+        match self.stream.peek() {
+            Some(next) => Err(Error::SyntaxError("Got an invalid line", next.span())),
+            None => Err(Error::UnexpectedEOF),
+        }
+
+    }
+
+    fn program_number(&mut self) -> Result<u32> {
+        lookahead!(self, "Expected a 'O'", TokenKind::O);
+        let _ = self.stream.next();
+
+        lookahead!(self, "Expected a program number", TokenKind::Integer(_));
+
+        match self.stream.next().unwrap().kind() {
+            TokenKind::Integer(n) => Ok(n),
+            _ => unreachable!(),
+        }
     }
 
     fn command(&mut self) -> Result<Command> {
@@ -178,12 +205,16 @@ impl<I> Parser<I>
     fn peek(&mut self) -> Option<TokenKind> {
         self.stream.peek().map(|t| t.kind())
     }
+
+    fn next_span(&mut self) -> Option<Span> {
+        self.stream.peek().map(|t| t.span())
+    }
 }
 
 impl<I> Iterator for Parser<I>
     where I: Iterator<Item = Token>
 {
-    type Item = Result<Command>;
+    type Item = Result<Line>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let got = self.parse();
@@ -196,7 +227,7 @@ impl<I> Iterator for Parser<I>
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Command {
     span: Span,
     line_number: Option<u32>,
@@ -226,6 +257,12 @@ enum ArgumentKind {
 enum CommandType {
     G,
     M,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Line {
+    Cmd(Command),
+    ProgramNumber(u32),
 }
 
 #[cfg(test)]
@@ -420,6 +457,19 @@ mod tests {
         let mut parser = Parser::new(tokens);
 
         let got = parser.command_name().unwrap();
+
+        assert_eq!(got, should_be);
+    }
+
+    #[test]
+    fn parse_program_number() {
+        let src = [TokenKind::O, TokenKind::Integer(50)];
+        let should_be = 50;
+
+        let tokens = src.iter().map(|&t| t.into());
+        let mut parser = Parser::new(tokens);
+
+        let got = parser.program_number().unwrap();
 
         assert_eq!(got, should_be);
     }
