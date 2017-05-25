@@ -76,11 +76,19 @@ impl<I> Parser<I>
     }
 
     pub fn parse(&mut self) -> Result<Line> {
+        let next_span = self.next_span();
+
         if let Ok(n) = self.program_number() {
             return Ok(Line::ProgramNumber(n));
         }
 
-        self.command().map(|c| Line::Cmd(c))
+        self.command()
+            .map(|mut c| {
+                     if let Some(span) = next_span {
+                         c.span = span;
+                     }
+                     Line::Cmd(c)
+                 })
     }
 
     fn program_number(&mut self) -> Result<u32> {
