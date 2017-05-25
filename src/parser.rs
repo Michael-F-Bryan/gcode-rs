@@ -108,11 +108,10 @@ impl<I> Parser<I>
             _ => false,
         };
 
-        lookahead!(self, "Expected a number", TokenKind::Integer(_) | TokenKind::Number(_));
+        lookahead!(self, "Expected a number", TokenKind::Number(_));
 
         let n = match self.stream.next().unwrap().kind() {
             TokenKind::Number(n) => n,
-            TokenKind::Integer(n) => n as f32,
             _ => unreachable!(),
         };
 
@@ -138,14 +137,9 @@ impl<I> Parser<I>
 
     fn command_name(&mut self) -> Result<(CommandType, u32)> {
         let ty = self.command_type()?;
+        let n = self.number()?;
 
-        lookahead!(self, "Commands should be followed by an integer", TokenKind::Integer(_));
-
-        if let TokenKind::Integer(n) = self.stream.next().unwrap().kind() {
-            Ok((ty, n))
-        } else {
-            unreachable!()
-        }
+        Ok((ty, n as u32))
     }
 
     fn command_type(&mut self) -> Result<CommandType> {
@@ -166,11 +160,10 @@ impl<I> Parser<I>
 
         let _ = self.stream.next();
 
-        lookahead!(self, "Expected a line number", TokenKind::Integer(_));
-
-        match self.stream.next().map(|t| t.kind()) {
-            Some(TokenKind::Integer(n)) => Ok(Some(n)),
-            _ => unreachable!(),
+        if let Ok(n) = self.number() {
+            Ok(Some(n as u32))
+        } else {
+            Ok(None)
         }
     }
 
@@ -303,7 +296,7 @@ mod tests {
 
     #[test]
     fn parse_line_number() {
-        let src = [TokenKind::N, TokenKind::Integer(10)];
+        let src = [TokenKind::N, TokenKind::Number(10.0)];
         let should_be = Some(10);
 
         let tokens = src.iter().map(|&t| t.into());
@@ -385,7 +378,7 @@ mod tests {
                        TokenKind::Y,
                        TokenKind::Number(2.1828),
                        TokenKind::M,
-                       TokenKind::Integer(6)];
+                       TokenKind::Number(6.0)];
 
         let mut should_be = ArgBuffer::new();
         should_be.push(Argument {
@@ -410,7 +403,7 @@ mod tests {
 
     #[test]
     fn parse_basic_command() {
-        let src = vec![TokenKind::G, TokenKind::Integer(90)]; // G90
+        let src = vec![TokenKind::G, TokenKind::Number(90.0)];
         let should_be = Command {
             span: (0, 0).into(),
             command_type: CommandType::G,
@@ -430,9 +423,9 @@ mod tests {
     #[test]
     fn parse_normal_g01() {
         let src = vec![TokenKind::N,
-                       TokenKind::Integer(10),
+                       TokenKind::Number(10.0),
                        TokenKind::G,
-                       TokenKind::Integer(91),
+                       TokenKind::Number(91.0),
                        TokenKind::X,
                        TokenKind::Number(1.0),
                        TokenKind::Y,
@@ -476,7 +469,7 @@ mod tests {
 
     #[test]
     fn parse_command_and_name() {
-        let src = [TokenKind::G, TokenKind::Integer(0)];
+        let src = [TokenKind::G, TokenKind::Number(0.0)];
         let should_be = (CommandType::G, 0);
 
         let tokens = src.iter().map(|&t| t.into());
@@ -489,7 +482,7 @@ mod tests {
 
     #[test]
     fn parse_program_number() {
-        let src = [TokenKind::O, TokenKind::Integer(50)];
+        let src = [TokenKind::O, TokenKind::Number(50.0)];
         let should_be = 50;
 
         let tokens = src.iter().map(|&t| t.into());
@@ -503,9 +496,9 @@ mod tests {
     #[test]
     fn tool_change_line() {
         let src = [TokenKind::T,
-                   TokenKind::Integer(1),
+                   TokenKind::Number(1.0),
                    TokenKind::M,
-                   TokenKind::Integer(6)];
+                   TokenKind::Number(6.0)];
         let mut should_be = Command {
             span: (0, 0).into(),
             line_number: None,
@@ -531,7 +524,7 @@ mod tests {
 
     #[test]
     fn parse_m_arg() {
-        let src = [TokenKind::M, TokenKind::Integer(6)];
+        let src = [TokenKind::M, TokenKind::Number(6.0)];
         let should_be = Argument {
             kind: ArgumentKind::M,
             value: 6.0,
@@ -547,7 +540,7 @@ mod tests {
 
     #[test]
     fn parse_negative_arg() {
-        let src = [TokenKind::X, TokenKind::Minus, TokenKind::Integer(6)];
+        let src = [TokenKind::X, TokenKind::Minus, TokenKind::Number(6.0)];
         let should_be = Argument {
             kind: ArgumentKind::X,
             value: -6.0,
@@ -563,7 +556,7 @@ mod tests {
 
     #[test]
     fn spindle_speed() {
-        let src = [TokenKind::S, TokenKind::Integer(600)];
+        let src = [TokenKind::S, TokenKind::Number(600.0)];
         let should_be = Argument {
             kind: ArgumentKind::S,
             value: 600.0,

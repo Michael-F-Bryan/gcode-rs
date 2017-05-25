@@ -103,7 +103,7 @@ impl<I> Tokenizer<I>
         match self.src.peek() {
             Some(&'.') => {}
             _ => {
-                let kind = TokenKind::Integer(integer_part);
+                let kind = TokenKind::Number(integer_part as f32);
                 return Ok(Token { kind, span });
             }
         }
@@ -233,8 +233,6 @@ impl Token {
 pub enum TokenKind {
     /// A floating point number.
     Number(f32),
-    /// A plain integer.
-    Integer(u32),
 
     // Command Types
     G,
@@ -334,9 +332,9 @@ mod tests {
 
     #[test]
     fn tokenize_numbers() {
-        let inputs = [("100000000", TokenKind::Integer(100000000)),
-                      ("0", TokenKind::Integer(0)),
-                      ("12", TokenKind::Integer(12)),
+        let inputs = [("100000000", TokenKind::Number(100000000.0)),
+                      ("0", TokenKind::Number(0.0)),
+                      ("12", TokenKind::Number(12.0)),
                       ("12.", TokenKind::Number(12.0)),
                       ("12.34", TokenKind::Number(12.34)),
                       ("00012312.00000001", TokenKind::Number(12312.00000001)),
