@@ -2,6 +2,7 @@
 //! representation.
 
 use core::iter::Peekable;
+use core::fmt::{self, Formatter, Display};
 use arrayvec::ArrayVec;
 
 use lexer::{Token, Span, TokenKind};
@@ -271,12 +272,34 @@ impl Command {
     }
 }
 
+impl Display for Command {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        if let Some(n) = self.line_number {
+            write!(f, "N{} ", n)?;
+        }
+
+        write!(f, "{}{}", self.command_type, self.command_number)?;
+
+        for arg in &self.args {
+            write!(f, " {}", arg)?;
+        }
+
+        write!(f, "\t(line: {}, column: {})", self.span.line, self.span.column)
+    }
+}
+
 
 /// An argument for a gcode command.
 #[derive(Clone, Debug, PartialEq)]
 struct Argument {
     kind: ArgumentKind,
     value: f32,
+}
+
+impl Display for Argument {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}{}", self.kind, self.value)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -295,6 +318,17 @@ enum ArgumentKind {
     J,
 }
 
+impl Display for ArgumentKind {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            ArgumentKind::X | ArgumentKind::Y | ArgumentKind::Z | ArgumentKind::R |
+            ArgumentKind::M | ArgumentKind::S | ArgumentKind::H | ArgumentKind::P |
+            ArgumentKind::I | ArgumentKind::J => write!(f, "{:?}", self),
+            ArgumentKind::FeedRate => write!(f, "F"),
+        }
+    }
+}
+
 /// An enum representing the command type.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum CommandType {
@@ -306,6 +340,15 @@ pub enum CommandType {
     T,
 }
 
+
+impl Display for CommandType {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+
+
 /// A line of gcode.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Line {
@@ -314,6 +357,19 @@ pub enum Line {
     /// The program number.
     ProgramNumber(u32),
 }
+
+
+impl Display for Line {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            Line::Cmd(ref cmd) => write!(f, "{}", cmd),
+            Line::ProgramNumber(n) => write!(f, "O{}", n),
+        }
+    }
+}
+
+
+
 
 #[cfg(test)]
 mod tests {
