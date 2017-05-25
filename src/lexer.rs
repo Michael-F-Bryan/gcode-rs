@@ -61,10 +61,12 @@ impl<I> Tokenizer<I>
                 }
 
                 '%' => {
-                    Ok(Token {
-                           kind: TokenKind::Percent,
-                           span: span,
-                       })
+                    // Explicitly ignore percent signs
+                    continue;
+                    // Ok(Token {
+                    //        kind: TokenKind::Percent,
+                    //        span: span,
+                    //    })
                 }
                 '-' => {
                     Ok(Token {
@@ -160,6 +162,9 @@ impl<I> Tokenizer<I>
             'O' => TokenKind::O,
             'S' => TokenKind::S,
             'H' => TokenKind::H,
+            'P' => TokenKind::P,
+            'I' => TokenKind::I,
+            'J' => TokenKind::J,
 
             other => {
                 debug!("Using escape hatch for character: {}", other);
@@ -249,6 +254,9 @@ pub enum TokenKind {
     S,
     R,
     H,
+    P,
+    I,
+    J,
 
     Minus,
     Percent,
@@ -319,6 +327,9 @@ mod tests {
                       ("S", TokenKind::S),
                       ("R", TokenKind::R),
                       ("H", TokenKind::H),
+                      ("P", TokenKind::P),
+                      ("I", TokenKind::I),
+                      ("J", TokenKind::J),
 
                       ("w", TokenKind::Other('w'))];
 

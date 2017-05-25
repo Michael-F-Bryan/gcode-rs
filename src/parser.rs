@@ -172,7 +172,9 @@ impl<I> Parser<I>
                    "Expected an argument kind",
                    TokenKind::X | TokenKind::Y | TokenKind::Z |
                    TokenKind::R | TokenKind::M | TokenKind::S |
-                   TokenKind::H | TokenKind::FeedRate);
+                   TokenKind::H | TokenKind::P | TokenKind::I |
+                   TokenKind::J |
+                   TokenKind::FeedRate);
 
         match self.stream.next().unwrap().kind() {
             TokenKind::X => Ok(ArgumentKind::X),
@@ -182,6 +184,9 @@ impl<I> Parser<I>
             TokenKind::M => Ok(ArgumentKind::M),
             TokenKind::S => Ok(ArgumentKind::S),
             TokenKind::H => Ok(ArgumentKind::H),
+            TokenKind::P => Ok(ArgumentKind::P),
+            TokenKind::I => Ok(ArgumentKind::I),
+            TokenKind::J => Ok(ArgumentKind::J),
             TokenKind::FeedRate => Ok(ArgumentKind::FeedRate),
             _ => unreachable!(),
         }
@@ -262,6 +267,9 @@ enum ArgumentKind {
     S,
     H,
     FeedRate,
+    P,
+    I,
+    J,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -305,23 +313,6 @@ mod tests {
         let got = parser.line_number().unwrap();
 
         assert_eq!(got, should_be);
-    }
-
-    #[test]
-    fn parse_argument_kind() {
-        let src = vec![([TokenKind::X], ArgumentKind::X),
-                       ([TokenKind::Y], ArgumentKind::Y),
-                       ([TokenKind::Z], ArgumentKind::Z),
-                       ([TokenKind::R], ArgumentKind::R),
-                       ([TokenKind::FeedRate], ArgumentKind::FeedRate)];
-
-        for (tokens, should_be) in src {
-            println!("{:?} => {:?}", tokens, should_be);
-
-            let mut parser = Parser::new(tokens.iter().map(|&k| k.into()));
-            let got = parser.arg_kind().unwrap();
-            assert_eq!(got, should_be);
-        }
     }
 
     #[test]
@@ -573,14 +564,17 @@ mod tests {
     #[test]
     fn argument_kinds() {
         let inputs = vec![(TokenKind::X, ArgumentKind::X),
-                      (TokenKind::Y, ArgumentKind::Y),
-                      (TokenKind::Z, ArgumentKind::Z),
+                          (TokenKind::Y, ArgumentKind::Y),
+                          (TokenKind::Z, ArgumentKind::Z),
 
-                      (TokenKind::R, ArgumentKind::R),
-                      (TokenKind::M, ArgumentKind::M),
-                      (TokenKind::S, ArgumentKind::S),
-                      (TokenKind::H, ArgumentKind::H),
-                      (TokenKind::FeedRate, ArgumentKind::FeedRate)];
+                          (TokenKind::R, ArgumentKind::R),
+                          (TokenKind::M, ArgumentKind::M),
+                          (TokenKind::S, ArgumentKind::S),
+                          (TokenKind::H, ArgumentKind::H),
+                          (TokenKind::P, ArgumentKind::P),
+                          (TokenKind::I, ArgumentKind::I),
+                          (TokenKind::J, ArgumentKind::J),
+                          (TokenKind::FeedRate, ArgumentKind::FeedRate)];
 
         for (input, should_be) in inputs.into_iter() {
             println!("{:?} => {:?}", input, should_be);
