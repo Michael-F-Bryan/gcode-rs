@@ -157,6 +157,7 @@ impl<I> Tokenizer<I>
             'Z' => TokenKind::Z,
             'R' => TokenKind::R,
             'F' => TokenKind::FeedRate,
+            'O' => TokenKind::O,
 
             other => {
                 debug!("Using escape hatch for character: {}", other);
@@ -237,6 +238,8 @@ pub enum TokenKind {
     M,
     T,
     N,
+    /// A program number.
+    O,
 
     X,
     Y,
@@ -370,5 +373,14 @@ mod tests {
         let mut tokenizer = Tokenizer::new(src.chars());
         tokenizer.to_end_of_line();
         assert_eq!(tokenizer.src.next(), Some('7'));
+    }
+
+    #[test]
+    fn tokenize_program_number() {
+        let src = "O";
+        let should_be = TokenKind::O;
+
+        let got = Tokenizer::new(src.chars()).next().unwrap().unwrap();
+        assert_eq!(got, should_be);
     }
 }

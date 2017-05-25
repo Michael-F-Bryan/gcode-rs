@@ -1,5 +1,5 @@
-//! Integration tests which try run the lexer on valid gcode programs and make
-//! sure it doesn't fail or panic.
+//! Integration tests which try run the lexer and parser on valid gcode
+//! programs and make sure it doesn't fail or panic.
 
 extern crate gcode;
 

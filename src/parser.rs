@@ -16,6 +16,8 @@ type ArgBuffer = ArrayVec<[Argument; 10]>;
 /// The grammar currently being used is roughly as follows:
 ///
 /// ```text
+/// start ::= command
+///
 /// command ::= line_number command_name args
 ///
 /// command_name ::= command_type INTEGER
