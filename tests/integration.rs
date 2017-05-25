@@ -5,7 +5,6 @@ extern crate gcode;
 
 use gcode::lexer::Tokenizer;
 use gcode::parser::BasicParser;
-use gcode::Result;
 
 macro_rules! lex_file {
     ($name:ident => $filename:expr) => {
