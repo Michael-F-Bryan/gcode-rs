@@ -47,7 +47,7 @@ type ArgBuffer = ArrayVec<[Argument; 10]>;
 /// ```
 ///
 /// I've tried to keep the grammar
-pub struct Parser<I>
+pub struct BasicParser<I>
     where I: Iterator<Item = Token>
 {
     pub stream: Peekable<I>,
@@ -68,11 +68,11 @@ macro_rules! lookahead {
     }
 }
 
-impl<I> Parser<I>
+impl<I> BasicParser<I>
     where I: Iterator<Item = Token>
 {
-    pub fn new(stream: I) -> Parser<I> {
-        Parser { stream: stream.peekable() }
+    pub fn new(stream: I) -> BasicParser<I> {
+        BasicParser { stream: stream.peekable() }
     }
 
     pub fn parse(&mut self) -> Result<Line> {
@@ -224,7 +224,7 @@ impl<I> Parser<I>
     }
 }
 
-impl<I> Iterator for Parser<I>
+impl<I> Iterator for BasicParser<I>
     where I: Iterator<Item = Token>
 {
     type Item = Result<Line>;
@@ -295,7 +295,7 @@ mod tests {
         let src = vec![];
         let should_be = None;
 
-        let mut parser = Parser::new(src.into_iter());
+        let mut parser = BasicParser::new(src.into_iter());
 
         let got = parser.line_number().unwrap();
 
@@ -308,7 +308,7 @@ mod tests {
         let should_be = Some(10);
 
         let tokens = src.iter().map(|&t| t.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.line_number().unwrap();
 
@@ -318,7 +318,7 @@ mod tests {
     #[test]
     fn parse_empty_arg() {
         let src = vec![];
-        let mut parser = Parser::new(src.into_iter());
+        let mut parser = BasicParser::new(src.into_iter());
         let got = parser.arg().unwrap();
         assert!(got.is_none());
     }
@@ -332,7 +332,7 @@ mod tests {
         };
 
         let tokens = src.iter().map(|&k| k.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.arg().unwrap().unwrap();
         assert_eq!(got, should_be);
@@ -341,7 +341,7 @@ mod tests {
     #[test]
     fn parse_empty_args() {
         let src = vec![];
-        let mut parser = Parser::new(src.into_iter());
+        let mut parser = BasicParser::new(src.into_iter());
         let got = parser.args().unwrap();
         assert!(got.is_empty());
     }
@@ -355,7 +355,7 @@ mod tests {
         };
 
         let tokens = src.iter().map(|&k| k.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.args().unwrap();
         assert_eq!(got.len(), 1);
@@ -386,7 +386,7 @@ mod tests {
                        });
 
         let tokens = src.iter().map(|&k| k.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.args().unwrap();
         assert_eq!(got, should_be);
@@ -404,7 +404,7 @@ mod tests {
         };
 
         let tokens = src.iter().map(|&t| t.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.command().unwrap();
 
@@ -451,7 +451,7 @@ mod tests {
                   });
 
         let tokens = src.iter().map(|&t| t.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.command().unwrap();
 
@@ -464,7 +464,7 @@ mod tests {
         let should_be = (CommandType::G, 0);
 
         let tokens = src.iter().map(|&t| t.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.command_name().unwrap();
 
@@ -477,7 +477,7 @@ mod tests {
         let should_be = 50;
 
         let tokens = src.iter().map(|&t| t.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.program_number().unwrap();
 
@@ -506,7 +506,7 @@ mod tests {
                   });
 
         let tokens = src.iter().map(|&t| t.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.command().unwrap();
 
@@ -522,7 +522,7 @@ mod tests {
         };
 
         let tokens = src.iter().map(|&t| t.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.arg().unwrap().unwrap();
 
@@ -538,7 +538,7 @@ mod tests {
         };
 
         let tokens = src.iter().map(|&t| t.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.arg().unwrap().unwrap();
 
@@ -554,7 +554,7 @@ mod tests {
         };
 
         let tokens = src.iter().map(|&t| t.into());
-        let mut parser = Parser::new(tokens);
+        let mut parser = BasicParser::new(tokens);
 
         let got = parser.arg().unwrap().unwrap();
 
@@ -582,7 +582,7 @@ mod tests {
             let src = [input];
             let tokens = src.iter().map(|&t| t.into());
 
-            let got = Parser::new(tokens).arg_kind().unwrap();
+            let got = BasicParser::new(tokens).arg_kind().unwrap();
             assert_eq!(got, should_be);
         }
     }

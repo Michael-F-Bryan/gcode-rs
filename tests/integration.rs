@@ -4,7 +4,7 @@
 extern crate gcode;
 
 use gcode::lexer::Tokenizer;
-use gcode::parser::Parser;
+use gcode::parser::BasicParser;
 use gcode::Result;
 
 macro_rules! lex_file {
@@ -31,7 +31,7 @@ macro_rules! parse_file {
             let src = include_str!($filename);
             let tokens = Tokenizer::new(src.chars());
 
-            for command in Parser::new(tokens.filter_map(|t| t.ok())) {
+            for command in BasicParser::new(tokens.filter_map(|t| t.ok())) {
                 println!("{:?}", command.unwrap());
             }
         }

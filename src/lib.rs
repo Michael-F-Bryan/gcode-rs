@@ -16,7 +16,7 @@ pub mod lexer;
 mod helpers;
 
 pub use lexer::Span;
-pub use parser::Parser;
+pub use parser::BasicParser;
 pub use errors::*;
 
 mod errors {
