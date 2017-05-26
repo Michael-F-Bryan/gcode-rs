@@ -166,6 +166,7 @@ impl<I> Tokenizer<I>
             'P' => TokenKind::P,
             'I' => TokenKind::I,
             'J' => TokenKind::J,
+            'E' => TokenKind::E,
 
             other => {
                 debug!("Using escape hatch for character: {}", other);
@@ -258,6 +259,7 @@ pub enum TokenKind {
     P,
     I,
     J,
+    E,
 
     Minus,
     Percent,
@@ -337,6 +339,7 @@ mod tests {
                       ("P", TokenKind::P),
                       ("I", TokenKind::I),
                       ("J", TokenKind::J),
+                      ("E", TokenKind::E),
 
                       ("w", TokenKind::Other('w'))];
 

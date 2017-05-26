@@ -186,9 +186,9 @@ impl<I> BasicParser<I>
         lookahead!(self,
                    "Expected an argument kind",
                    TokenKind::X | TokenKind::Y | TokenKind::Z |
-                   TokenKind::R | TokenKind::M | TokenKind::S |
+                   TokenKind::R | TokenKind::S | TokenKind::M |
                    TokenKind::H | TokenKind::P | TokenKind::I |
-                   TokenKind::J |
+                   TokenKind::J | TokenKind::E |
                    TokenKind::FeedRate);
 
         match self.stream.next().unwrap().kind() {
@@ -196,12 +196,13 @@ impl<I> BasicParser<I>
             TokenKind::Y => Ok(ArgumentKind::Y),
             TokenKind::Z => Ok(ArgumentKind::Z),
             TokenKind::R => Ok(ArgumentKind::R),
-            TokenKind::M => Ok(ArgumentKind::M),
             TokenKind::S => Ok(ArgumentKind::S),
             TokenKind::H => Ok(ArgumentKind::H),
+            TokenKind::M => Ok(ArgumentKind::M),
             TokenKind::P => Ok(ArgumentKind::P),
             TokenKind::I => Ok(ArgumentKind::I),
             TokenKind::J => Ok(ArgumentKind::J),
+            TokenKind::E => Ok(ArgumentKind::E),
             TokenKind::FeedRate => Ok(ArgumentKind::FeedRate),
             _ => unreachable!(),
         }
@@ -319,21 +320,22 @@ enum ArgumentKind {
     Z,
 
     R,
-    M,
     S,
     H,
     FeedRate,
     P,
+    M,
     I,
     J,
+    E,
 }
 
 impl Display for ArgumentKind {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match *self {
             ArgumentKind::X | ArgumentKind::Y | ArgumentKind::Z | ArgumentKind::R |
-            ArgumentKind::M | ArgumentKind::S | ArgumentKind::H | ArgumentKind::P |
-            ArgumentKind::I | ArgumentKind::J => write!(f, "{:?}", self),
+            ArgumentKind::S | ArgumentKind::H | ArgumentKind::P | ArgumentKind::I |
+            ArgumentKind::E | ArgumentKind::M | ArgumentKind::J => write!(f, "{:?}", self),
             ArgumentKind::FeedRate => write!(f, "F"),
         }
     }
@@ -464,7 +466,7 @@ mod tests {
                        TokenKind::Number(3.14),
                        TokenKind::Y,
                        TokenKind::Number(2.1828),
-                       TokenKind::M,
+                       TokenKind::Z,
                        TokenKind::Number(6.0)];
 
         let mut should_be = ArgBuffer::new();
@@ -477,7 +479,7 @@ mod tests {
                            value: 2.1828,
                        });
         should_be.push(Argument {
-                           kind: ArgumentKind::M,
+                           kind: ArgumentKind::Z,
                            value: 6.0,
                        });
 
@@ -670,6 +672,7 @@ mod tests {
                           (TokenKind::P, ArgumentKind::P),
                           (TokenKind::I, ArgumentKind::I),
                           (TokenKind::J, ArgumentKind::J),
+                          (TokenKind::E, ArgumentKind::E),
                           (TokenKind::FeedRate, ArgumentKind::FeedRate)];
 
         for (input, should_be) in inputs.into_iter() {
