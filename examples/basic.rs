@@ -1,4 +1,3 @@
-extern crate env_logger;
 extern crate gcode;
 
 use gcode::lexer::Tokenizer;
@@ -6,8 +5,6 @@ use gcode::parser::BasicParser;
 
 
 fn main() {
-    env_logger::init().unwrap();
-
     let src = include_str!("../tests/data/PI_octcat.gcode");
 
     let lexer = Tokenizer::new(src.chars());

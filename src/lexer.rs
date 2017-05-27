@@ -168,10 +168,7 @@ impl<I> Tokenizer<I>
             'J' => TokenKind::J,
             'E' => TokenKind::E,
 
-            other => {
-                debug!("Using escape hatch for character: {}", other);
-                TokenKind::Other(other)
-            }
+            other => TokenKind::Other(other),
         };
 
         Ok(Token { kind, span })
@@ -205,10 +202,6 @@ impl<I> Iterator for Tokenizer<I>
 
     fn next(&mut self) -> Option<Self::Item> {
         let t = self.next_token();
-        if let Some(tok) = t.as_ref() {
-            trace!("{:?}", tok);
-        }
-
         t
     }
 }

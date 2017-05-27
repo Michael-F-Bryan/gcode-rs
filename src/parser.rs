@@ -144,16 +144,6 @@ impl<I> BasicParser<I>
         let ty = self.command_type()?;
         let n = self.number()?;
 
-        if cfg!(debug_assertions) {
-            if n != n.round() {
-                if let Some(span) = self.next_span() {
-                    warn!("Command using decimal notation, {}{} ({})", ty, n, span);
-                } else {
-                    warn!("Command using decimal notation, {}{}", ty, n);
-                }
-            }
-        }
-
         Ok((ty, n as u32))
     }
 
