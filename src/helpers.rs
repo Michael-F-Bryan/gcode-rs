@@ -169,4 +169,14 @@ mod tests {
             assert_eq!(got, should_be);
         }
     }
+
+    #[test]
+    fn swapping_case() {
+        let inputs = [('a', 'A'), ('m', 'M'), ('$', '$'), ('z', 'Z'), ('s', 'S')];
+
+        for &(left, right) in &inputs {
+            assert_eq!(left.uppercase(), right);
+            assert_eq!(right.lowercase(), left);
+        }
+    }
 }
