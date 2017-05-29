@@ -105,14 +105,11 @@ note: Run with `RUST_BACKTRACE=1` for a backtrace.
 
 ```rust
         4 => {
-            if let Some(secs) = arg_reader.seconds {
-                if secs < 0.0 {
-                    Err(Error::InvalidCommand("Dwell duration cannot be negative"))
-                } else {
-                    Ok(GCode::G04 { seconds: secs })
-                }
-            } else {
-                Err(Error::InvalidCommand("Must provide a dwell duration"))
+            match arg_reader.seconds {
+                Some(secs) if secs > 0.0 => Ok(GCode::G04 { seconds: secs }),
+                Some(secs) => Err(Error::InvalidCommand("Dwell duration cannot be negative")),
+                None => Err(Error::InvalidCommand("Must provide a dwell duration")),
+
             }
         }
 ```
