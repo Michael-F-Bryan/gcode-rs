@@ -28,6 +28,33 @@ impl MaybeAlphabetic for char {
     }
 }
 
+pub trait SwapCase {
+    fn uppercase(&self) -> Self;
+    fn lowercase(&self) -> Self;
+}
+
+impl SwapCase for char {
+    fn uppercase(&self) -> Self {
+        match *self {
+            'a'...'z' => {
+                let diff = 'a' as u8 - 'A' as u8;
+                (*self as u8 - diff) as Self
+            }
+            other => other,
+        }
+    }
+
+    fn lowercase(&self) -> Self {
+        match *self {
+            'A'...'Z' => {
+                let diff = 'a' as u8 - 'A' as u8;
+                (*self as u8 + diff) as Self
+            }
+            other => other,
+        }
+    }
+}
+
 
 #[cfg(feature = "nightly")]
 pub mod lines {
