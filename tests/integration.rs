@@ -3,9 +3,9 @@
 
 extern crate gcode;
 
-use gcode::{Tokenizer, BasicParser};
-// use gcode::type_check;
+use gcode::{Tokenizer, BasicParser, type_check};
 
+const TYPE_CHECK_ENABLED: bool = false;
 
 /// Create an integration test which will take the gcodes from the specified
 /// file, then run the lexer and low level parser in stages, making sure that
@@ -40,23 +40,23 @@ macro_rules! integration_test {
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap();
 
-            for line in lines {
-                println!("{:?}", line);
+
+            if TYPE_CHECK_ENABLED {
+                println!();
+                println!("Type Checking");
+                println!("=============");
+                println!();
+
+                let strongly_typed: Vec<_> = lines.into_iter().map(type_check).collect();
+
+                for line in strongly_typed {
+                    println!("{:?}", line);
+                }
+            } else {
+                for line in lines {
+                    println!("{:?}", line);
+                }
             }
-
-            // TODO: Uncomment this when type checking is pretty much complete
-            // You can also use this to figure out which commands aren't yet
-            // supported by the type checker.
-            // println!();
-            // println!("Type Checking");
-            // println!("=============");
-            // println!();
-
-            // let strongly_typed: Vec<_> = lines.into_iter().map(type_check).collect();
-
-            // for line in strongly_typed {
-            //     println!("{:?}", line);
-            // }
         }
     }
 }

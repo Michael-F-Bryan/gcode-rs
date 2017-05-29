@@ -121,6 +121,14 @@ note: Run with `RUST_BACKTRACE=1` for a backtrace.
 7. ???
 8. Profit!!!
 
+If you are wondering which G code to support next, there's an integration test
+which runs each stage of the parser pipeline over several real-life gcode
+programs.
+
+At the very top there's a `TYPE_CHECK_ENABLED` flag which will let
+enable testing the type checker stage, so running the tests again should fail
+on an unsupported G code and indicate which G code to make a PR for next.
+
 
 [thread]:https://users.rust-lang.org/t/g-code-interpreter/10930
 [docs]: https://michael-f-bryan.github.io/gcode-rs/
