@@ -2,9 +2,7 @@
 extern crate test;
 extern crate gcode;
 
-use gcode::lexer::Tokenizer;
-use gcode::parser::BasicParser;
-use gcode::Result;
+use gcode::{Tokenizer, BasicParser, type_check, Result};
 
 
 const SRC: &'static str = include_str!("../tests/data/program_3.gcode");
@@ -26,3 +24,17 @@ fn bench_parse_program_3(b: &mut test::Bencher) {
                parser.collect::<Result<Vec<_>>>().unwrap()
            })
 }
+
+
+// TODO: Uncomment this when type checking is pretty much complete
+// #[bench]
+// fn lex_parse_and_typecheck_program_3(b: &mut test::Bencher) {
+//     b.iter(|| {
+//                let lexer = Tokenizer::new(SRC.chars());
+//                let tokens = lexer.filter_map(|t| t.ok());
+//                BasicParser::new(tokens)
+//                    .map(|l| l.unwrap())
+//                    .map(type_check)
+//                    .collect::<Vec<_>>()
+//            })
+// }

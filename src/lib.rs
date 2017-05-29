@@ -79,9 +79,16 @@
 //! [`high_level::Line`]: high_level/enum.Line.html
 
 #![no_std]
-#![deny(missing_docs)]
+#![deny(missing_docs,
+        missing_debug_implementations, missing_copy_implementations,
+        trivial_casts, trivial_numeric_casts,
+        unsafe_code,
+        unused_import_braces, unused_qualifications)]
 
+// Allow using unstable features with the "nightly" feature flag
+#![cfg_attr(not(feature = "nightly"), deny(unstable_features))]
 
+// Enable nightly-only features
 #![cfg_attr(feature = "nightly", feature(conservative_impl_trait))]
 
 #[cfg(test)]
@@ -101,7 +108,7 @@ pub use errors::*;
 pub use high_level::type_check;
 
 #[cfg(feature = "nightly")]
-pub use helpers::parse;
+pub use helpers::lines::parse;
 
 mod errors {
     use super::*;
@@ -110,7 +117,7 @@ mod errors {
     pub type Result<T> = ::core::result::Result<T, Error>;
 
     /// The error type.
-    #[derive(Debug, Clone, PartialEq)]
+    #[derive(Debug, Copy, Clone, PartialEq)]
     pub enum Error {
         /// Encountered an unknown token at a particular location.
         UnknownToken(char, Span),

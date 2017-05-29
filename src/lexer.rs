@@ -16,6 +16,7 @@ use helpers::*;
 /// let src = "N40 G90 X1.0";
 /// let tokens: Vec<_> = Tokenizer::new(src.chars()).collect();
 /// ```
+#[derive(Debug)]
 pub struct Tokenizer<I>
     where I: Iterator<Item = char>
 {
@@ -53,7 +54,7 @@ impl<I> Tokenizer<I>
                 a if a.is_alphabetic() => self.tokenize_alpha(a, span),
 
                 ';' => {
-                    self.to_end_of_line();
+                    self.skip_to_end_of_line();
                     continue;
                 }
                 '(' => {
@@ -174,7 +175,7 @@ impl<I> Tokenizer<I>
         Ok(Token { kind, span })
     }
 
-    fn to_end_of_line(&mut self) {
+    fn skip_to_end_of_line(&mut self) {
         while let Some(peek) = self.src.peek().cloned() {
             if peek == '\n' {
                 let _ = self.next_char();
@@ -201,8 +202,7 @@ impl<I> Iterator for Tokenizer<I>
     type Item = Result<Token>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let t = self.next_token();
-        t
+        self.next_token()
     }
 }
 
@@ -391,7 +391,7 @@ mod tests {
     fn tokenizer_skips_to_end_of_line() {
         let src = "awleifr 238r\n7";
         let mut tokenizer = Tokenizer::new(src.chars());
-        tokenizer.to_end_of_line();
+        tokenizer.skip_to_end_of_line();
         assert_eq!(tokenizer.src.next(), Some('7'));
     }
 }

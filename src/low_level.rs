@@ -51,6 +51,7 @@ pub type ArgBuffer = ArrayVec<[Argument; 10]>;
 /// number ::= MINUS NUMBER
 ///          | NUMBER
 /// ```
+#[derive(Debug)]
 pub struct BasicParser<I>
     where I: Iterator<Item = Token>
 {
@@ -310,7 +311,7 @@ impl From<(CommandType, u32)> for Command {
 }
 
 /// An argument for a gcode command.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Argument {
     /// What type of argument this is.
     pub kind: ArgumentKind,
@@ -331,7 +332,7 @@ impl Display for Argument {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 #[allow(missing_docs)]
 pub enum ArgumentKind {
     X,

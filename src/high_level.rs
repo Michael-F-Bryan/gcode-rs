@@ -21,7 +21,7 @@ fn convert_command(cmd: low_level::Command) -> Line {
     }
 }
 
-fn convert_g(number: u32, args: &[low_level::Argument]) -> GCode {
+fn convert_g(number: u32, args: &[Argument]) -> GCode {
     match number {
         0 => {
             let args = ArgumentReader::read(args);
@@ -35,13 +35,13 @@ fn convert_g(number: u32, args: &[low_level::Argument]) -> GCode {
 }
 
 
-fn convert_m(number: u32, args: &[low_level::Argument]) -> MCode {
+fn convert_m(number: u32, args: &[Argument]) -> MCode {
     unimplemented!()
 }
 
 
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Line {
     G(GCode),
     M(MCode),
@@ -49,15 +49,15 @@ pub enum Line {
     ProgramNumber(u32),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum GCode {
     G00 { to: Point, feed_rate: Option<f32> },
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum MCode {}
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct Point {
     pub x: Option<f32>,
     pub y: Option<f32>,
@@ -76,7 +76,7 @@ impl Point {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 struct ArgumentReader {
     to: Point,
     feed_rate: Option<f32>,
