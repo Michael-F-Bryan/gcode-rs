@@ -312,8 +312,17 @@ impl From<(CommandType, u32)> for Command {
 /// An argument for a gcode command.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Argument {
-    kind: ArgumentKind,
-    value: f32,
+    /// What type of argument this is.
+    pub kind: ArgumentKind,
+    /// Its value.
+    pub value: f32,
+}
+
+impl Argument {
+    /// Create a new argument.
+    pub fn new(kind: ArgumentKind, value: f32) -> Argument {
+        Argument { kind, value }
+    }
 }
 
 impl Display for Argument {
@@ -323,7 +332,8 @@ impl Display for Argument {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-pub(crate) enum ArgumentKind {
+#[allow(missing_docs)]
+pub enum ArgumentKind {
     X,
     Y,
     Z,
