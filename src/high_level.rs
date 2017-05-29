@@ -43,6 +43,16 @@ fn convert_g(number: u32, args: &[Argument]) -> Result<GCode> {
                    feed_rate: arg_reader.feed_rate,
                })
         }
+        1 => {
+            if arg_reader.to.is_none() {
+                return Err(Error::InvalidCommand("G01 must have at least one axis word specified"));
+            }
+
+            Ok(GCode::G01 {
+                   to: arg_reader.to,
+                   feed_rate: arg_reader.feed_rate,
+               })
+        }
         other => panic!("G Code not yet supported: {}", other),
     }
 }
@@ -120,7 +130,9 @@ impl ArgumentReader {
                 ArgumentKind::X => this.to.set_x(arg.value),
                 ArgumentKind::Y => this.to.set_y(arg.value),
                 ArgumentKind::Z => this.to.set_z(arg.value),
-                _ => unimplemented!(),
+                ArgumentKind::FeedRate => this.feed_rate = Some(arg.value),
+
+                other => panic!(r#"Argument Kind "{:?}" isn't yet supported"#, other),
             }
         }
 
@@ -154,11 +166,11 @@ mod tests {
                             feed_rate: None
                         });
 
-    g_code_test!(g_01, (0, &[
+    g_code_test!(g_01, (1, &[
                             Argument::new(ArgumentKind::X, 1.23),
                             Argument::new(ArgumentKind::Y, 4.0),
                             Argument::new(ArgumentKind::Z, 2.71828),
-                            Argument::new(ArgumentKind::F, 9000.0)])
+                            Argument::new(ArgumentKind::FeedRate, 9000.0)])
                  => GCode::G01 {
                             to: Point {
                                 x: Some(1.23),
