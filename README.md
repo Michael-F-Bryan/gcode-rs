@@ -41,6 +41,83 @@ ns/character for both lexing and parsing on my machine.
 
 As usual, take these numbers with a massive pinch of salt.
 
+## Contributing
+
+Contributing to this project is really easy! Because I'm wanting to make the
+high level representation for gcodes strongly typed, this requires adding
+each and every G and M code, as well as ensuring their invariants are upheld
+(for example, providing **both** a radius and a centre point in a G02 is
+an error).
+
+Here's the process I followed when adding support for `G04` (dwell).
+
+1. Go to the bottom of `src/high_level.rs` and add a new test for the G code
+   with all the valid arguments provided.
+
+```rust
+g_code_test!(g_04, (4, &[Argument::new(ArgumentKind::P, 100.0)])
+                => GCode::G04 { seconds: 100.0 });
+```
+
+2. Check the [NIST][nist] spec (section 3.4.4) for any error conditions and add
+   tests for those
+
+```rust
+g_code_error!(g_04_requires_a_duration, (4, &[]));
+g_code_error!(g_04_duration_cant_be_negative, (4, &[Argument::new(ArgumentKind::P, -1.23)]));
+```
+
+3. Add that variant to the `GCode` enum
+
+```rust
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum GCode {
+    /// Rapid Linear Motion
+    G00 { to: Point, feed_rate: Option<f32> },
+    ...
+    /// Dwell - wait for a number of seconds
+    G04 { seconds: f32 },
+}
+```
+
+4. Run the tests and make sure they fail (if they don't something went very
+   wrong and you should submit a bug report). The error message will tell you
+   roughly where in the file to go to next.
+
+```bash
+$ cargo test
+    ...
+
+---- high_level::tests::g_04 stdout ----
+        thread 'high_level::tests::g_04' panicked at 'G Code not yet supported: 4', src/high_level.rs:79
+note: Run with `RUST_BACKTRACE=1` for a backtrace.
+
+    ...
+```
+
+5. Go to that line and add a case for that G code number, making sure to add
+   appropriate error checking.
+
+
+```rust
+        4 => {
+            if let Some(secs) = arg_reader.seconds {
+                if secs < 0.0 {
+                    Err(Error::InvalidCommand("Dwell duration cannot be negative"))
+                } else {
+                    Ok(GCode::G04 { seconds: secs })
+                }
+            } else {
+                Err(Error::InvalidCommand("Must provide a dwell duration"))
+            }
+        }
+```
+
+6. Make a pull request.
+7. ???
+8. Profit!!!
+
+
 
 [thread]:https://users.rust-lang.org/t/g-code-interpreter/10930
 [docs]: https://michael-f-bryan.github.io/gcode-rs/
