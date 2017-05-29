@@ -56,8 +56,13 @@ fn convert_g(number: u32, args: &[Argument]) -> Result<GCode> {
 
         // Circular interpolation
         2 => {
+            // Check whether you provide both or neither
             if arg_reader.radius.is_none() == arg_reader.centre.is_none() {
                 return Err(Error::InvalidCommand("You must specify either a radius-formatted arc or a centre-formatted arc",),);
+            }
+
+            if arg_reader.radius.is_some() && arg_reader.to.is_none() {
+                return Err(Error::InvalidCommand("You must provide an end point for a G02"));
             }
 
             Ok(GCode::G02 {
@@ -198,6 +203,18 @@ mod tests {
         }
     }
 
+    /// Test that a g code invariant is held.
+    macro_rules! g_code_error {
+        ($name:ident, $input:expr) => {
+            #[test]
+            fn $name() {
+                let input: (u32, &[Argument]) = $input;
+                let got = convert_g(input.0, input.1);
+                assert!(got.is_err());
+            }
+        }
+    }
+
     g_code_test!(g_00, (0, &[Argument::new(ArgumentKind::Y, 3.1415)])
                  => GCode::G00 {
                             to: Point {y: Some(3.1415), ..Default::default()},
@@ -252,6 +269,16 @@ mod tests {
                             radius: None,
                             centre: Some(Point{x: Some(1.23), y: Some(4.0), z: None}),
                         });
+
+    // You aren't allowed to provide both a radius and centre coordinates in a
+    // G02 command.
+    g_code_error!(g_02_cant_have_both_centre_and_radius_formats,
+                  (2,
+                   &[Argument::new(ArgumentKind::I, 1.23),
+                     Argument::new(ArgumentKind::R, 4.0)]));
+    g_code_error!(g_02_radius_must_have_an_end_point,
+                  (2, &[Argument::new(ArgumentKind::R, 1.23)]));
+
 
     #[test]
     fn argument_reader_handles_coords() {
