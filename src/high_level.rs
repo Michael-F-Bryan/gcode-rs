@@ -74,6 +74,8 @@ pub enum Line {
 pub enum GCode {
     /// Rapid Linear Motion
     G00 { to: Point, feed_rate: Option<f32> },
+    /// Linear Motion at Feed Rate
+    G01 { to: Point, feed_rate: Option<f32> },
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -150,6 +152,20 @@ mod tests {
                  => GCode::G00 {
                             to: Point {y: Some(3.1415), ..Default::default()},
                             feed_rate: None
+                        });
+
+    g_code_test!(g_01, (0, &[
+                            Argument::new(ArgumentKind::X, 1.23),
+                            Argument::new(ArgumentKind::Y, 4.0),
+                            Argument::new(ArgumentKind::Z, 2.71828),
+                            Argument::new(ArgumentKind::F, 9000.0)])
+                 => GCode::G01 {
+                            to: Point {
+                                x: Some(1.23),
+                                y: Some(4.0),
+                                z: Some(2.71828),
+                            },
+                            feed_rate: Some(9000.0),
                         });
 
     #[test]
