@@ -53,6 +53,24 @@ fn convert_g(number: u32, args: &[Argument]) -> Result<GCode> {
                    feed_rate: arg_reader.feed_rate,
                })
         }
+
+        // Circular interpolation
+        2 => {
+            if arg_reader.radius.is_none() == arg_reader.centre.is_none() {
+                return Err(Error::InvalidCommand("You must specify either a radius-formatted arc or a centre-formatted arc",),);
+            }
+
+            Ok(GCode::G02 {
+                   to: arg_reader.to,
+                   feed_rate: arg_reader.feed_rate,
+                   radius: arg_reader.radius,
+                   centre: if arg_reader.centre.is_none() {
+                       None
+                   } else {
+                       Some(arg_reader.centre)
+                   },
+               })
+        }
         other => panic!("G Code not yet supported: {}", other),
     }
 }
@@ -86,6 +104,19 @@ pub enum GCode {
     G00 { to: Point, feed_rate: Option<f32> },
     /// Linear Motion at Feed Rate
     G01 { to: Point, feed_rate: Option<f32> },
+    /// Clockwise Arc at Feed Rate
+    ///
+    /// # Note
+    ///
+    /// positive radius indicates that the arc turns through 180 degrees or
+    /// less, while a negative radius indicates a turn of 180 degrees to
+    /// 359.999 degrees.
+    G02 {
+        to: Point,
+        feed_rate: Option<f32>,
+        radius: Option<f32>,
+        centre: Option<Point>,
+    },
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -119,6 +150,8 @@ impl Point {
 struct ArgumentReader {
     to: Point,
     feed_rate: Option<f32>,
+    radius: Option<f32>,
+    centre: Point,
 }
 
 impl ArgumentReader {
@@ -130,7 +163,12 @@ impl ArgumentReader {
                 ArgumentKind::X => this.to.set_x(arg.value),
                 ArgumentKind::Y => this.to.set_y(arg.value),
                 ArgumentKind::Z => this.to.set_z(arg.value),
+
                 ArgumentKind::FeedRate => this.feed_rate = Some(arg.value),
+
+                ArgumentKind::R => this.radius = Some(arg.value),
+                ArgumentKind::I => this.centre.set_x(arg.value),
+                ArgumentKind::J => this.centre.set_y(arg.value),
 
                 other => panic!(r#"Argument Kind "{:?}" isn't yet supported"#, other),
             }
@@ -178,6 +216,41 @@ mod tests {
                                 z: Some(2.71828),
                             },
                             feed_rate: Some(9000.0),
+                        });
+
+    g_code_test!(g_02_radius_format, (2, &[
+                            Argument::new(ArgumentKind::X, 1.23),
+                            Argument::new(ArgumentKind::Y, 4.0),
+                            Argument::new(ArgumentKind::Z, 2.71828),
+                            Argument::new(ArgumentKind::R, 100.0),
+                            Argument::new(ArgumentKind::FeedRate, 9000.0)])
+                 => GCode::G02 {
+                            to: Point {
+                                x: Some(1.23),
+                                y: Some(4.0),
+                                z: Some(2.71828),
+                            },
+                            feed_rate: Some(9000.0),
+                            radius: Some(100.0),
+                            centre: None,
+                        });
+
+    g_code_test!(g_02_centre_format, (2, &[
+                            Argument::new(ArgumentKind::X, 1.23),
+                            Argument::new(ArgumentKind::Y, 4.0),
+                            Argument::new(ArgumentKind::I, 1.23),
+                            Argument::new(ArgumentKind::J, 4.0),
+                            Argument::new(ArgumentKind::Z, 2.71828),
+                            Argument::new(ArgumentKind::FeedRate, 9000.0)])
+                 => GCode::G02 {
+                            to: Point {
+                                x: Some(1.23),
+                                y: Some(4.0),
+                                z: Some(2.71828),
+                            },
+                            feed_rate: Some(9000.0),
+                            radius: None,
+                            centre: Some(Point{x: Some(1.23), y: Some(4.0), z: None}),
                         });
 
     #[test]
