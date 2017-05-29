@@ -13,7 +13,7 @@ fuzz_target!(|data: &[u8]| {
 
     BasicParser::new(tokens)
         .filter_map(|l| l.ok())
-        .map(type_check)
-        .filter_map(|l| l.ok())
+        // .map(type_check)
+        // .filter_map(|l| l.ok())
         .collect::<Vec<_>>();
 });
