@@ -28,12 +28,12 @@ impl MaybeAlphabetic for char {
     }
 }
 
-pub trait SwapCase {
+pub trait AsciiSwapCase {
     fn uppercase(&self) -> Self;
     fn lowercase(&self) -> Self;
 }
 
-impl SwapCase for char {
+impl AsciiSwapCase for char {
     fn uppercase(&self) -> Self {
         match *self {
             'a'...'z' => {
