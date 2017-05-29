@@ -13,6 +13,9 @@ instructions.
 > [this issue](https://github.com/Michael-F-Bryan/gcode-rs/issues/7) and I'll
 > see what I can do to help.
 
+At them moment, the low level parsing is definitely usable, however the high
+level strongly-typed interface isn't quite ready.
+
 
 ## Useful Links
 
@@ -51,6 +54,8 @@ an error).
 
 Here's the process I followed when adding support for `G04` (dwell).
 
+0. Make a new branch on your own fork of the repo.
+
 1. Go to the bottom of `src/high_level.rs` and add a new test for the G code
    with all the valid arguments provided.
 
@@ -60,17 +65,16 @@ g_code_test!(g_04, (4, &[Argument::new(ArgumentKind::P, 100.0)])
 ```
 
 2. Check the [NIST][nist] spec (section 3.4.4) for any error conditions and add
-   tests for those
+   tests for those.
 
 ```rust
 g_code_error!(g_04_requires_a_duration, (4, &[]));
 g_code_error!(g_04_duration_cant_be_negative, (4, &[Argument::new(ArgumentKind::P, -1.23)]));
 ```
 
-3. Add that variant to the `GCode` enum
+3. Add the G code to the `GCode` enum.
 
 ```rust
-#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum GCode {
     /// Rapid Linear Motion
     G00 { to: Point, feed_rate: Option<f32> },
@@ -113,10 +117,9 @@ note: Run with `RUST_BACKTRACE=1` for a backtrace.
         }
 ```
 
-6. Make a pull request.
+6. Make a pull request so I can merge the new G code in.
 7. ???
 8. Profit!!!
-
 
 
 [thread]:https://users.rust-lang.org/t/g-code-interpreter/10930
