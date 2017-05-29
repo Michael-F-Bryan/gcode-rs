@@ -14,23 +14,52 @@
 //! of buffered reader.
 //!
 //!
-//! Stage | Transform                      | Transformer     | Description
-//! ------+--------------------------------+--------+----------------------------------
-//! 1     | char -> [`Token`]              | [`Tokenizer`]   | Lexical analysis (tokenizing)
-//! 2     | Token -> [`low_level::Line`]   | [`BasicParser`] | Initial parsing
-//! 3     | Line -> [`high_level::Line`]   | [`Parser`]      | Type-checking
+//! Stage | Transform                      | Transformer       | Description
+//! ------+--------------------------------+--------+------------------------------------
+//! 1     | char -> [`Token`]              | [`Tokenizer`]     | Lexical analysis (tokenizing)
+//! 2     | Token -> [`low_level::Line`]   | [`BasicParser`]   | Initial parsing
+//! 3     | Line -> [`high_level::Line`]   | [`type_check()`]  | Type-checking and strong typing
 //!
+//!
+//! # Examples
+//!
+//! You can exercise the entire pipeline as follows:
+//!
+//! ```rust
+//! use gcode::{Tokenizer, BasicParser, type_check};
+//!
+//! let src = "G00 X10.0 Y20.0; G00 Z-10.0; G01 X55.2 Y-32.0 F500;";
+//!
+//! // Construct a tokenizer and pass it our source code.
+//! let lexer = Tokenizer::new(src.chars());
+//!
+//! // Ignore any errors we encounter to get a stream of `Token`s.
+//! let tokens = lexer.filter_map(|t| t.ok());
+//!
+//! // Construct a parser which takes in the tokens.
+//! let parser = BasicParser::new(tokens);
+//!
+//! // Skip all parsing errors and then apply type checking
+//! let lines = parser.filter_map(|l| l.ok())
+//!                   .map(|l| type_check(l));
+//!
+//! for line in lines {
+//!     println!("{:?}", line);
+//! }
+//! ```
 //!
 //! [`Iterator`]: https://doc.rust-lang.org/nightly/core/iter/trait.Iterator.html
 //! [`Tokenizer`]: lexer/struct.Tokenizer.html
 //! [`BasicParser`]: parser/struct.BasicParser.html
-//! [`Parser`]: high_level/struct.Parser.html
+//! [`type_check()`]: high_level/fn.type_check.html
 //! [`Token`]: lexer/struct.Token.html
 //! [`low_level::Line`]: low_level/enum.Line.html
 //! [`high_level::Line`]: high_level/enum.Line.html
 
 #![no_std]
 #![deny(missing_docs)]
+
+#![cfg_attr(feature = "nightly", conservative_impl_trait)]
 
 #[cfg(test)]
 #[macro_use]
@@ -43,9 +72,13 @@ pub mod lexer;
 mod helpers;
 pub mod high_level;
 
-pub use lexer::Span;
+pub use lexer::{Tokenizer, Span};
 pub use low_level::BasicParser;
 pub use errors::*;
+pub use high_level::type_check;
+
+#[cfg(feature = "nightly")]
+pub use helpers::parse;
 
 mod errors {
     use super::*;

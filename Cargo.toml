@@ -5,3 +5,8 @@ authors = ["Michael-F-Bryan <michaelfbryan@gmail.com>"]
 
 [dependencies]
 arrayvec = {version="^0.3", default_features = false}
+
+[features]
+default = []
+
+nightly = []

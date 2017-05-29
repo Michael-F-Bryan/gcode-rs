@@ -30,7 +30,7 @@ fn convert_g(number: u32, args: &[low_level::Argument]) -> GCode {
                 feed_rate: args.feed_rate,
             }
         }
-        _ => unimplemented!(),
+        other => panic!("G Code not yet supported: {}", other),
     }
 }
 

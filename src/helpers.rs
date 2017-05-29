@@ -1,6 +1,10 @@
 //! Some helper traits because a lot of the useful unicode stuff isn't
 //! included in `core::char`.
 
+use core::iter::{Map, FilterMap};
+use lexer::{Tokenizer, Token};
+use low_level::BasicParser;
+use high_level::{type_check, Line};
 
 pub trait MaybeWhitespace {
     fn is_whitespace(&self) -> bool;
@@ -28,6 +32,56 @@ impl MaybeAlphabetic for char {
     }
 }
 
+
+/// A high level helper function which will parse a stream of characters into
+/// GCodes.
+///
+/// Where possible, you probably want to use this where possible to make life
+/// easier.
+///
+///
+/// # Note
+///
+/// This requires the `nightly` feature because we use `conservative_impl_trait`,
+/// which is currently behind a feature gate.
+///
+/// It will also silently ignore parsing or lexing failures.
+#[cfg(feature = "nightly")]
+pub fn parse<I>(src: I) -> impl Iterator<Item = Line>
+    where I: Iterator<Item = char>
+{
+    let lexer = Tokenizer::new(src);
+    let tokens = lexer.filter_map(|t| t.ok());
+
+    let parser = BasicParser::new(tokens);
+    let commands = parser.filter_map(|line| line.ok()).map(|c| type_check(c));
+
+    Lines::new(commands)
+}
+
+pub struct Lines<I>
+    where I: Iterator<Item = Line>
+{
+    lines: I,
+}
+
+impl<I> Lines<I>
+    where I: Iterator<Item = Line>
+{
+    fn new(lines: I) -> Lines<I> {
+        Lines { lines: lines }
+    }
+}
+
+impl<I> Iterator for Lines<I>
+    where I: Iterator<Item = Line>
+{
+    type Item = Line;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.lines.next()
+    }
+}
 
 /// Create a `f32` from its integer part and fractional part.
 pub fn float_from_integers(integer_part: u32, fractional_part: u32, fractional_length: u32) -> f32 {
