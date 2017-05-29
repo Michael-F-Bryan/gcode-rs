@@ -576,7 +576,7 @@ mod tests {
     #[test]
     fn tool_change_line() {
         let src = [TokenKind::T, TokenKind::Number(1.0)];
-        let mut should_be = Command {
+        let should_be = Command {
             span: (0, 0).into(),
             line_number: None,
             command_type: CommandType::T,

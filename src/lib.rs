@@ -40,6 +40,7 @@ extern crate arrayvec;
 pub mod parser;
 pub mod lexer;
 mod helpers;
+pub mod high_level;
 
 pub use lexer::Span;
 pub use parser::BasicParser;
