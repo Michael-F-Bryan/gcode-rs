@@ -1,19 +1,25 @@
 //! The high level interpreting of parsed Commands as their particular G and M
 //! codes and applying strong typing to their arguments.
 
-#![allow(missing_docs, dead_code)]
+#![allow(missing_docs, dead_code, unused_variables)]
 
 use low_level::{self, Argument, ArgumentKind};
 
+/// Convert the loosely typed `low_level::Line` into its more strongly typed
+/// representation.
+///
+/// Note that as a result of this process you tend to lose line information.
+/// It's assumed that if you get this far in the pipeline you've already dealt
+/// with errors.
 pub fn type_check(line: low_level::Line) -> Line {
     match line {
         low_level::Line::ProgramNumber(n) => Line::ProgramNumber(n),
-        low_level::Line::Cmd(cmd) => convert_command(cmd),
+        low_level::Line::Cmd(cmd) => convert_command(&cmd),
     }
 }
 
 
-fn convert_command(cmd: low_level::Command) -> Line {
+fn convert_command(cmd: &low_level::Command) -> Line {
     match cmd.command() {
         (low_level::CommandType::M, n) => Line::M(convert_m(n, cmd.args())),
         (low_level::CommandType::G, n) => Line::G(convert_g(n, cmd.args())),
@@ -21,13 +27,15 @@ fn convert_command(cmd: low_level::Command) -> Line {
     }
 }
 
+/// Convert a G code into its strongly-typed variant.
 fn convert_g(number: u32, args: &[Argument]) -> GCode {
+    let arg_reader = ArgumentReader::read(args);
+
     match number {
         0 => {
-            let args = ArgumentReader::read(args);
             GCode::G00 {
-                to: args.to,
-                feed_rate: args.feed_rate,
+                to: arg_reader.to,
+                feed_rate: arg_reader.feed_rate,
             }
         }
         other => panic!("G Code not yet supported: {}", other),
@@ -36,7 +44,11 @@ fn convert_g(number: u32, args: &[Argument]) -> GCode {
 
 
 fn convert_m(number: u32, args: &[Argument]) -> MCode {
-    unimplemented!()
+    let arg_reader = ArgumentReader::read(args);
+
+    match number {
+        other => panic!("G Code not yet supported: {}", other),
+    }
 }
 
 

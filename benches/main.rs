@@ -2,7 +2,8 @@
 extern crate test;
 extern crate gcode;
 
-use gcode::{Tokenizer, BasicParser, type_check, Result};
+use gcode::{Tokenizer, BasicParser, Result};
+// use gcode::type_check;
 
 
 const SRC: &'static str = include_str!("../tests/data/program_3.gcode");

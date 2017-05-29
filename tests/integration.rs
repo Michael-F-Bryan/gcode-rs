@@ -3,7 +3,8 @@
 
 extern crate gcode;
 
-use gcode::{Tokenizer, BasicParser, type_check};
+use gcode::{Tokenizer, BasicParser};
+// use gcode::type_check;
 
 
 /// Create an integration test which will take the gcodes from the specified
@@ -39,7 +40,13 @@ macro_rules! integration_test {
                 .collect::<Result<Vec<_>, _>>()
                 .unwrap();
 
+            for line in lines {
+                println!("{:?}", line);
+            }
+
             // TODO: Uncomment this when type checking is pretty much complete
+            // You can also use this to figure out which commands aren't yet
+            // supported by the type checker.
             // println!();
             // println!("Type Checking");
             // println!("=============");
@@ -66,5 +73,6 @@ integration_tests!(program_1 => "data/program_1.gcode",
                    program_2 => "data/program_2.gcode",
                    program_3 => "data/program_3.gcode",
                    guide => "data/guide.gcode");
+
 // octocat => "data/PI_octcat.gcode",
 // rust_logo => "data/PI_rustlogo.gcode"
