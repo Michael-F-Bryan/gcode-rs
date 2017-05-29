@@ -14,19 +14,20 @@
 //! of buffered reader.
 //!
 //!
-//! Stage | Transform           | Transformer     | Description
-//! ------+---------------------+--------+----------------------------------
-//! 1     | char -> [`Token`]   | [`Tokenizer`]   | Lexical analysis (tokenizing)
-//! 2     | Token -> [`Line`]   | [`BasicParser`] | Initial parsing
-//! 3     | Line -> ???         | [`Parser`]      | Type-checking
+//! Stage | Transform                      | Transformer     | Description
+//! ------+--------------------------------+--------+----------------------------------
+//! 1     | char -> [`Token`]              | [`Tokenizer`]   | Lexical analysis (tokenizing)
+//! 2     | Token -> [`low_level::Line`]   | [`BasicParser`] | Initial parsing
+//! 3     | Line -> [`high_level::Line`]   | [`Parser`]      | Type-checking
 //!
 //!
 //! [`Iterator`]: https://doc.rust-lang.org/nightly/core/iter/trait.Iterator.html
 //! [`Tokenizer`]: lexer/struct.Tokenizer.html
 //! [`BasicParser`]: parser/struct.BasicParser.html
-//! [`Parser`]: #
+//! [`Parser`]: high_level/struct.Parser.html
 //! [`Token`]: lexer/struct.Token.html
-//! [`Line`]: parser/enum.Line.html
+//! [`low_level::Line`]: low_level/enum.Line.html
+//! [`high_level::Line`]: high_level/enum.Line.html
 
 #![no_std]
 #![deny(missing_docs)]

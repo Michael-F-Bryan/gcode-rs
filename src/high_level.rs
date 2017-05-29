@@ -1,3 +1,6 @@
+//! The high level interpreting of parsed Commands as their particular G and M
+//! codes and applying strong typing to their arguments.
+
 #![allow(missing_docs, dead_code)]
 
 use low_level;
