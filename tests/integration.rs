@@ -3,57 +3,61 @@
 
 extern crate gcode;
 
-use gcode::lexer::Tokenizer;
-use gcode::BasicParser;
+use gcode::lexer::{Tokenizer, Token};
+use gcode::low_level::{BasicParser, Line};
 
-macro_rules! lex_file {
+
+/// Create an integration test which will take the gcodes from the specified
+/// file, then run the lexer and low level parser in stages, making sure that
+/// each stage had no errors.
+macro_rules! integration_test {
     ($name:ident => $filename:expr) => {
         #[test]
         fn $name() {
-            println!("Lexing Program: {}", $filename);
-
-            let src = include_str!($filename);
-            for token in Tokenizer::new(src.chars()) {
-                println!("{:?}", token.unwrap());
-            }
-        }
-    }
-}
-
-macro_rules! parse_file {
-    ($name:ident => $filename:expr) => {
-        #[test]
-        fn $name() {
-            println!("Parsing Program: {}", $filename);
+            println!("Testing Program: {}", $filename);
             println!();
 
             let src = include_str!($filename);
-            let tokens = Tokenizer::new(src.chars());
 
-            for command in BasicParser::new(tokens.filter_map(|t| t.ok())) {
-                println!("{:?}", command.unwrap());
+            println!();
+            println!("Tokenizing");
+            println!("==========");
+            println!();
+
+            let lexer = Tokenizer::new(src.chars());
+            let tokens = lexer.inspect(|t| println!("{:?}", t))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap();
+
+            println!();
+            println!("Low Level Parsing");
+            println!("=================");
+            println!();
+
+            let low_level_parser = BasicParser::new(tokens.into_iter());
+            let lines = low_level_parser
+                .inspect(|c| println!("{:?}", c))
+                .collect::<Result<Vec<_>, _>>()
+                .unwrap();
+
+            for line in lines {
+                println!("{:?}", line);
             }
         }
     }
 }
 
-macro_rules! lex_files {
+macro_rules! integration_tests {
     ($( $name:ident => $filename:expr),* ) => (
-        $( lex_file!($name => $filename); )*
-    )
-}
-macro_rules! parse_files {
-    ($( $name:ident => $filename:expr),* ) => (
-        $( parse_file!($name => $filename); )*
+        $( integration_test!($name => $filename); )*
     )
 }
 
 
 
-lex_files!(lex_program_1 => "data/program_1.gcode",
-           lex_program_2 => "data/program_2.gcode",
-           lex_program_3 => "data/program_3.gcode");
-
-parse_files!(parse_program_1 => "data/program_1.gcode",
-           parse_program_2 => "data/program_2.gcode",
-           parse_program_3 => "data/program_3.gcode");
+integration_tests!(program_1 => "data/program_1.gcode",
+                   program_2 => "data/program_2.gcode",
+                   program_3 => "data/program_3.gcode",
+                   guide => "data/guide.gcode");
+// octocat => "data/PI_octcat.gcode",
+// rust_logo => "data/PI_rustlogo.gcode"
