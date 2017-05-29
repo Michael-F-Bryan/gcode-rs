@@ -9,7 +9,8 @@ use lexer::{Token, Span, TokenKind};
 use errors::*;
 
 
-type ArgBuffer = ArrayVec<[Argument; 10]>;
+/// An argument buffer containing up to 10 Arguments.
+pub type ArgBuffer = ArrayVec<[Argument; 10]>;
 
 
 /// A parser which takes a stream of characters and parses them as gcode
@@ -273,6 +274,11 @@ impl Command {
     pub fn command(&self) -> (CommandType, u32) {
         (self.command_type, self.command_number)
     }
+
+    /// Get the arguments this command was invoked with.
+    pub fn args(&self) -> &[Argument] {
+        &self.args
+    }
 }
 
 impl Display for Command {
@@ -291,10 +297,21 @@ impl Display for Command {
     }
 }
 
+impl From<(CommandType, u32)> for Command {
+    fn from(other: (CommandType, u32)) -> Self {
+        Command {
+            span: Span::default(),
+            line_number: None,
+            command_type: other.0,
+            command_number: other.1,
+            args: ArgBuffer::default(),
+        }
+    }
+}
 
 /// An argument for a gcode command.
 #[derive(Clone, Debug, PartialEq)]
-struct Argument {
+pub struct Argument {
     kind: ArgumentKind,
     value: f32,
 }
@@ -306,7 +323,7 @@ impl Display for Argument {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-enum ArgumentKind {
+pub(crate) enum ArgumentKind {
     X,
     Y,
     Z,
