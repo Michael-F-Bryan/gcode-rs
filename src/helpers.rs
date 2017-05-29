@@ -28,6 +28,33 @@ impl MaybeAlphabetic for char {
     }
 }
 
+pub trait SwapCase {
+    fn uppercase(&self) -> Self;
+    fn lowercase(&self) -> Self;
+}
+
+impl SwapCase for char {
+    fn uppercase(&self) -> Self {
+        match *self {
+            'a'...'z' => {
+                let diff = 'a' as u8 - 'A' as u8;
+                (*self as u8 - diff) as Self
+            }
+            other => other,
+        }
+    }
+
+    fn lowercase(&self) -> Self {
+        match *self {
+            'A'...'Z' => {
+                let diff = 'a' as u8 - 'A' as u8;
+                (*self as u8 + diff) as Self
+            }
+            other => other,
+        }
+    }
+}
+
 
 #[cfg(feature = "nightly")]
 pub mod lines {
@@ -140,6 +167,16 @@ mod tests {
             let got = float_from_integers(integer, frac, length);
             println!("({}, {}) => {}", integer, frac, should_be);
             assert_eq!(got, should_be);
+        }
+    }
+
+    #[test]
+    fn swapping_case() {
+        let inputs = [('a', 'A'), ('m', 'M'), ('$', '$'), ('z', 'Z'), ('s', 'S')];
+
+        for &(left, right) in &inputs {
+            assert_eq!(left.uppercase(), right);
+            assert_eq!(right.lowercase(), left);
         }
     }
 }

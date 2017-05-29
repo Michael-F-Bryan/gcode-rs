@@ -150,7 +150,7 @@ impl<I> Tokenizer<I>
     }
 
     fn tokenize_alpha(&mut self, first: char, span: Span) -> Result<Token> {
-        let kind = match first {
+        let kind = match first.uppercase() {
             'G' => TokenKind::G,
             'M' => TokenKind::M,
             'T' => TokenKind::T,
@@ -169,7 +169,7 @@ impl<I> Tokenizer<I>
             'J' => TokenKind::J,
             'E' => TokenKind::E,
 
-            other => TokenKind::Other(other),
+            other => TokenKind::Other(first),
         };
 
         Ok(Token { kind, span })
@@ -393,5 +393,13 @@ mod tests {
         let mut tokenizer = Tokenizer::new(src.chars());
         tokenizer.skip_to_end_of_line();
         assert_eq!(tokenizer.src.next(), Some('7'));
+    }
+
+    #[test]
+    fn case_insensitive_tokens() {
+        let lower = Tokenizer::new("g".chars()).next();
+        let upper = Tokenizer::new("G".chars()).next();
+
+        assert_eq!(lower, upper);
     }
 }
