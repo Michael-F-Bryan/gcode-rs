@@ -76,6 +76,18 @@ fn convert_g(number: u32, args: &[Argument]) -> Result<GCode> {
                    },
                })
         }
+
+        4 => {
+            if let Some(secs) = arg_reader.seconds {
+                if secs < 0.0 {
+                    Err(Error::InvalidCommand("Dwell duration cannot be negative"))
+                } else {
+                    Ok(GCode::G04 { seconds: secs })
+                }
+            } else {
+                Err(Error::InvalidCommand("Must provide a dwell duration"))
+            }
+        }
         other => panic!("G Code not yet supported: {}", other),
     }
 }
@@ -122,6 +134,8 @@ pub enum GCode {
         radius: Option<f32>,
         centre: Option<Point>,
     },
+    /// Dwell - wait for a number of seconds
+    G04 { seconds: f32 },
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -157,6 +171,7 @@ struct ArgumentReader {
     feed_rate: Option<f32>,
     radius: Option<f32>,
     centre: Point,
+    seconds: Option<f32>,
 }
 
 impl ArgumentReader {
@@ -174,6 +189,8 @@ impl ArgumentReader {
                 ArgumentKind::R => this.radius = Some(arg.value),
                 ArgumentKind::I => this.centre.set_x(arg.value),
                 ArgumentKind::J => this.centre.set_y(arg.value),
+
+                ArgumentKind::P => this.seconds = Some(arg.value),
 
                 other => panic!(r#"Argument Kind "{:?}" isn't yet supported"#, other),
             }
@@ -279,6 +296,13 @@ mod tests {
     g_code_error!(g_02_radius_must_have_an_end_point,
                   (2, &[Argument::new(ArgumentKind::R, 1.23)]));
 
+
+    // Dwell for a specified duration
+    g_code_test!(g_04, (4, &[ Argument::new(ArgumentKind::P, 100.0)])
+                 => GCode::G04 { seconds: 100.0 });
+    g_code_error!(g_04_requires_a_duration, (4, &[]));
+    g_code_error!(g_04_duration_cant_be_negative,
+                  (4, &[Argument::new(ArgumentKind::P, -1.23)]));
 
     #[test]
     fn argument_reader_handles_coords() {
