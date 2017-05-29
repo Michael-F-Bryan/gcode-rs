@@ -1,7 +1,7 @@
 extern crate gcode;
 
 use gcode::lexer::Tokenizer;
-use gcode::parser::BasicParser;
+use gcode::BasicParser;
 
 
 fn main() {

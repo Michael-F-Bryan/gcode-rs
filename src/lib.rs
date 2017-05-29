@@ -37,13 +37,13 @@ extern crate std;
 
 extern crate arrayvec;
 
-pub mod parser;
+pub mod low_level;
 pub mod lexer;
 mod helpers;
 pub mod high_level;
 
 pub use lexer::Span;
-pub use parser::BasicParser;
+pub use low_level::BasicParser;
 pub use errors::*;
 
 mod errors {
