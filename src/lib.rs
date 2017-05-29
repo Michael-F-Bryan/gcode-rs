@@ -39,9 +39,10 @@
 //! // Construct a parser which takes in the tokens.
 //! let parser = BasicParser::new(tokens);
 //!
-//! // Skip all parsing errors and then apply type checking
+//! // Skip all parsing errors and then apply type checking, skipping errors again
 //! let lines = parser.filter_map(|l| l.ok())
-//!                   .map(|l| type_check(l));
+//!                   .map(|l| type_check(l))
+//!                   .filter_map(|l| l.ok());
 //!
 //! for line in lines {
 //!     println!("{:?}", line);

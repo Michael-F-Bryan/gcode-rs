@@ -47,7 +47,7 @@ pub mod lines {
     /// This requires the `nightly` feature because we use `conservative_impl_trait`,
     /// which is currently behind a feature gate.
     ///
-    /// It will also silently ignore parsing or lexing failures.
+    /// It will also silently ignore parsing, lexing, or type-checking errors.
     pub fn parse<I>(src: I) -> impl Iterator<Item = Line>
         where I: Iterator<Item = char>
     {
@@ -55,7 +55,10 @@ pub mod lines {
         let tokens = lexer.filter_map(|t| t.ok());
 
         let parser = BasicParser::new(tokens);
-        let commands = parser.filter_map(|line| line.ok()).map(|c| type_check(c));
+        let commands = parser
+            .filter_map(|line| line.ok())
+            .map(|c| type_check(c))
+            .filter_map(|line| line.ok());
 
         Lines::new(commands)
     }
