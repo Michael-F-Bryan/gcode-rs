@@ -124,7 +124,10 @@ impl<I> BasicParser<I>
     }
 
     fn command(&mut self) -> Result<Command> {
-        let span = Span::default(); // TODO: actually get from next token
+        let span = match self.next_span() {
+            Some(span) => span,
+            None => return Err(Error::UnexpectedEOF),
+        };
 
         let line_number = self.line_number()?;
         let (command_type, command_number) = self.command_name()?;
@@ -176,7 +179,7 @@ impl<I> BasicParser<I>
         lookahead!(self,
                    "Expected an argument kind",
                    TokenKind::X | TokenKind::Y | TokenKind::Z |
-                   TokenKind::R | TokenKind::S | TokenKind::M |
+                   TokenKind::R | TokenKind::S |
                    TokenKind::H | TokenKind::P | TokenKind::I |
                    TokenKind::J | TokenKind::E |
                    TokenKind::FeedRate);
@@ -188,7 +191,6 @@ impl<I> BasicParser<I>
             TokenKind::R => Ok(ArgumentKind::R),
             TokenKind::S => Ok(ArgumentKind::S),
             TokenKind::H => Ok(ArgumentKind::H),
-            TokenKind::M => Ok(ArgumentKind::M),
             TokenKind::P => Ok(ArgumentKind::P),
             TokenKind::I => Ok(ArgumentKind::I),
             TokenKind::J => Ok(ArgumentKind::J),
@@ -314,7 +316,6 @@ enum ArgumentKind {
     H,
     FeedRate,
     P,
-    M,
     I,
     J,
     E,
@@ -325,7 +326,7 @@ impl Display for ArgumentKind {
         match *self {
             ArgumentKind::X | ArgumentKind::Y | ArgumentKind::Z | ArgumentKind::R |
             ArgumentKind::S | ArgumentKind::H | ArgumentKind::P | ArgumentKind::I |
-            ArgumentKind::E | ArgumentKind::M | ArgumentKind::J => write!(f, "{:?}", self),
+            ArgumentKind::E | ArgumentKind::J => write!(f, "{:?}", self),
             ArgumentKind::FeedRate => write!(f, "F"),
         }
     }
@@ -574,10 +575,7 @@ mod tests {
 
     #[test]
     fn tool_change_line() {
-        let src = [TokenKind::T,
-                   TokenKind::Number(1.0),
-                   TokenKind::M,
-                   TokenKind::Number(6.0)];
+        let src = [TokenKind::T, TokenKind::Number(1.0)];
         let mut should_be = Command {
             span: (0, 0).into(),
             line_number: None,
@@ -586,33 +584,10 @@ mod tests {
             args: ArgBuffer::new(),
         };
 
-        should_be
-            .args
-            .push(Argument {
-                      kind: ArgumentKind::M,
-                      value: 6.0,
-                  });
-
         let tokens = src.iter().map(|&t| t.into());
         let mut parser = BasicParser::new(tokens);
 
         let got = parser.command().unwrap();
-
-        assert_eq!(got, should_be);
-    }
-
-    #[test]
-    fn parse_m_arg() {
-        let src = [TokenKind::M, TokenKind::Number(6.0)];
-        let should_be = Argument {
-            kind: ArgumentKind::M,
-            value: 6.0,
-        };
-
-        let tokens = src.iter().map(|&t| t.into());
-        let mut parser = BasicParser::new(tokens);
-
-        let got = parser.arg().unwrap().unwrap();
 
         assert_eq!(got, should_be);
     }
@@ -656,7 +631,6 @@ mod tests {
                           (TokenKind::Z, ArgumentKind::Z),
 
                           (TokenKind::R, ArgumentKind::R),
-                          (TokenKind::M, ArgumentKind::M),
                           (TokenKind::S, ArgumentKind::S),
                           (TokenKind::H, ArgumentKind::H),
                           (TokenKind::P, ArgumentKind::P),
@@ -674,5 +648,18 @@ mod tests {
             let got = BasicParser::new(tokens).arg_kind().unwrap();
             assert_eq!(got, should_be);
         }
+    }
+
+    #[test]
+    fn m_is_not_an_argument() {
+        let input = vec![Token::from(TokenKind::M)];
+
+        let mut parser = BasicParser::new(input.clone().into_iter());
+        let got = parser.arg_kind();
+        assert!(got.is_err());
+
+        let mut parser = BasicParser::new(input.into_iter());
+        let got = parser.command_type();
+        assert!(got.is_ok());
     }
 }
