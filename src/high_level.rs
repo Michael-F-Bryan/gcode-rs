@@ -60,14 +60,19 @@ fn convert_m(number: u32, args: &[Argument]) -> Result<MCode> {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Line {
+    /// A G code.
     G(GCode),
+    /// A M code.
     M(MCode),
+    /// A tool Change.
     T(u32),
+    /// The program number.
     ProgramNumber(u32),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum GCode {
+    /// Rapid Linear Motion
     G00 { to: Point, feed_rate: Option<f32> },
 }
 
