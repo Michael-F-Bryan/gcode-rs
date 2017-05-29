@@ -10,8 +10,15 @@ main() {
         return
     fi
 
-    cross test --target $TARGET
-    cross test --target $TARGET --release
+    # When we're compiling on nightly we need to add the "nightly" feature
+    if [ ! -z $NIGHTLY ]; then
+      cross test --target $TARGET --features=nightly
+      cross test --target $TARGET --release --features=nightly
+    else
+      cross test --target $TARGET 
+      cross test --target $TARGET --release
+    fi
+
 }
 
 # we don't run the "test phase" when doing deploys
