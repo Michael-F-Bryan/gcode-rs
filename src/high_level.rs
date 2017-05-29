@@ -43,6 +43,51 @@ fn convert_g(number: u32, args: &[Argument]) -> Result<GCode> {
                    feed_rate: arg_reader.feed_rate,
                })
         }
+        1 => {
+            if arg_reader.to.is_none() {
+                return Err(Error::InvalidCommand("G01 must have at least one axis word specified"));
+            }
+
+            Ok(GCode::G01 {
+                   to: arg_reader.to,
+                   feed_rate: arg_reader.feed_rate,
+               })
+        }
+
+        // Circular interpolation
+        2 => {
+            // Check whether you provide both or neither
+            if arg_reader.radius.is_none() == arg_reader.centre.is_none() {
+                return Err(Error::InvalidCommand("You must specify either a radius-formatted arc or a centre-formatted arc",),);
+            }
+
+            if arg_reader.radius.is_some() && arg_reader.to.is_none() {
+                return Err(Error::InvalidCommand("You must provide an end point for a G02"));
+            }
+
+            Ok(GCode::G02 {
+                   to: arg_reader.to,
+                   feed_rate: arg_reader.feed_rate,
+                   radius: arg_reader.radius,
+                   centre: if arg_reader.centre.is_none() {
+                       None
+                   } else {
+                       Some(arg_reader.centre)
+                   },
+               })
+        }
+
+        4 => {
+            if let Some(secs) = arg_reader.seconds {
+                if secs < 0.0 {
+                    Err(Error::InvalidCommand("Dwell duration cannot be negative"))
+                } else {
+                    Ok(GCode::G04 { seconds: secs })
+                }
+            } else {
+                Err(Error::InvalidCommand("Must provide a dwell duration"))
+            }
+        }
         other => panic!("G Code not yet supported: {}", other),
     }
 }
@@ -60,15 +105,37 @@ fn convert_m(number: u32, args: &[Argument]) -> Result<MCode> {
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Line {
+    /// A G code.
     G(GCode),
+    /// A M code.
     M(MCode),
+    /// A tool Change.
     T(u32),
+    /// The program number.
     ProgramNumber(u32),
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum GCode {
+    /// Rapid Linear Motion
     G00 { to: Point, feed_rate: Option<f32> },
+    /// Linear Motion at Feed Rate
+    G01 { to: Point, feed_rate: Option<f32> },
+    /// Clockwise Arc at Feed Rate
+    ///
+    /// # Note
+    ///
+    /// positive radius indicates that the arc turns through 180 degrees or
+    /// less, while a negative radius indicates a turn of 180 degrees to
+    /// 359.999 degrees.
+    G02 {
+        to: Point,
+        feed_rate: Option<f32>,
+        radius: Option<f32>,
+        centre: Option<Point>,
+    },
+    /// Dwell - wait for a number of seconds
+    G04 { seconds: f32 },
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -102,6 +169,9 @@ impl Point {
 struct ArgumentReader {
     to: Point,
     feed_rate: Option<f32>,
+    radius: Option<f32>,
+    centre: Point,
+    seconds: Option<f32>,
 }
 
 impl ArgumentReader {
@@ -113,7 +183,16 @@ impl ArgumentReader {
                 ArgumentKind::X => this.to.set_x(arg.value),
                 ArgumentKind::Y => this.to.set_y(arg.value),
                 ArgumentKind::Z => this.to.set_z(arg.value),
-                _ => unimplemented!(),
+
+                ArgumentKind::FeedRate => this.feed_rate = Some(arg.value),
+
+                ArgumentKind::R => this.radius = Some(arg.value),
+                ArgumentKind::I => this.centre.set_x(arg.value),
+                ArgumentKind::J => this.centre.set_y(arg.value),
+
+                ArgumentKind::P => this.seconds = Some(arg.value),
+
+                other => panic!(r#"Argument Kind "{:?}" isn't yet supported"#, other),
             }
         }
 
@@ -141,11 +220,89 @@ mod tests {
         }
     }
 
+    /// Test that a g code invariant is held.
+    macro_rules! g_code_error {
+        ($name:ident, $input:expr) => {
+            #[test]
+            fn $name() {
+                let input: (u32, &[Argument]) = $input;
+                let got = convert_g(input.0, input.1);
+                assert!(got.is_err());
+            }
+        }
+    }
+
     g_code_test!(g_00, (0, &[Argument::new(ArgumentKind::Y, 3.1415)])
                  => GCode::G00 {
                             to: Point {y: Some(3.1415), ..Default::default()},
                             feed_rate: None
                         });
+
+    g_code_test!(g_01, (1, &[
+                            Argument::new(ArgumentKind::X, 1.23),
+                            Argument::new(ArgumentKind::Y, 4.0),
+                            Argument::new(ArgumentKind::Z, 2.71828),
+                            Argument::new(ArgumentKind::FeedRate, 9000.0)])
+                 => GCode::G01 {
+                            to: Point {
+                                x: Some(1.23),
+                                y: Some(4.0),
+                                z: Some(2.71828),
+                            },
+                            feed_rate: Some(9000.0),
+                        });
+
+    g_code_test!(g_02_radius_format, (2, &[
+                            Argument::new(ArgumentKind::X, 1.23),
+                            Argument::new(ArgumentKind::Y, 4.0),
+                            Argument::new(ArgumentKind::Z, 2.71828),
+                            Argument::new(ArgumentKind::R, 100.0),
+                            Argument::new(ArgumentKind::FeedRate, 9000.0)])
+                 => GCode::G02 {
+                            to: Point {
+                                x: Some(1.23),
+                                y: Some(4.0),
+                                z: Some(2.71828),
+                            },
+                            feed_rate: Some(9000.0),
+                            radius: Some(100.0),
+                            centre: None,
+                        });
+
+    g_code_test!(g_02_centre_format, (2, &[
+                            Argument::new(ArgumentKind::X, 1.23),
+                            Argument::new(ArgumentKind::Y, 4.0),
+                            Argument::new(ArgumentKind::I, 1.23),
+                            Argument::new(ArgumentKind::J, 4.0),
+                            Argument::new(ArgumentKind::Z, 2.71828),
+                            Argument::new(ArgumentKind::FeedRate, 9000.0)])
+                 => GCode::G02 {
+                            to: Point {
+                                x: Some(1.23),
+                                y: Some(4.0),
+                                z: Some(2.71828),
+                            },
+                            feed_rate: Some(9000.0),
+                            radius: None,
+                            centre: Some(Point{x: Some(1.23), y: Some(4.0), z: None}),
+                        });
+
+    // You aren't allowed to provide both a radius and centre coordinates in a
+    // G02 command.
+    g_code_error!(g_02_cant_have_both_centre_and_radius_formats,
+                  (2,
+                   &[Argument::new(ArgumentKind::I, 1.23),
+                     Argument::new(ArgumentKind::R, 4.0)]));
+    g_code_error!(g_02_radius_must_have_an_end_point,
+                  (2, &[Argument::new(ArgumentKind::R, 1.23)]));
+
+
+    // Dwell for a specified duration
+    g_code_test!(g_04, (4, &[ Argument::new(ArgumentKind::P, 100.0)])
+                 => GCode::G04 { seconds: 100.0 });
+    g_code_error!(g_04_requires_a_duration, (4, &[]));
+    g_code_error!(g_04_duration_cant_be_negative,
+                  (4, &[Argument::new(ArgumentKind::P, -1.23)]));
 
     #[test]
     fn argument_reader_handles_coords() {
