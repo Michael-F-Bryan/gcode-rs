@@ -89,6 +89,8 @@ impl ArgumentReader {
         for arg in arguments {
             match arg.kind {
                 ArgumentKind::X => this.to.set_x(arg.value),
+                ArgumentKind::Y => this.to.set_y(arg.value),
+                ArgumentKind::Z => this.to.set_z(arg.value),
                 _ => unimplemented!(),
             }
         }
@@ -134,6 +136,8 @@ mod tests {
             ..Default::default()
         };
 
-        let args = ArgumentReader::read(&input);
+        let got = ArgumentReader::read(&input);
+
+        assert_eq!(got, should_be);
     }
 }
