@@ -650,6 +650,8 @@ mod tests {
         }
     }
 
+    /// This test makes sure we don't get regressions on issue #5
+    /// link: https://github.com/Michael-F-Bryan/gcode-rs/issues/5
     #[test]
     fn m_is_not_an_argument() {
         let input = vec![Token::from(TokenKind::M)];
