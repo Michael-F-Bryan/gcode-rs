@@ -23,7 +23,7 @@
 //!
 //! # Examples
 //!
-//! You can exercise the entire pipeline as follows:
+//! You can manually exercise the entire pipeline as follows:
 //!
 //! ```rust
 //! use gcode::{Tokenizer, BasicParser, type_check};
@@ -48,6 +48,28 @@
 //! }
 //! ```
 //!
+//! Alternatively, using the `nightly` feature flag, you can just use the
+//! `parse()` function.
+//!
+//! ```rust,ignore
+//! use gcode::parse;
+//!
+//! let src = "G00 X10.0 Y20.0; G00 Z-10.0; G01 X55.2 Y-32.0 F500;";
+//!
+//! for line in parse(src.chars()) {
+//!     println!("{:?}", line);
+//! }
+//! ```
+//!
+//! # Feature Flags
+//!
+//! At the moment only one feature flag is available.
+//!
+//! - `nightly` enables the `parse` function. This is a convenience function
+//!   which will convert a stream of `char`s into a stream of
+//!   [`high_level::Line`]s. It relies on `conservative_impl_trait`.
+//!
+//!
 //! [`Iterator`]: https://doc.rust-lang.org/nightly/core/iter/trait.Iterator.html
 //! [`Tokenizer`]: lexer/struct.Tokenizer.html
 //! [`BasicParser`]: parser/struct.BasicParser.html
@@ -59,7 +81,8 @@
 #![no_std]
 #![deny(missing_docs)]
 
-#![cfg_attr(feature = "nightly", conservative_impl_trait)]
+
+#![cfg_attr(feature = "nightly", feature(conservative_impl_trait))]
 
 #[cfg(test)]
 #[macro_use]
