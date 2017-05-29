@@ -126,5 +126,8 @@ mod errors {
 
         /// A syntax error and its location.
         SyntaxError(&'static str, Span),
+
+        /// During type-checking invalid command conditions were encountered.
+        InvalidCommand(&'static str),
     }
 }

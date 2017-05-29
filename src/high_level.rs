@@ -4,6 +4,7 @@
 #![allow(missing_docs, dead_code, unused_variables)]
 
 use low_level::{self, Argument, ArgumentKind};
+use errors::*;
 
 /// Convert the loosely typed `low_level::Line` into its more strongly typed
 /// representation.
@@ -11,39 +12,43 @@ use low_level::{self, Argument, ArgumentKind};
 /// Note that as a result of this process you tend to lose line information.
 /// It's assumed that if you get this far in the pipeline you've already dealt
 /// with errors.
-pub fn type_check(line: low_level::Line) -> Line {
+pub fn type_check(line: low_level::Line) -> Result<Line> {
     match line {
-        low_level::Line::ProgramNumber(n) => Line::ProgramNumber(n),
+        low_level::Line::ProgramNumber(n) => Ok(Line::ProgramNumber(n)),
         low_level::Line::Cmd(cmd) => convert_command(&cmd),
     }
 }
 
 
-fn convert_command(cmd: &low_level::Command) -> Line {
+fn convert_command(cmd: &low_level::Command) -> Result<Line> {
     match cmd.command() {
-        (low_level::CommandType::M, n) => Line::M(convert_m(n, cmd.args())),
-        (low_level::CommandType::G, n) => Line::G(convert_g(n, cmd.args())),
-        (low_level::CommandType::T, n) => Line::T(n),
+        (low_level::CommandType::M, n) => Ok(Line::M(convert_m(n, cmd.args())?)),
+        (low_level::CommandType::G, n) => Ok(Line::G(convert_g(n, cmd.args())?)),
+        (low_level::CommandType::T, n) => Ok(Line::T(n)),
     }
 }
 
 /// Convert a G code into its strongly-typed variant.
-fn convert_g(number: u32, args: &[Argument]) -> GCode {
+fn convert_g(number: u32, args: &[Argument]) -> Result<GCode> {
     let arg_reader = ArgumentReader::read(args);
 
     match number {
         0 => {
-            GCode::G00 {
-                to: arg_reader.to,
-                feed_rate: arg_reader.feed_rate,
+            if arg_reader.to.is_none() {
+                return Err(Error::InvalidCommand("G00 must have at least one axis word specified"));
             }
+
+            Ok(GCode::G00 {
+                   to: arg_reader.to,
+                   feed_rate: arg_reader.feed_rate,
+               })
         }
         other => panic!("G Code not yet supported: {}", other),
     }
 }
 
 
-fn convert_m(number: u32, args: &[Argument]) -> MCode {
+fn convert_m(number: u32, args: &[Argument]) -> Result<MCode> {
     let arg_reader = ArgumentReader::read(args);
 
     match number {
@@ -77,6 +82,11 @@ pub struct Point {
 }
 
 impl Point {
+    /// Check whether all the `Point`'s components are `None`.
+    fn is_none(&self) -> bool {
+        self.x.is_none() && self.y.is_none() && self.z.is_none()
+    }
+
     fn set_x(&mut self, val: f32) {
         self.x = Some(val);
     }
@@ -125,13 +135,17 @@ mod tests {
                 let input: (u32, &[Argument]) = $input;
                 let should_be: GCode = $output;
 
-                let got = convert_g(input.0, input.1);
+                let got = convert_g(input.0, input.1).unwrap();
                 assert_eq!(got, should_be);
             }
         }
     }
 
-    g_code_test!(g_00, (0, &[]) => GCode::G00 { to: Point::default(), feed_rate: None });
+    g_code_test!(g_00, (0, &[Argument::new(ArgumentKind::Y, 3.1415)])
+                 => GCode::G00 {
+                            to: Point {y: Some(3.1415), ..Default::default()},
+                            feed_rate: None
+                        });
 
     #[test]
     fn argument_reader_handles_coords() {
