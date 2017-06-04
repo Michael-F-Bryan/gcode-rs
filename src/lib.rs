@@ -96,6 +96,10 @@
 #[macro_use]
 extern crate std;
 
+#[cfg(test)]
+#[macro_use]
+extern crate quickcheck;
+
 extern crate arrayvec;
 
 pub mod low_level;

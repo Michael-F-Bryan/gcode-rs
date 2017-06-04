@@ -50,7 +50,7 @@ impl<I> Tokenizer<I>
             };
 
             let tok = match peek {
-                d if d.is_digit(10) || d == '.' => self.tokenize_number(d, span),
+                d if d.is_digit(10) => self.tokenize_number(d, span),
                 a if a.is_alphabetic() => self.tokenize_alpha(a, span),
 
                 ';' => {
@@ -401,5 +401,19 @@ mod tests {
         let upper = Tokenizer::new("G".chars()).next();
 
         assert_eq!(lower, upper);
+    }
+
+    #[allow(trivial_casts)]
+    mod qc {
+        use super::*;
+
+        quickcheck!{
+            fn lexer_doesnt_panic(src: ::std::string::String) -> bool {
+                let tokenizer = Tokenizer::new(src.chars());
+                for token in tokenizer{}
+
+                true
+            }
+        }
     }
 }
