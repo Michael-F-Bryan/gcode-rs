@@ -101,7 +101,6 @@ extern crate std;
 extern crate quickcheck;
 
 #[cfg(test)]
-#[macro_use]
 extern crate rand;
 
 extern crate arrayvec;

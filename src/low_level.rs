@@ -697,52 +697,6 @@ mod tests {
     mod qc {
         use super::*;
         use std::prelude::v1::*;
-        use quickcheck::{Arbitrary, Gen};
-        use rand::{Rng, Rand};
-
-        impl Rand for TokenKind {
-            fn rand<R: Rng>(rng: &mut R) -> Self {
-                loop {
-                    // TODO: Update this every time `TokenKind` gains a variant
-                    let tk = match rng.gen::<u8>() {
-                        1 => TokenKind::Number(rng.gen()),
-                        2 => TokenKind::G,
-                        3 => TokenKind::T,
-                        4 => TokenKind::N,
-                        5 => TokenKind::O,
-                        6 => TokenKind::X,
-                        7 => TokenKind::Y,
-                        8 => TokenKind::Z,
-                        9 => TokenKind::FeedRate,
-                        10 => TokenKind::M,
-                        11 => TokenKind::S,
-                        12 => TokenKind::R,
-                        13 => TokenKind::H,
-                        14 => TokenKind::P,
-                        15 => TokenKind::I,
-                        16 => TokenKind::J,
-                        17 => TokenKind::E,
-                        18 => TokenKind::Minus,
-                        19 => TokenKind::Percent,
-                        _ => continue,
-                    };
-
-                    return tk;
-                }
-            }
-        }
-
-        impl Rand for Token {
-            fn rand<R: Rng>(rng: &mut R) -> Self {
-                Token::from(rng.gen::<TokenKind>())
-            }
-        }
-
-        impl Arbitrary for Token {
-            fn arbitrary<G: Gen>(gen: &mut G) -> Self {
-                gen.gen()
-            }
-        }
 
         macro_rules! quick_parser_quickcheck {
             ($method:ident) => (
@@ -757,8 +711,10 @@ mod tests {
 
         quick_parser_quickcheck!(parse);
 
+        quick_parser_quickcheck!(command);
         quick_parser_quickcheck!(command_name);
         quick_parser_quickcheck!(command_type);
+        quick_parser_quickcheck!(number);
         quick_parser_quickcheck!(arg);
         quick_parser_quickcheck!(arg_kind);
         quick_parser_quickcheck!(program_number);
