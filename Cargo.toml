@@ -4,11 +4,14 @@ name = "gcode"
 version = "0.1.0"
 
 [dependencies]
-quickcheck = "0.4.1"
 
 [dependencies.arrayvec]
 default_features = false
 version = "^0.3"
+
+[dev-dependencies]
+quickcheck = "0.4.1"
+rand = "0.3.15"
 
 [features]
 default = []

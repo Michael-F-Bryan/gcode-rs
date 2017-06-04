@@ -408,11 +408,9 @@ mod tests {
         use super::*;
 
         quickcheck!{
-            fn lexer_doesnt_panic(src: ::std::string::String) -> bool {
+            fn lexer_doesnt_panic(src: ::std::string::String) -> () {
                 let tokenizer = Tokenizer::new(src.chars());
                 for token in tokenizer{}
-
-                true
             }
         }
     }
