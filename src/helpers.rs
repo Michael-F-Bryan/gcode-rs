@@ -37,7 +37,7 @@ impl AsciiSwapCase for char {
     fn uppercase(&self) -> Self {
         match *self {
             'a'...'z' => {
-                let diff = 'a' as u8 - 'A' as u8;
+                let diff = b'a' - b'A';
                 (*self as u8 - diff) as Self
             }
             other => other,
@@ -47,7 +47,7 @@ impl AsciiSwapCase for char {
     fn lowercase(&self) -> Self {
         match *self {
             'A'...'Z' => {
-                let diff = 'a' as u8 - 'A' as u8;
+                let diff = b'a' - b'A';
                 (*self as u8 + diff) as Self
             }
             other => other,
