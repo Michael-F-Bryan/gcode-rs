@@ -95,7 +95,7 @@ fn convert_m(number: u32, args: &[Argument]) -> Result<MCode> {
     let arg_reader = ArgumentReader::read(args);
 
     match number {
-        other => panic!("G Code not yet supported: {}", other),
+        other => panic!("M Code not yet supported: {}", other),
     }
 }
 
