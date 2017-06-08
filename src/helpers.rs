@@ -59,8 +59,7 @@ impl AsciiSwapCase for char {
 #[cfg(feature = "nightly")]
 pub mod lines {
     use lexer::Tokenizer;
-    use low_level::BasicParser;
-    use high_level::{type_check, Line};
+    use low_level::{BasicParser, Line};
 
     /// A high level helper function which will parse a stream of characters into
     /// GCodes.
@@ -82,10 +81,7 @@ pub mod lines {
         let tokens = lexer.filter_map(|t| t.ok());
 
         let parser = BasicParser::new(tokens);
-        let commands = parser
-            .filter_map(|line| line.ok())
-            .map(|c| type_check(c))
-            .filter_map(|line| line.ok());
+        let commands = parser.filter_map(|line| line.ok());
 
         Lines::new(commands)
     }
