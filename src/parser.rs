@@ -6,6 +6,22 @@ use lexer::{Token, TokenKind, Tokenizer};
 use errors::*;
 
 
+/// Peek at the next token, if its kind isn't one of the specified `$pattern`s,
+/// return a `Error::SyntaxError` with the provided message.
+macro_rules! lookahead {
+    ($self:expr, $err_msg:expr, $( $pattern:pat )|*) => {
+        match $self.peek() {
+            $( Some($pattern) )|* => {},
+            Some(_) => {
+                let next = $self.tokens.peek().unwrap();
+                return Err(Error::SyntaxError($err_msg, next.span()));
+            }
+            None => return Err(Error::UnexpectedEOF),
+        }
+    }
+}
+
+
 pub struct Parser<I>
     where I: Iterator<Item = Token>
 {
@@ -43,21 +59,18 @@ impl<I> Parser<I>
     }
 
     fn line_number(&mut self) -> Result<Option<u32>> {
-        // TODO: make legit
         if let Some(TokenKind::N) = self.peek() {
             let _ = self.tokens.next();
 
-            match self.tokens.next() {
-                Some(t) => {
-                    match t.kind() {
-                        TokenKind::Number(n) => Ok(Some(n as u32)),
-                        _ => {
-                            Err(Error::SyntaxError("A \"N\" command must be followed by a number",
-                                                   t.span()))
-                        }
-                    }
-                }
-                None => Err(Error::UnexpectedEOF),
+            lookahead!(self, r#"A "N" command must be followed by a number"#,
+                       TokenKind::Number(_));
+
+            match self.tokens
+                      .next()
+                      .expect("This should be unreachable")
+                      .kind() {
+                TokenKind::Number(n) => Ok(Some(n as u32)),
+                _ => unreachable!(),
             }
         } else {
             Ok(None)
@@ -65,8 +78,31 @@ impl<I> Parser<I>
     }
 
     fn command_type(&mut self) -> Result<(CommandKind, Number)> {
-        // TODO: make legit
-        Ok((CommandKind::G, Number::Integer(20)))
+        lookahead!(self, "Expected a command type",
+                   TokenKind::G | TokenKind::M | TokenKind::T);
+
+        let kind = match self.unchecked_next() {
+            TokenKind::G => CommandKind::G,
+            TokenKind::M => CommandKind::M,
+            TokenKind::T => CommandKind::T,
+            _ => unreachable!(),
+        };
+
+        lookahead!(self, "Commands need to have a number", TokenKind::Number(_));
+
+        let n = match self.unchecked_next() {
+            TokenKind::Number(n) => {
+                // TODO: Need to amend the lexer's definition of a Number
+                if n == n as u32 as f32 {
+                    Number::Integer(n as u32)
+                } else {
+                    unimplemented!();
+                }
+            }
+            _ => unreachable!(),
+        };
+
+        Ok((kind, n))
     }
 
     fn args(&mut self) -> Result<Args> {
@@ -75,6 +111,13 @@ impl<I> Parser<I>
 
     fn peek(&mut self) -> Option<TokenKind> {
         self.tokens.peek().map(|t| t.kind().clone())
+    }
+
+    fn unchecked_next(&mut self) -> TokenKind {
+        self.tokens
+            .next()
+            .expect("Should never get here because we always do a lookahead first")
+            .kind()
     }
 }
 
@@ -152,11 +195,13 @@ mod tests {
     parser_test!(no_line_number, line_number, "G10" => None);
     parser_test!(FAIL: invalid_line_number, line_number, "N");
 
-    parser_test!(parse_entire_basic_command, next_command, "G20"
-                 => Command {
-                        kind: CommandKind::G,
-                        number: Number::Integer(20),
-                        args: Args::default(),
-                        line_number: None,
-                    });
+    parser_test!(basic_g_code, command_type, "G20" => (CommandKind::G, Number::Integer(20)));
+    parser_test!(m_command_type, command_type, "M02" => (CommandKind::M, Number::Integer(02)));
+    parser_test!(t_command_type, command_type, "T20" => (CommandKind::T, Number::Integer(20)));
+    parser_test!(FAIL: invalid_command_type, command_type, "N15");
+    parser_test!(FAIL: command_type_with_no_number, command_type, "G X15.0");
+
+    // TODO: Uncomment this when the lexer has been adjusted
+    // parser_test!(gcode_with_decimal_command, command_type, "G91.1"
+    //              => (CommandKind::G, Number::Decimal(91, 1)));
 }
