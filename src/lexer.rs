@@ -3,6 +3,12 @@
 use core::iter::Peekable;
 use core::fmt::{self, Display, Formatter};
 
+
+#[cfg(test)]
+use quickcheck::{Arbitrary, Gen};
+#[cfg(test)]
+use rand::{Rng, Rand};
+
 use errors::*;
 use helpers::*;
 
@@ -50,7 +56,7 @@ impl<I> Tokenizer<I>
             };
 
             let tok = match peek {
-                d if d.is_digit(10) || d == '.' => self.tokenize_number(d, span),
+                d if d.is_digit(10) => self.tokenize_number(d, span),
                 a if a.is_alphabetic() => self.tokenize_alpha(a, span),
 
                 ';' => {
@@ -169,7 +175,7 @@ impl<I> Tokenizer<I>
             'J' => TokenKind::J,
             'E' => TokenKind::E,
 
-            other => TokenKind::Other(first),
+            _ => TokenKind::Other(first),
         };
 
         Ok(Token { kind, span })
@@ -311,6 +317,54 @@ impl From<TokenKind> for Token {
 
 
 #[cfg(test)]
+impl Rand for TokenKind {
+    fn rand<R: Rng>(rng: &mut R) -> Self {
+        loop {
+            // TODO: Update this every time `TokenKind` gains a variant
+            let tk = match rng.gen::<u8>() {
+                1 => TokenKind::Number(rng.gen()),
+                2 => TokenKind::G,
+                3 => TokenKind::T,
+                4 => TokenKind::N,
+                5 => TokenKind::O,
+                6 => TokenKind::X,
+                7 => TokenKind::Y,
+                8 => TokenKind::Z,
+                9 => TokenKind::FeedRate,
+                10 => TokenKind::M,
+                11 => TokenKind::S,
+                12 => TokenKind::R,
+                13 => TokenKind::H,
+                14 => TokenKind::P,
+                15 => TokenKind::I,
+                16 => TokenKind::J,
+                17 => TokenKind::E,
+                18 => TokenKind::Minus,
+                19 => TokenKind::Percent,
+                _ => continue,
+            };
+
+            return tk;
+        }
+    }
+}
+
+#[cfg(test)]
+impl Rand for Token {
+    fn rand<R: Rng>(rng: &mut R) -> Self {
+        Token::from(rng.gen::<TokenKind>())
+    }
+}
+
+#[cfg(test)]
+impl Arbitrary for Token {
+    fn arbitrary<G: Gen>(gen: &mut G) -> Self {
+        gen.gen()
+    }
+}
+
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -401,5 +455,47 @@ mod tests {
         let upper = Tokenizer::new("G".chars()).next();
 
         assert_eq!(lower, upper);
+    }
+
+    #[allow(trivial_casts)]
+    mod qc {
+        use super::*;
+        use std::prelude::v1::*;
+        use quickcheck::TestResult;
+
+        quickcheck!{
+            fn lexer_doesnt_panic(src: String) -> () {
+                let tokenizer = Tokenizer::new(src.chars());
+                for token in tokenizer{
+                    println!("{:?}", token);
+                }
+            }
+
+            fn lex_number(src: String) -> TestResult {
+                let mut chars = src.chars();
+                let first = match chars.next() {
+                    Some(c) if c.is_digit(10) => c,
+                    _ => return TestResult::discard(),
+                };
+
+                let mut tokenizer = Tokenizer::new(chars);
+                let n = tokenizer.tokenize_number(first, Span::default());
+
+                TestResult::from_bool(n.is_ok())
+            }
+
+            fn lex_alpha(src: String) -> TestResult {
+                let mut chars = src.chars();
+                let first = match chars.next() {
+                    Some(c) if c.is_alphabetic() => c,
+                    _ => return TestResult::discard(),
+                };
+
+                let mut tokenizer = Tokenizer::new(chars);
+                let n = tokenizer.tokenize_alpha(first, Span::default());
+
+                TestResult::from_bool(n.is_ok())
+            }
+        }
     }
 }

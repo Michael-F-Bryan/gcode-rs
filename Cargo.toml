@@ -1,12 +1,18 @@
 [package]
+authors = ["Michael-F-Bryan <michaelfbryan@gmail.com>"]
 name = "gcode"
 version = "0.1.0"
-authors = ["Michael-F-Bryan <michaelfbryan@gmail.com>"]
 
 [dependencies]
-arrayvec = {version="^0.3", default_features = false}
+
+[dependencies.arrayvec]
+default_features = false
+version = "^0.3"
+
+[dev-dependencies]
+quickcheck = "0.4.1"
+rand = "0.3.15"
 
 [features]
 default = []
-
 nightly = []

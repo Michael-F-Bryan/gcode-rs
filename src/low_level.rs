@@ -692,4 +692,32 @@ mod tests {
         let got = parser.command_type();
         assert!(got.is_ok());
     }
+
+    #[allow(trivial_casts)]
+    mod qc {
+        use super::*;
+        use std::prelude::v1::*;
+
+        macro_rules! quick_parser_quickcheck {
+            ($method:ident) => (
+                quickcheck!{
+                    fn $method(tokens: Vec<Token>) -> () {
+                    let mut parser = BasicParser::new(tokens.into_iter());
+                    let _ = parser.$method();
+                    }
+                }
+            )
+        }
+
+        quick_parser_quickcheck!(parse);
+
+        quick_parser_quickcheck!(command);
+        quick_parser_quickcheck!(command_name);
+        quick_parser_quickcheck!(command_type);
+        quick_parser_quickcheck!(number);
+        quick_parser_quickcheck!(arg);
+        quick_parser_quickcheck!(arg_kind);
+        quick_parser_quickcheck!(program_number);
+        quick_parser_quickcheck!(line_number);
+    }
 }
