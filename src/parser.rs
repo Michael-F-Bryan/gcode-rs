@@ -1,4 +1,6 @@
-use core::iter::{FilterMap, Peekable};
+#![allow(missing_docs, dead_code, unused_imports)]
+
+use core::iter::Peekable;
 
 use lexer::{Token, TokenKind, Tokenizer};
 use errors::*;
@@ -42,7 +44,24 @@ impl<I> Parser<I>
 
     fn line_number(&mut self) -> Result<Option<u32>> {
         // TODO: make legit
-        Ok(None)
+        if let Some(TokenKind::N) = self.peek() {
+            let _ = self.tokens.next();
+
+            match self.tokens.next() {
+                Some(t) => {
+                    match t.kind() {
+                        TokenKind::Number(n) => Ok(Some(n as u32)),
+                        _ => {
+                            Err(Error::SyntaxError("A \"N\" command must be followed by a number",
+                                                   t.span()))
+                        }
+                    }
+                }
+                None => Err(Error::UnexpectedEOF),
+            }
+        } else {
+            Ok(None)
+        }
     }
 
     fn command_type(&mut self) -> Result<(CommandKind, Number)> {
@@ -52,6 +71,10 @@ impl<I> Parser<I>
 
     fn args(&mut self) -> Result<Args> {
         Ok(Args::default())
+    }
+
+    fn peek(&mut self) -> Option<TokenKind> {
+        self.tokens.peek().map(|t| t.kind().clone())
     }
 }
 
@@ -89,7 +112,6 @@ pub enum CommandKind {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lexer::TokenKind;
 
     macro_rules! tokens {
         ($src:expr) => {
@@ -101,20 +123,40 @@ mod tests {
         }
     }
 
-    #[test]
-    fn basic_command() {
-        let src = tokens!("G20"); // Set units to inches
-        let mut parser = Parser::new(src);
+    macro_rules! parser_test {
+        ($name:ident, $method:ident, $src:expr => $should_be:expr) => {
+            #[test]
+            fn $name() {
+                let src = tokens!($src);
+                let mut parser = Parser::new(src);
 
-        let should_be = Command {
-            kind: CommandKind::G,
-            number: Number::Integer(20),
-            args: Args::default(),
-            line_number: None,
+                let should_be = $should_be;
+                let got = parser.$method().unwrap();
+
+                assert_eq!(got, should_be);
+            }
         };
+        (FAIL: $name:ident, $method:ident, $src:expr) => {
+            #[test]
+            fn $name() {
+                let src = tokens!($src);
+                let mut parser = Parser::new(src);
 
-        let got = parser.next_command().unwrap();
-
-        assert_eq!(got, should_be);
+                assert!(parser.$method().is_err());
+            }
+        };
     }
+
+
+    parser_test!(parse_line_number, line_number, "N10" => Some(10));
+    parser_test!(no_line_number, line_number, "G10" => None);
+    parser_test!(FAIL: invalid_line_number, line_number, "N");
+
+    parser_test!(parse_entire_basic_command, next_command, "G20"
+                 => Command {
+                        kind: CommandKind::G,
+                        number: Number::Integer(20),
+                        args: Args::default(),
+                        line_number: None,
+                    });
 }
