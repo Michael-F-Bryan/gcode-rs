@@ -3,9 +3,7 @@
 
 extern crate gcode;
 
-use gcode::{Tokenizer, BasicParser, type_check};
-
-const TYPE_CHECK_ENABLED: bool = false;
+use gcode::{Tokenizer, BasicParser};
 
 /// Create an integration test which will take the gcodes from the specified
 /// file, then run the lexer and low level parser in stages, making sure that
@@ -41,21 +39,8 @@ macro_rules! integration_test {
                 .unwrap();
 
 
-            if TYPE_CHECK_ENABLED {
-                println!();
-                println!("Type Checking");
-                println!("=============");
-                println!();
-
-                let strongly_typed: Vec<_> = lines.into_iter().map(type_check).collect();
-
-                for line in strongly_typed {
-                    println!("{:?}", line);
-                }
-            } else {
-                for line in lines {
-                    println!("{:?}", line);
-                }
+            for line in lines {
+                println!("{:?}", line);
             }
         }
     }

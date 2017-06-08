@@ -26,7 +26,7 @@
 //! You can manually exercise the entire pipeline as follows:
 //!
 //! ```rust
-//! use gcode::{Tokenizer, BasicParser, type_check};
+//! use gcode::{Tokenizer, BasicParser};
 //!
 //! let src = "G00 X10.0 Y20.0; G00 Z-10.0; G01 X55.2 Y-32.0 F500;";
 //!
@@ -40,9 +40,7 @@
 //! let parser = BasicParser::new(tokens);
 //!
 //! // Skip all parsing errors and then apply type checking, skipping errors again
-//! let lines = parser.filter_map(|l| l.ok())
-//!                   .map(|l| type_check(l))
-//!                   .filter_map(|l| l.ok());
+//! let lines = parser.filter_map(|l| l.ok());
 //!
 //! for line in lines {
 //!     println!("{:?}", line);
@@ -108,12 +106,11 @@ extern crate arrayvec;
 pub mod low_level;
 pub mod lexer;
 mod helpers;
-pub mod high_level;
+mod parser;
 
 pub use lexer::{Tokenizer, Span};
 pub use low_level::BasicParser;
 pub use errors::*;
-pub use high_level::type_check;
 
 #[cfg(feature = "nightly")]
 pub use helpers::lines::parse;
