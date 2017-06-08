@@ -107,7 +107,44 @@ impl<I> Parser<I>
     }
 
     fn args(&mut self) -> Result<Args> {
-        Ok(Args::default())
+        let mut a = Args::default();
+
+        while let Ok((kind, value)) = self.argument() {
+            a.set(kind, value);
+        }
+
+        Ok(a)
+    }
+
+    fn argument(&mut self) -> Result<(ArgumentKind, f32)> {
+        lookahead!(self, "Expected an argument kind",
+        TokenKind::X | TokenKind::Y | TokenKind::Z | TokenKind::S | 
+        TokenKind::FeedRate | TokenKind::I | TokenKind::J);
+
+        let kind = match self.unchecked_next() {
+            TokenKind::X => ArgumentKind::X,
+            TokenKind::Y => ArgumentKind::Y,
+            TokenKind::Z => ArgumentKind::Z,
+            TokenKind::S => ArgumentKind::S,
+            TokenKind::I => ArgumentKind::I,
+            TokenKind::J => ArgumentKind::J,
+            _ => unreachable!(),
+        };
+
+        let n = match self.tokens.next() {
+            Some(t) => {
+                match t.kind() {
+                    TokenKind::Number(number) => number,
+                    other => {
+                        return Err(Error::SyntaxError("All arguments must be followed by a number",
+                                                      t.span()))
+                    }
+                }
+            }
+            None => return Err(Error::UnexpectedEOF),
+        };
+
+        Ok((kind, n))
     }
 
     fn peek(&mut self) -> Option<TokenKind> {
@@ -143,6 +180,23 @@ pub struct Args {
     z: Option<f32>,
     s: Option<f32>,
     t: Option<f32>,
+}
+
+impl Args {
+    fn set(&mut self, kind: ArgumentKind, value: f32) {
+        unimplemented!();
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum ArgumentKind {
+    X,
+    Y,
+    Z,
+    F,
+    S,
+    I,
+    J,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -206,6 +260,13 @@ mod tests {
     // parser_test!(gcode_with_decimal_command, command_type, "G91.1"
     //              => (CommandKind::G, Number::Decimal(91, 1)));
 
+
+    parser_test!(x_argument, argument, "X10.0" => (ArgumentKind::X, 10.0));
+    parser_test!(y_argument, argument, "Y10.0" => (ArgumentKind::Y, 10.0));
+    parser_test!(z_argument, argument, "Z3.14" => (ArgumentKind::Z, 3.14));
+    parser_test!(s_argument, argument, "S10.0" => (ArgumentKind::S, 10.0));
+    parser_test!(i_argument, argument, "I10" => (ArgumentKind::I, 10.0));
+    parser_test!(j_argument, argument, "J10.0" => (ArgumentKind::J, 10.0));
 
     #[allow(trivial_casts)]
     mod qc {
