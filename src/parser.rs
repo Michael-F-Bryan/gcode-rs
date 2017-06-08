@@ -96,7 +96,8 @@ impl<I> Parser<I>
                 if n == n as u32 as f32 {
                     Number::Integer(n as u32)
                 } else {
-                    unimplemented!();
+                    return Err(Error::SyntaxError("Commands with a decimal aren't supported at the moment",
+                                                  Default::default()));
                 }
             }
             _ => unreachable!(),
@@ -204,4 +205,25 @@ mod tests {
     // TODO: Uncomment this when the lexer has been adjusted
     // parser_test!(gcode_with_decimal_command, command_type, "G91.1"
     //              => (CommandKind::G, Number::Decimal(91, 1)));
+
+
+    #[allow(trivial_casts)]
+    mod qc {
+        use super::*;
+        use std::prelude::v1::*;
+
+        macro_rules! quick_parser_quickcheck {
+            ($method:ident) => (
+                quickcheck!{
+                    fn $method(tokens: Vec<Token>) -> () {
+                    let mut parser = Parser::new(tokens.into_iter());
+                    let _ = parser.$method();
+                    }
+                }
+            )
+        }
+
+        quick_parser_quickcheck!(command_type);
+        quick_parser_quickcheck!(line_number);
+    }
 }
