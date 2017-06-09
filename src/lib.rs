@@ -63,7 +63,7 @@ extern crate rand;
 
 extern crate arrayvec;
 
-#[deprecated]
+#[deprecated(since="0.2.0", note="Please use the `parser` module instead")]
 pub mod low_level;
 pub mod lexer;
 mod helpers;

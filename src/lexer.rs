@@ -222,11 +222,13 @@ pub struct Token {
 
 impl Token {
     /// Which kind of token is this?
+    #[inline]
     pub fn kind(&self) -> TokenKind {
         self.kind
     }
 
     /// Get the location of the token in the source code.
+    #[inline]
     pub fn span(&self) -> Span {
         self.span
     }
