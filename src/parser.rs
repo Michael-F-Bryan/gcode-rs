@@ -131,6 +131,14 @@ impl<I> Parser<I>
             _ => unreachable!(),
         };
 
+        // Check for a negative number
+        let is_negative = if self.peek() == Some(TokenKind::Minus) {
+            let _ = self.tokens.next();
+            true
+        } else {
+            false
+        };
+
         let n = match self.tokens.next() {
             Some(t) => {
                 match t.kind() {
@@ -144,7 +152,11 @@ impl<I> Parser<I>
             None => return Err(Error::UnexpectedEOF),
         };
 
-        Ok((kind, n))
+        if is_negative {
+            Ok((kind, -1.0 * n))
+        } else {
+            Ok((kind, n))
+        }
     }
 
     fn peek(&mut self) -> Option<TokenKind> {
@@ -180,11 +192,22 @@ pub struct Args {
     z: Option<f32>,
     s: Option<f32>,
     t: Option<f32>,
+    f: Option<f32>,
+    i: Option<f32>,
+    j: Option<f32>,
 }
 
 impl Args {
     fn set(&mut self, kind: ArgumentKind, value: f32) {
-        unimplemented!();
+        match kind {
+            ArgumentKind::X => self.x = Some(value),
+            ArgumentKind::Y => self.y = Some(value),
+            ArgumentKind::Z => self.z = Some(value),
+            ArgumentKind::S => self.s = Some(value),
+            ArgumentKind::F => self.f = Some(value),
+            ArgumentKind::I => self.i = Some(value),
+            ArgumentKind::J => self.j = Some(value),
+        }
     }
 }
 
@@ -261,12 +284,24 @@ mod tests {
     //              => (CommandKind::G, Number::Decimal(91, 1)));
 
 
+    parser_test!(negative_x_argument, argument, "X-10.0" => (ArgumentKind::X, -10.0));
     parser_test!(x_argument, argument, "X10.0" => (ArgumentKind::X, 10.0));
     parser_test!(y_argument, argument, "Y10.0" => (ArgumentKind::Y, 10.0));
     parser_test!(z_argument, argument, "Z3.14" => (ArgumentKind::Z, 3.14));
     parser_test!(s_argument, argument, "S10.0" => (ArgumentKind::S, 10.0));
     parser_test!(i_argument, argument, "I10" => (ArgumentKind::I, 10.0));
     parser_test!(j_argument, argument, "J10.0" => (ArgumentKind::J, 10.0));
+
+
+    parser_test!(basic_command, next_command, "N15 G10 X-2.0" => Command {
+        kind: CommandKind::G,
+        number: Number::Integer(10),
+        args: Args {
+            x: Some(-2.0),
+            ..Default::default()
+        },
+        line_number: Some(15),
+    });
 
     #[allow(trivial_casts)]
     mod qc {
