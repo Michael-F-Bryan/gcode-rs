@@ -1,3 +1,5 @@
+//! The main parsing module for this crate.
+
 use core::iter::Peekable;
 
 use lexer::{Token, TokenKind};
@@ -34,17 +36,6 @@ impl<I> Parser<I>
     /// Create a new parser using the provided stream of tokens.
     pub fn new(tokens: I) -> Parser<I> {
         Parser { tokens: tokens.peekable() }
-    }
-
-    /// A convenience function for creating a parser directly from a stream of
-    /// characters.
-    #[cfg(nightly)]
-    fn from_source<C, F>(src: C) -> Parser<impl Iterator<Item = Token>>
-        where C: Iterator<Item = char>
-    {
-        use lexer::Tokenizer;
-        let tok = Tokenizer::new(src);
-        Parser { tokens: tok.filter_map(|t| t.ok()).peekable() }
     }
 
     fn next_command(&mut self) -> Result<Line> {
@@ -238,19 +229,20 @@ pub struct Command {
     pub line_number: Option<u32>,
 }
 
-/// A "bag-o-floats" which contains all the possible arguments and their values.
+/// A *good ol' bag-o-floats* which contains all the possible arguments and their values.
 #[derive(Debug, Copy, Clone, Default, PartialEq)]
+#[allow(missing_docs)]
 pub struct Args {
-    x: Option<f32>,
-    y: Option<f32>,
-    z: Option<f32>,
-    s: Option<f32>,
-    t: Option<f32>,
-    f: Option<f32>,
-    i: Option<f32>,
-    j: Option<f32>,
-    h: Option<f32>,
-    p: Option<f32>,
+    pub x: Option<f32>,
+    pub y: Option<f32>,
+    pub z: Option<f32>,
+    pub s: Option<f32>,
+    pub t: Option<f32>,
+    pub f: Option<f32>,
+    pub i: Option<f32>,
+    pub j: Option<f32>,
+    pub h: Option<f32>,
+    pub p: Option<f32>,
 }
 
 impl Args {
