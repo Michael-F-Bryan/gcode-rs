@@ -1,7 +1,6 @@
 extern crate gcode;
 
-use gcode::lexer::Tokenizer;
-use gcode::BasicParser;
+use gcode::{Parser, Tokenizer};
 
 
 fn main() {
@@ -13,9 +12,9 @@ fn main() {
     // ones
     let tokens = lexer.filter_map(|t| t.ok());
 
-    let parser = BasicParser::new(tokens);
+    let parser = Parser::new(tokens);
 
     for line in parser {
-        println!("{}", line.unwrap());
+        println!("{:?}", line.unwrap());
     }
 }

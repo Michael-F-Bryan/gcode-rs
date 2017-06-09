@@ -52,6 +52,7 @@ pub type ArgBuffer = ArrayVec<[Argument; 10]>;
 ///          | NUMBER
 /// ```
 #[derive(Debug)]
+#[deprecated]
 pub struct BasicParser<I>
     where I: Iterator<Item = Token>
 {

@@ -83,6 +83,7 @@
         trivial_casts, trivial_numeric_casts,
         unsafe_code,
         unused_import_braces, unused_qualifications)]
+#![allow(deprecated)]
 
 // Allow using unstable features with the "nightly" feature flag
 #![cfg_attr(not(feature = "nightly"), deny(unstable_features))]
@@ -103,6 +104,7 @@ extern crate rand;
 
 extern crate arrayvec;
 
+#[deprecated]
 pub mod low_level;
 pub mod lexer;
 mod helpers;
