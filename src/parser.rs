@@ -46,17 +46,34 @@ impl<I> Parser<I>
         Parser { tokens: tok.filter_map(|t| t.ok()).peekable() }
     }
 
-    fn next_command(&mut self) -> Result<Command> {
+    fn next_command(&mut self) -> Result<Line> {
+        if let Ok(number) = self.program_number() {
+            return Ok(Line::ProgramNumber(number));
+        };
+
         let line_number = self.line_number()?;
         let (kind, number) = self.command_type()?;
         let args = self.args()?;
 
-        Ok(Command {
-               kind,
-               number,
-               args,
-               line_number,
-           })
+        let cmd = Command {
+            kind,
+            number,
+            args,
+            line_number,
+        };
+        Ok(Line::Cmd(cmd))
+    }
+
+    fn program_number(&mut self) -> Result<u32> {
+        lookahead!(self, "Expected an \"O\"", TokenKind::O);
+        let _ = self.tokens.next();
+
+        lookahead!(self, "Expected a program number", TokenKind::Number(_));
+
+        match self.unchecked_next() {
+            TokenKind::Number(n) => Ok(n as u32),
+            _ => unreachable!(),
+        }
     }
 
     fn line_number(&mut self) -> Result<Option<u32>> {
@@ -97,8 +114,8 @@ impl<I> Parser<I>
                 if n == n as u32 as f32 {
                     Number::Integer(n as u32)
                 } else {
-                    return Err(Error::SyntaxError("Commands with a decimal aren't supported at the moment",
-                                                  Default::default()));
+                    // FIXME: This is wrong, read above TODO
+                    Number::Decimal(n as u32, 0)
                 }
             }
             _ => unreachable!(),
@@ -120,7 +137,8 @@ impl<I> Parser<I>
     fn argument(&mut self) -> Result<(ArgumentKind, f32)> {
         lookahead!(self, "Expected an argument kind",
         TokenKind::X | TokenKind::Y | TokenKind::Z | TokenKind::S | 
-        TokenKind::FeedRate | TokenKind::I | TokenKind::J);
+        TokenKind::FeedRate | TokenKind::I | TokenKind::J | TokenKind::H |
+        TokenKind::P);
 
         let kind = match self.unchecked_next() {
             TokenKind::X => ArgumentKind::X,
@@ -129,6 +147,8 @@ impl<I> Parser<I>
             TokenKind::S => ArgumentKind::S,
             TokenKind::I => ArgumentKind::I,
             TokenKind::J => ArgumentKind::J,
+            TokenKind::H => ArgumentKind::H,
+            TokenKind::P => ArgumentKind::P,
             TokenKind::FeedRate => ArgumentKind::F,
             _ => unreachable!(),
         };
@@ -176,13 +196,19 @@ impl<I> Parser<I>
 impl<I> Iterator for Parser<I>
     where I: Iterator<Item = Token>
 {
-    type Item = Result<Command>;
+    type Item = Result<Line>;
     fn next(&mut self) -> Option<Self::Item> {
         match self.next_command() {
             Err(Error::UnexpectedEOF) => None,
             other => Some(other),
         }
     }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Line {
+    ProgramNumber(u32),
+    Cmd(Command),
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -209,6 +235,8 @@ pub struct Args {
     f: Option<f32>,
     i: Option<f32>,
     j: Option<f32>,
+    h: Option<f32>,
+    p: Option<f32>,
 }
 
 impl Args {
@@ -221,6 +249,8 @@ impl Args {
             ArgumentKind::F => self.f = Some(value),
             ArgumentKind::I => self.i = Some(value),
             ArgumentKind::J => self.j = Some(value),
+            ArgumentKind::H => self.h = Some(value),
+            ArgumentKind::P => self.p = Some(value),
         }
     }
 }
@@ -234,6 +264,8 @@ enum ArgumentKind {
     S,
     I,
     J,
+    H,
+    P,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -306,8 +338,10 @@ mod tests {
     parser_test!(i_argument, argument, "I10" => (ArgumentKind::I, 10.0));
     parser_test!(j_argument, argument, "J10.0" => (ArgumentKind::J, 10.0));
 
+    parser_test!(program_number, program_number, "O500" => 500);
 
-    parser_test!(basic_command, next_command, "N15 G10 X-2.0" => Command {
+
+    parser_test!(basic_command, next_command, "N15 G10 X-2.0" => Line::Cmd(Command {
         kind: CommandKind::G,
         number: Number::Integer(10),
         args: Args {
@@ -315,7 +349,7 @@ mod tests {
             ..Default::default()
         },
         line_number: Some(15),
-    });
+    }));
 
     #[allow(trivial_casts)]
     mod qc {
@@ -334,6 +368,7 @@ mod tests {
         }
 
         quick_parser_quickcheck!(command_type);
+        quick_parser_quickcheck!(program_number);
         quick_parser_quickcheck!(line_number);
         quick_parser_quickcheck!(args);
         quick_parser_quickcheck!(argument);
