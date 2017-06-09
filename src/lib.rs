@@ -106,7 +106,7 @@ extern crate arrayvec;
 pub mod low_level;
 pub mod lexer;
 mod helpers;
-mod parser;
+pub mod parser;
 
 pub use lexer::{Tokenizer, Span};
 pub use low_level::BasicParser;

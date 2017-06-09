@@ -4,6 +4,7 @@
 extern crate gcode;
 
 use gcode::{Tokenizer, BasicParser};
+use gcode::parser::Parser;
 
 /// Create an integration test which will take the gcodes from the specified
 /// file, then run the lexer and low level parser in stages, making sure that
@@ -32,7 +33,7 @@ macro_rules! integration_test {
             println!("=================");
             println!();
 
-            let low_level_parser = BasicParser::new(tokens.into_iter());
+            let low_level_parser = Parser::new(tokens.into_iter());
             let lines = low_level_parser
                 .inspect(|c| println!("{:?}", c))
                 .collect::<Result<Vec<_>, _>>()

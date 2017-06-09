@@ -22,6 +22,7 @@ macro_rules! lookahead {
 }
 
 
+#[derive(Debug)]
 pub struct Parser<I>
     where I: Iterator<Item = Token>
 {
@@ -31,7 +32,7 @@ pub struct Parser<I>
 impl<I> Parser<I>
     where I: Iterator<Item = Token>
 {
-    fn new(tokens: I) -> Parser<I> {
+    pub fn new(tokens: I) -> Parser<I> {
         Parser { tokens: tokens.peekable() }
     }
 
@@ -128,6 +129,7 @@ impl<I> Parser<I>
             TokenKind::S => ArgumentKind::S,
             TokenKind::I => ArgumentKind::I,
             TokenKind::J => ArgumentKind::J,
+            TokenKind::FeedRate => ArgumentKind::F,
             _ => unreachable!(),
         };
 
@@ -171,13 +173,25 @@ impl<I> Parser<I>
     }
 }
 
+impl<I> Iterator for Parser<I>
+    where I: Iterator<Item = Token>
+{
+    type Item = Result<Command>;
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.next_command() {
+            Err(Error::UnexpectedEOF) => None,
+            other => Some(other),
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 enum Number {
     Integer(u32),
     Decimal(u32, u32),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Command {
     kind: CommandKind,
     number: Number,
@@ -185,7 +199,7 @@ pub struct Command {
     line_number: Option<u32>,
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Copy, Clone, Default, PartialEq)]
 pub struct Args {
     x: Option<f32>,
     y: Option<f32>,
@@ -321,5 +335,8 @@ mod tests {
 
         quick_parser_quickcheck!(command_type);
         quick_parser_quickcheck!(line_number);
+        quick_parser_quickcheck!(args);
+        quick_parser_quickcheck!(argument);
+        quick_parser_quickcheck!(next_command);
     }
 }
