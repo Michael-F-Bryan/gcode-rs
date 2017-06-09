@@ -1,8 +1,6 @@
-#![allow(missing_docs, dead_code, unused_imports)]
-
 use core::iter::Peekable;
 
-use lexer::{Token, TokenKind, Tokenizer};
+use lexer::{Token, TokenKind};
 use errors::*;
 
 
@@ -22,6 +20,7 @@ macro_rules! lookahead {
 }
 
 
+/// A parser which turns a stream of gcode tokens into a stream of commands.
 #[derive(Debug)]
 pub struct Parser<I>
     where I: Iterator<Item = Token>
@@ -32,6 +31,7 @@ pub struct Parser<I>
 impl<I> Parser<I>
     where I: Iterator<Item = Token>
 {
+    /// Create a new parser using the provided stream of tokens.
     pub fn new(tokens: I) -> Parser<I> {
         Parser { tokens: tokens.peekable() }
     }
@@ -42,6 +42,7 @@ impl<I> Parser<I>
     fn from_source<C, F>(src: C) -> Parser<impl Iterator<Item = Token>>
         where C: Iterator<Item = char>
     {
+        use lexer::Tokenizer;
         let tok = Tokenizer::new(src);
         Parser { tokens: tok.filter_map(|t| t.ok()).peekable() }
     }
@@ -165,7 +166,7 @@ impl<I> Parser<I>
             Some(t) => {
                 match t.kind() {
                     TokenKind::Number(number) => number,
-                    other => {
+                    _ => {
                         return Err(Error::SyntaxError("All arguments must be followed by a number",
                                                       t.span()))
                     }
@@ -182,7 +183,7 @@ impl<I> Parser<I>
     }
 
     fn peek(&mut self) -> Option<TokenKind> {
-        self.tokens.peek().map(|t| t.kind().clone())
+        self.tokens.peek().map(|t| t.kind())
     }
 
     fn unchecked_next(&mut self) -> TokenKind {
@@ -205,26 +206,39 @@ impl<I> Iterator for Parser<I>
     }
 }
 
+/// A single line of gcode.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum Line {
+    /// A program number.
     ProgramNumber(u32),
+    /// An actual command.
     Cmd(Command),
 }
 
+/// A type which can either be an integer or a float.
 #[derive(Debug, Copy, Clone, PartialEq)]
-enum Number {
+pub enum Number {
+    /// A plain integer.
     Integer(u32),
+    /// A floating point number, represented as the integer before and after
+    /// the decimal point.
     Decimal(u32, u32),
 }
 
+/// A single command.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Command {
-    kind: CommandKind,
-    number: Number,
-    args: Args,
-    line_number: Option<u32>,
+    /// Which kind of `Command` is this?
+    pub kind: CommandKind,
+    /// The command's number.
+    pub number: Number,
+    /// All arguments passed to the command.
+    pub args: Args,
+    /// The line number the command is on (if any).
+    pub line_number: Option<u32>,
 }
 
+/// A "bag-o-floats" which contains all the possible arguments and their values.
 #[derive(Debug, Copy, Clone, Default, PartialEq)]
 pub struct Args {
     x: Option<f32>,
@@ -255,7 +269,9 @@ impl Args {
     }
 }
 
+/// The type of argument provided.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[allow(missing_docs)]
 enum ArgumentKind {
     X,
     Y,
@@ -268,7 +284,9 @@ enum ArgumentKind {
     P,
 }
 
+/// The type of command.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[allow(missing_docs)]
 pub enum CommandKind {
     G,
     M,

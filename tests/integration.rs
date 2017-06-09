@@ -3,8 +3,7 @@
 
 extern crate gcode;
 
-use gcode::{Tokenizer, BasicParser};
-use gcode::parser::Parser;
+use gcode::{Tokenizer, Parser};
 
 /// Create an integration test which will take the gcodes from the specified
 /// file, then run the lexer and low level parser in stages, making sure that
