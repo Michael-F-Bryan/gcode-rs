@@ -130,7 +130,7 @@ impl<I> Parser<I>
         lookahead!(self, "Expected an argument kind",
         TokenKind::X | TokenKind::Y | TokenKind::Z | TokenKind::S | 
         TokenKind::FeedRate | TokenKind::I | TokenKind::J | TokenKind::H |
-        TokenKind::P);
+        TokenKind::P | TokenKind::E);
 
         let kind = match self.unchecked_next() {
             TokenKind::X => ArgumentKind::X,
@@ -142,6 +142,7 @@ impl<I> Parser<I>
             TokenKind::H => ArgumentKind::H,
             TokenKind::P => ArgumentKind::P,
             TokenKind::FeedRate => ArgumentKind::F,
+            TokenKind::E => ArgumentKind::E,
             _ => unreachable!(),
         };
 
@@ -243,6 +244,7 @@ pub struct Args {
     pub j: Option<f32>,
     pub h: Option<f32>,
     pub p: Option<f32>,
+    pub e: Option<f32>,
 }
 
 impl Args {
@@ -257,6 +259,7 @@ impl Args {
             ArgumentKind::J => self.j = Some(value),
             ArgumentKind::H => self.h = Some(value),
             ArgumentKind::P => self.p = Some(value),
+            ArgumentKind::E => self.e = Some(value),
         }
     }
 }
@@ -274,6 +277,7 @@ enum ArgumentKind {
     J,
     H,
     P,
+    E,
 }
 
 /// The type of command.
@@ -347,6 +351,7 @@ mod tests {
     parser_test!(s_argument, argument, "S10.0" => (ArgumentKind::S, 10.0));
     parser_test!(i_argument, argument, "I10" => (ArgumentKind::I, 10.0));
     parser_test!(j_argument, argument, "J10.0" => (ArgumentKind::J, 10.0));
+    parser_test!(e_argument, argument, "E10.0" => (ArgumentKind::E, 10.0));
 
     parser_test!(program_number, program_number, "O500" => 500);
 
