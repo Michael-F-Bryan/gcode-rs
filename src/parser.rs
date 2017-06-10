@@ -351,6 +351,7 @@ mod tests {
     parser_test!(s_argument, argument, "S10.0" => (ArgumentKind::S, 10.0));
     parser_test!(i_argument, argument, "I10" => (ArgumentKind::I, 10.0));
     parser_test!(j_argument, argument, "J10.0" => (ArgumentKind::J, 10.0));
+    parser_test!(e_argument, argument, "E10.0" => (ArgumentKind::E, 10.0));
 
     parser_test!(program_number, program_number, "O500" => 500);
 
