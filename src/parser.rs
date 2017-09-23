@@ -25,11 +25,14 @@ impl Parser {
     /// Try to parse a single command, updating the parser's internal state
     /// and also returning the number of bytes read.
     fn parse_single_command(&mut self, mut src: &[u8]) -> Option<(Command, usize)> {
-        let line_no = line_number(src);
-
-        if let Some((_, bytes_read)) = line_no {
-            src = &src[bytes_read..];
-        }
+        let original_len = src.len();
+        let line_no = match line_number(src) {
+            Some((n, bytes_read)) => {
+                src = &src[bytes_read..];
+                Some(n)
+            }
+            None => None,
+        };
 
         src = skip_whitespace(src);
 
@@ -37,9 +40,28 @@ impl Parser {
             Some(thing) => thing,
             None => return None,
         };
+        src = &src[bytes_read..];
         src = skip_whitespace(src);
 
-        unimplemented!()
+        let mut args = Arguments::default();
+
+        while let Some((arg_kind, value, bytes_read)) = argument(src) {
+            src = &src[bytes_read..];
+            args.set(arg_kind, value);
+
+            src = skip_whitespace(src);
+        }
+
+        let cmd = Command {
+            line: line_no,
+            kind: kind,
+            number: major,
+            secondary_number: minor,
+            args: args,
+        };
+        let total_bytes_read = original_len - src.len();
+
+        Some((cmd, total_bytes_read))
     }
 }
 
@@ -195,7 +217,27 @@ fn decimal(src: &[u8]) -> Option<(&[u8], usize)> {
 }
 
 fn argument(src: &[u8]) -> Option<(ArgumentKind, f32, usize)> {
-    unimplemented!()
+    if src.is_empty() {
+        return None;
+    }
+
+    let kind = match src[0].uppercase() {
+        b'X' => ArgumentKind::X,
+        b'Y' => ArgumentKind::Y,
+        _ => return None,
+    };
+
+    let (value, _) = match decimal(&src[1..]) {
+        Some(v) => v,
+        None => return None,
+    };
+
+    let bytes_read = 1 + value.len();
+
+    match str::from_utf8(value).unwrap().parse() {
+        Ok(value) => Some((kind, value, bytes_read)),
+        Err(_) => None,
+    }
 }
 
 /// Something which may be either an integer, or two integers separated by
@@ -238,7 +280,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore]
     fn parse_simple_g90() {
         let src = b"G90 X10.0";
         let should_be = Command {
@@ -354,6 +395,22 @@ mod tests {
             let should_be = should_be.map(|v| (v, src.len()));
 
             let got = may_be_integer_or_decimal(src.as_bytes());
+            assert_eq!(got, should_be);
+        }
+    }
+
+    #[test]
+    fn argument_parsing() {
+        let inputs = vec![
+            ("X10.0", Some((ArgumentKind::X, 10.0))),
+            ("Y10.", Some((ArgumentKind::Y, 10.0))),
+            ("G90", None),
+        ];
+
+        for (src, should_be) in inputs {
+            let should_be = should_be.map(|(kind, value)| (kind, value, src.len()));
+
+            let got = argument(src.as_bytes());
             assert_eq!(got, should_be);
         }
     }
