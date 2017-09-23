@@ -7,8 +7,13 @@
 pub trait AsciiExt {
     fn is_whitespace(&self) -> bool;
     fn is_alphabetic(&self) -> bool;
+    fn is_numeric(&self) -> bool;
     fn uppercase(&self) -> Self;
     fn lowercase(&self) -> Self;
+
+    fn is_alphanumeric(&self) -> bool {
+        self.is_alphabetic() || self.is_numeric()
+    }
 }
 
 impl AsciiExt for char {
@@ -22,6 +27,13 @@ impl AsciiExt for char {
     fn is_alphabetic(&self) -> bool {
         match *self {
             'a'...'z' | 'A'...'Z' => true,
+            _ => false,
+        }
+    }
+
+    fn is_numeric(&self) -> bool {
+        match *self {
+            '0'...'1' => true,
             _ => false,
         }
     }
@@ -54,6 +66,9 @@ impl AsciiExt for u8 {
 
     fn is_alphabetic(&self) -> bool {
         (*self as char).is_alphabetic()
+    }
+    fn is_numeric(&self) -> bool {
+        (*self as char).is_numeric()
     }
 
     fn uppercase(&self) -> Self {
