@@ -2,38 +2,30 @@
 //! included in `core::char`.
 
 
-pub trait MaybeWhitespace {
+/// An extension trait which allows you to do common character manipulation,
+/// assuming your text is purely ascii.
+pub trait AsciiExt {
     fn is_whitespace(&self) -> bool;
+    fn is_alphabetic(&self) -> bool;
+    fn uppercase(&self) -> Self;
+    fn lowercase(&self) -> Self;
 }
 
-impl MaybeWhitespace for char {
+impl AsciiExt for char {
     fn is_whitespace(&self) -> bool {
         match *self {
             '\r' | ' ' | '\t' | '\n' => true,
             _ => false,
         }
     }
-}
 
-pub trait MaybeAlphabetic {
-    fn is_alphabetic(&self) -> bool;
-}
-
-impl MaybeAlphabetic for char {
     fn is_alphabetic(&self) -> bool {
         match *self {
             'a'...'z' | 'A'...'Z' => true,
             _ => false,
         }
     }
-}
 
-pub trait AsciiSwapCase {
-    fn uppercase(&self) -> Self;
-    fn lowercase(&self) -> Self;
-}
-
-impl AsciiSwapCase for char {
     fn uppercase(&self) -> Self {
         match *self {
             'a'...'z' => {
@@ -55,6 +47,23 @@ impl AsciiSwapCase for char {
     }
 }
 
+impl AsciiExt for u8 {
+    fn is_whitespace(&self) -> bool {
+        (*self as char).is_whitespace()
+    }
+
+    fn is_alphabetic(&self) -> bool {
+        (*self as char).is_alphabetic()
+    }
+
+    fn uppercase(&self) -> Self {
+        (*self as char).uppercase() as u8
+    }
+
+    fn lowercase(&self) -> Self {
+        (*self as char).lowercase() as u8
+    }
+}
 
 
 /// Create a `f32` from its integer part and fractional part.
@@ -78,18 +87,19 @@ mod tests {
 
     #[test]
     fn check_alphabetic() {
-        let inputs = [('a', true),
-                      ('b', true),
-                      ('z', true),
-                      ('x', true),
-                      ('A', true),
-                      ('B', true),
-                      ('Z', true),
-                      ('X', true),
-
-                      (' ', false),
-                      ('!', false),
-                      ('.', false)];
+        let inputs = [
+            ('a', true),
+            ('b', true),
+            ('z', true),
+            ('x', true),
+            ('A', true),
+            ('B', true),
+            ('Z', true),
+            ('X', true),
+            (' ', false),
+            ('!', false),
+            ('.', false),
+        ];
 
         for &(src, should_be) in &inputs {
             assert_eq!(src.is_alphabetic(), should_be);
@@ -98,10 +108,12 @@ mod tests {
 
     #[test]
     fn test_float_from_integers() {
-        let inputs = [((12, 34, 2), 12.34),
-                      ((1, 0, 0), 1.0),
-                      ((12345, 54321, 5), 12345.54321),
-                      ((1000, 0001, 4), 1000.0001)];
+        let inputs = [
+            ((12, 34, 2), 12.34),
+            ((1, 0, 0), 1.0),
+            ((12345, 54321, 5), 12345.54321),
+            ((1000, 0001, 4), 1000.0001),
+        ];
 
         for &((integer, frac, length), should_be) in &inputs {
             let got = float_from_integers(integer, frac, length);
