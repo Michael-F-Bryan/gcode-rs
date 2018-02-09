@@ -76,14 +76,23 @@ impl<'a> Iterator for Gcodes<'a> {
     type Item = Command;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let src = &self.data[self.current_index..];
-
-        match self.parser.parse_single_command(src) {
-            Some((cmd, bytes_read)) => {
-                self.current_index += bytes_read;
-                Some(cmd)
+        loop {
+            let src = &self.data[self.current_index..];
+            if src.is_empty() {
+                return None;
             }
-            None => None,
+
+            match self.parser.parse_single_command(src) {
+                Some((cmd, bytes_read)) => {
+                    self.current_index += bytes_read;
+                    return Some(cmd);
+                }
+                None => {
+                    // we couldn't parse something, try to step past it
+                    self.current_index += 1;
+                    continue;
+                }
+            }
         }
     }
 }

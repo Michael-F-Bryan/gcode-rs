@@ -3,6 +3,8 @@
 
 extern crate gcode;
 
+use gcode::Parser;
+
 
 /// Create an integration test which will take the gcodes from the specified
 /// file, then run the lexer and low level parser in stages, making sure that
@@ -16,7 +18,11 @@ macro_rules! integration_test {
 
             let src = include_str!($filename);
 
-            unimplemented!();
+            let mut parser = Parser::new();
+
+            for command in parser.parse(src.as_bytes()) {
+                println!("{:?}", command);
+            }
         }
     }
 }

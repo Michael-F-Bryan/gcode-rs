@@ -37,6 +37,8 @@ extern crate rand;
 
 extern crate arrayvec;
 
+#[macro_use]
+mod macros;
 mod helpers;
 mod parser;
 mod command;
