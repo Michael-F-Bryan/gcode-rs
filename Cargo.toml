@@ -1,14 +1,8 @@
 [package]
 authors = ["Michael-F-Bryan <michaelfbryan@gmail.com>"]
 name = "gcode"
-version = "0.2.1"
+version = "0.3.0"
+description = "A gcode parser for no-std applications."
+license = "MIT"
 
 [dependencies]
-
-[dependencies.arrayvec]
-default_features = false
-version = "^0.3"
-
-[dev-dependencies]
-quickcheck = "0.4.1"
-rand = "0.3.15"
