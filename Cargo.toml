@@ -6,3 +6,4 @@ description = "A gcode parser for no-std applications."
 license = "MIT"
 
 [dependencies]
+nom = { version = "4.0.0-beta2", default_features = false, features = [] }
