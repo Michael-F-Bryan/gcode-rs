@@ -1,8 +1,9 @@
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct GCode {
     number: Number,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Number {
     Integer(u16),
     Decimal(u16, u16),

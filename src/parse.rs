@@ -16,7 +16,7 @@ where
         unsafe { str::from_utf8_unchecked(bytes) }
     };
 
-    s.parse().expect("unreachable")
+    s.parse().expect("parsing should always succeed")
 }
 
 fn digits(i: &[u8]) -> ::nom::IResult<&[u8], &[u8]> {
