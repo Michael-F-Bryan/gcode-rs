@@ -10,3 +10,6 @@ extern crate std;
 extern crate quickcheck;
 
 pub mod parse;
+mod validate;
+
+pub use validate::validate;

@@ -21,8 +21,8 @@ impl<'a> Block<'a> {
         }
     }
 
-    pub fn words(&self) -> Words<'a> {
-        Words::new(self.src)
+    pub fn words<'b>(&'b self) -> Words<'b> {
+        Words::new(self)
     }
 }
 
@@ -292,12 +292,14 @@ impl Arbitrary for Number {
 }
 
 pub struct Words<'a> {
+    parent: &'a Block<'a>,
     src: &'a [u8],
 }
 
 impl<'a> Words<'a> {
-    fn new(src: &'a [u8]) -> Words<'a> {
-        Words { src }
+    fn new(parent: &'a Block<'a>) -> Words<'a> {
+        let src = parent.src;
+        Words { src, parent }
     }
 
     fn skip_junk(&mut self) {
@@ -317,6 +319,10 @@ impl<'a> Words<'a> {
         if !self.src.is_empty() {
             self.src = &self.src[1..];
         }
+    }
+
+    pub fn column(&self) -> usize {
+        self.parent.src.len() - self.src.len()
     }
 }
 
@@ -367,7 +373,11 @@ mod tests {
 
     #[test]
     fn parse_proper_numbers() {
-        let inputs = vec![("1", Number::Integer(1)), ("12.3", Number::Decimal(12, 3))];
+        let inputs = vec![
+            ("1", Number::Integer(1)),
+            ("12.3", Number::Decimal(12, 3)),
+            ("12 X", Number::Integer(12)),
+        ];
 
         for (src, should_be) in inputs {
             let (_, got) = parse_number(src.as_bytes()).unwrap();
@@ -401,6 +411,7 @@ mod tests {
             ("T50", Word::T(Number::Integer(50))),
             ("G91.5", Word::G(Number::Decimal(91, 5))),
             ("X91.5", Word::X(91.5)),
+            ("G01 X", Word::G(Number::Integer(1))),
             ("y-5.0", Word::Y(-5.0)),
             ("Z5", Word::Z(5.0)),
             ("Z5.", Word::Z(5.0)),
@@ -450,7 +461,8 @@ mod tests {
             Word::Z(-52.0),
         ];
 
-        let got = Words::new(src.as_bytes())
+        let got = Block::new(src)
+            .words()
             .collect::<Result<Vec<Word>, ParseError>>()
             .unwrap();
         assert_eq!(got, should_be);
