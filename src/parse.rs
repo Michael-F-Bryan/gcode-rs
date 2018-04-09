@@ -18,6 +18,14 @@ pub enum Word {
     G(Number),
     N(Number),
     T(Number),
+
+    X(f32),
+    Y(f32),
+    Z(f32),
+
+    I(f32),
+    J(f32),
+    K(f32),
 }
 
 impl Display for Word {
@@ -26,6 +34,26 @@ impl Display for Word {
             Word::G(n) => write!(f, "G{}", n),
             Word::N(n) => write!(f, "N{}", n),
             Word::T(n) => write!(f, "T{}", n),
+            Word::X(n) => write!(f, "X{}", n),
+            Word::Y(n) => write!(f, "Y{}", n),
+            Word::Z(n) => write!(f, "Z{}", n),
+            Word::I(n) => write!(f, "I{}", n),
+            Word::J(n) => write!(f, "J{}", n),
+            Word::K(n) => write!(f, "K{}", n),
+        }
+    }
+}
+
+impl FromStr for Word {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Word, Self::Err> {
+        let (rest, got) = parse_word(s.as_bytes())?;
+
+        if rest.is_empty() {
+            Err(ParseError::UnexpectedEOF)
+        } else {
+            Ok(got)
         }
     }
 }
@@ -56,6 +84,20 @@ impl Display for Number {
         match *self {
             Number::Integer(n) => n.fmt(f),
             Number::Decimal(a, b) => write!(f, "{}.{}", a, b),
+        }
+    }
+}
+
+impl FromStr for Number {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Number, Self::Err> {
+        let (rest, got) = parse_number(s.as_bytes())?;
+
+        if rest.is_empty() {
+            Err(ParseError::UnexpectedEOF)
+        } else {
+            Ok(got)
         }
     }
 }
@@ -93,12 +135,35 @@ fn skip_comments_to_newline(src: &[u8]) -> &[u8] {
 }
 
 fn parse_word(src: &[u8]) -> Result<(&[u8], Word), ParseError> {
-    let mnemonic = src.first().ok_or(ParseError::EOF)?;
+    let mnemonic = src.first().ok_or(ParseError::UnexpectedEOF)?;
     let rest = &src[1..];
 
-    match mnemonic {
-        b'g' | b'G' => parse_number(rest).map(|(r, n)| (r, Word::G(n))),
-        b'n' | b'N' => parse_number(rest).map(|(r, n)| (r, Word::N(n))),
+    fn num_parse<F>(rest: &[u8], func: F) -> Result<(&[u8], Word), ParseError>
+    where
+        F: Fn(Number) -> Word,
+    {
+        parse_number(rest).map(|(r, n)| (r, func(n)))
+    }
+
+    fn float_parse<F>(rest: &[u8], func: F) -> Result<(&[u8], Word), ParseError>
+    where
+        F: Fn(f32) -> Word,
+    {
+        parse_float(rest).map(|(r, n)| (r, func(n)))
+    }
+
+    match mnemonic.to_ascii_uppercase() {
+        b'G' => num_parse(rest, Word::G),
+        b'T' => num_parse(rest, Word::T),
+        b'N' => num_parse(rest, Word::N),
+
+        b'X' => float_parse(rest, Word::X),
+        b'Y' => float_parse(rest, Word::Y),
+        b'Z' => float_parse(rest, Word::Z),
+
+        b'I' => float_parse(rest, Word::I),
+        b'J' => float_parse(rest, Word::J),
+        b'K' => float_parse(rest, Word::K),
         _ => Err(ParseError::Expected("A word")),
     }
 }
@@ -123,7 +188,7 @@ where
 
 fn parse_number(src: &[u8]) -> Result<(&[u8], Number), ParseError> {
     if src.is_empty() {
-        return Err(ParseError::EOF);
+        return Err(ParseError::UnexpectedEOF);
     }
 
     if let Ok((rest, (a, b))) = parse_decimal(src) {
@@ -198,7 +263,8 @@ where
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ParseError {
     Expected(&'static str),
-    EOF,
+    NumberTooBig,
+    UnexpectedEOF,
 }
 
 #[cfg(test)]
@@ -269,7 +335,13 @@ mod tests {
         let inputs = vec![
             ("G90", Word::G(Number::Integer(90))),
             ("N05", Word::N(Number::Integer(5))),
+            ("T50", Word::T(Number::Integer(50))),
             ("G91.5", Word::G(Number::Decimal(91, 5))),
+            ("X91.5", Word::X(91.5)),
+            ("y-5.0", Word::Y(-5.0)),
+            ("Z5", Word::Z(5.0)),
+            ("Z5.", Word::Z(5.0)),
+            ("i-3.14", Word::I(-3.14)),
         ];
 
         for (src, should_be) in inputs {
