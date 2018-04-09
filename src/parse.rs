@@ -1,64 +1,107 @@
 //! Low level parsing routines.
 
-use core::fmt::Debug;
-use core::str::{self, FromStr};
-use types::Number;
-
-/// Uses `FromStr` to unconditionally convert a string of bytes into some `T`.
-fn parse_bytes<T>(bytes: &[u8]) -> T
-where
-    T: FromStr,
-    T::Err: Debug,
-{
-    let s = if cfg!(debug_assertions) {
-        str::from_utf8(bytes).expect("Input should alway be UTF-8")
-    } else {
-        unsafe { str::from_utf8_unchecked(bytes) }
-    };
-
-    s.parse().expect("parsing should always succeed")
+/// A single block of gcodes, usually one line.
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct Block<'a> {
+    src: &'a str,
+    line_number: Option<usize>,
 }
 
-fn digits(i: &[u8]) -> ::nom::IResult<&[u8], &[u8]> {
-    let mut remaining = i;
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct Word {
+    pub mnemonic: Mnemonic,
+    pub value: Number,
+}
 
-    while !remaining.is_empty() {
-        if remaining[0].is_ascii_digit() {
-            remaining = &remaining[1..];
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Mnemonic {
+    G,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum Number {
+    Integer(u16),
+    Decimal(u16, u16),
+}
+
+impl Number {
+    pub fn major(&self) -> u16 {
+        match *self {
+            Number::Integer(maj) | Number::Decimal(maj, _) => maj,
+        }
+    }
+
+    pub fn minor(&self) -> Option<u16> {
+        match *self {
+            Number::Integer(_) => None,
+            Number::Decimal(_, min) => Some(min),
+        }
+    }
+}
+
+fn parse_integer(src: &str) -> Result<(&str, u16), ParseError> {
+    let (rest, number) = take_while(src, |c| (c as u8).is_ascii_digit())
+        .ok_or(ParseError::Expected("one or more digits"))?;
+
+    let n = number.parse().expect("never fails");
+
+    Ok((rest, n))
+}
+
+fn parse_number(src: &str) -> Result<(&str, Number), ParseError> {
+    if let Ok((rest, (a, b))) = parse_decimal(src) {
+        return Ok((rest, Number::Decimal(a, b)));
+    }
+
+    if let Ok((rest, i)) = parse_integer(src) {
+        return Ok((rest, Number::Integer(i)));
+    }
+
+    Err(ParseError::Expected("A number"))
+}
+
+fn parse_decimal(src: &str) -> Result<(&str, (u16, u16)), ParseError> {
+    let (mut rest, integer_part) = parse_integer(src)?;
+
+    if rest.starts_with('.') {
+        rest = &rest[1..];
+    } else {
+        return Err(ParseError::Expected("A decimal point"));
+    }
+
+    let (rest, decimal_part) = parse_integer(rest)?;
+
+    let dec = (integer_part, decimal_part);
+    Ok((rest, dec))
+}
+
+fn take_while<F>(src: &str, mut predicate: F) -> Option<(&str, &str)>
+where
+    F: FnMut(char) -> bool,
+{
+    let mut cursor = 0;
+
+    for (ix, c) in src.char_indices() {
+        if predicate(c) {
+            cursor = ix + c.len_utf8();
         } else {
             break;
         }
     }
 
-    let num_bytes = i.len() - remaining.len();
+    let (keep, rest) = src.split_at(cursor);
 
-    if num_bytes == 0 {
-        Err(::nom::Err::Incomplete(::nom::Needed::Size(1)))
+    if !keep.is_empty() {
+        Some((rest, keep))
     } else {
-        let matched = &i[..num_bytes];
-        Ok((remaining, matched))
+        None
     }
 }
 
-named!(decimal_number<&[u8], Number>, do_parse!(
-    major: map!(digits, parse_bytes) >>
-    char!('.') >>
-    minor: map!(digits, parse_bytes) >>
-    (Number::Decimal(major, minor))
-));
-
-named!(integer_number<&[u8], Number>, map!(map!(digits, parse_bytes), |maj| Number::Integer(maj)));
-
-named!(pub number<&[u8], Number>, alt!(complete!(decimal_number) | integer_number));
-
-named!(
-    g_word<&[u8], Number>,
-    do_parse!(
-        tag_no_case!("g") >>
-        num: number >>
-        (num)
-    )
-);
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum ParseError {
+    Expected(&'static str),
+}
 
 #[cfg(test)]
 mod tests {
@@ -66,44 +109,31 @@ mod tests {
 
     #[test]
     fn parse_an_integer() {
-        let src = b"123";
-        let should_be = Number::Integer(123);
-
-        let (_, got) = number(src).unwrap();
-        assert_eq!(got, should_be);
-    }
-
-    #[test]
-    fn parse_a_decimal_number() {
-        let src = b"123.45";
-        let should_be = Number::Decimal(123, 45);
-
-        let (_, got) = number(src).unwrap();
-        assert_eq!(got, should_be);
-    }
-
-    #[test]
-    fn recognise_g_commands() {
-        let inputs = vec![
-            ("G90", Number::Integer(90)),
-            ("g9", Number::Integer(9)),
-            ("G32.1", Number::Decimal(32, 1)),
-        ];
+        let inputs = vec![("1", 1), ("123", 123), ("1234.567", 1234)];
 
         for (src, should_be) in inputs {
-            let (_, got) = g_word(src.as_bytes()).unwrap();
+            let (_, got) = parse_integer(src).unwrap();
             assert_eq!(got, should_be);
         }
     }
 
     #[test]
-    fn invalid_g_commands() {
-        let inputs = vec![
-            "M", "x12.3", " ", "", "N5", "%", "$", "\0", "G", "g", "1.23"
-        ];
+    fn parse_a_full_decimal() {
+        let src = "12.3";
+        let should_be = (12, 3);
 
-        for src in inputs {
-            let _ = g_word(src.as_bytes()).unwrap_err();
+        let (_, got) = parse_decimal(src).unwrap();
+
+        assert_eq!(got, should_be);
+    }
+
+    #[test]
+    fn parse_proper_numbers() {
+        let inputs = vec![("1", Number::Integer(1)), ("12.3", Number::Decimal(12, 3))];
+
+        for (src, should_be) in inputs {
+            let (_, got) = parse_number(src).unwrap();
+            assert_eq!(got, should_be);
         }
     }
 }

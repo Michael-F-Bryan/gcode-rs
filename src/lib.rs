@@ -2,14 +2,8 @@
 
 #![no_std]
 
-#[macro_use]
-extern crate nom;
-
-#[cfg(not(test))]
-extern crate core as std;
 #[cfg(test)]
 #[macro_use]
 extern crate std;
 
-mod parse;
-pub mod types;
+pub mod parse;
