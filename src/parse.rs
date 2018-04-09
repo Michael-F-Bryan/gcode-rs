@@ -1,6 +1,10 @@
 //! Low level parsing routines.
 
+use core::fmt::{self, Display, Formatter};
 use core::str::{self, FromStr};
+
+#[cfg(test)]
+use quickcheck::{Arbitrary, Gen};
 
 /// A single block of gcodes, usually one line.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -14,6 +18,16 @@ pub enum Word {
     G(Number),
     N(Number),
     T(Number),
+}
+
+impl Display for Word {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            Word::G(n) => write!(f, "G{}", n),
+            Word::N(n) => write!(f, "N{}", n),
+            Word::T(n) => write!(f, "T{}", n),
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -33,6 +47,15 @@ impl Number {
         match *self {
             Number::Integer(_) => None,
             Number::Decimal(_, min) => Some(min),
+        }
+    }
+}
+
+impl Display for Number {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            Number::Integer(n) => n.fmt(f),
+            Number::Decimal(a, b) => write!(f, "{}.{}", a, b),
         }
     }
 }
@@ -179,6 +202,17 @@ pub enum ParseError {
 }
 
 #[cfg(test)]
+impl Arbitrary for Number {
+    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        if g.gen_weighted_bool(2) {
+            Number::Integer(g.gen())
+        } else {
+            Number::Decimal(g.gen(), g.gen())
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -282,6 +316,13 @@ mod tests {
         fn float_parsing_is_reversible(n: f32) -> bool {
             let src = format!("{}", n);
             let (_, got) = parse_float(src.as_bytes()).unwrap();
+
+            got == n
+        }
+
+        fn round_trip_number(n: Number) -> bool {
+            let src = format!("{}", n);
+            let (_, got) = parse_number(src.as_bytes()).unwrap();
 
             got == n
         }
