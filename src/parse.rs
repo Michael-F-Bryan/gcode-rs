@@ -18,18 +18,18 @@ pub enum Word {
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Number {
-    Integer(u16),
-    Decimal(u16, u16),
+    Integer(u32),
+    Decimal(u32, u32),
 }
 
 impl Number {
-    pub fn major(&self) -> u16 {
+    pub fn major(&self) -> u32 {
         match *self {
             Number::Integer(maj) | Number::Decimal(maj, _) => maj,
         }
     }
 
-    pub fn minor(&self) -> Option<u16> {
+    pub fn minor(&self) -> Option<u32> {
         match *self {
             Number::Integer(_) => None,
             Number::Decimal(_, min) => Some(min),
@@ -80,7 +80,7 @@ fn parse_word(src: &[u8]) -> Result<(&[u8], Word), ParseError> {
     }
 }
 
-fn parse_integer(src: &[u8]) -> Result<(&[u8], u16), ParseError> {
+fn parse_integer(src: &[u8]) -> Result<(&[u8], u32), ParseError> {
     let (rest, number) = take_while(src, |c| (c as u8).is_ascii_digit())
         .ok_or(ParseError::Expected("one or more digits"))?;
 
@@ -114,7 +114,7 @@ fn parse_number(src: &[u8]) -> Result<(&[u8], Number), ParseError> {
     Err(ParseError::Expected("A number"))
 }
 
-fn parse_decimal(src: &[u8]) -> Result<(&[u8], (u16, u16)), ParseError> {
+fn parse_decimal(src: &[u8]) -> Result<(&[u8], (u32, u32)), ParseError> {
     let (mut rest, integer_part) = parse_integer(src)?;
 
     if rest.starts_with(b".") {
@@ -268,6 +268,22 @@ mod tests {
             let got = skip_comments_to_newline(src.as_bytes());
             let got = str::from_utf8(got).unwrap();
             assert_eq!(got, should_be);
+        }
+    }
+
+    quickcheck! {
+        fn round_trip_int_parsing(n: u32) -> bool {
+            let src = format!("{}", n);
+            let (_, got) = parse_integer(src.as_bytes()).unwrap();
+
+            got == n
+        }
+
+        fn float_parsing_is_reversible(n: f32) -> bool {
+            let src = format!("{}", n);
+            let (_, got) = parse_float(src.as_bytes()).unwrap();
+
+            got == n
         }
     }
 }
