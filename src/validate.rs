@@ -1,5 +1,6 @@
 use parse::{Block, ParseError};
 
+/// Parse the entire source string and check whether there are any errors.
 pub fn validate(src: &str) -> Result<(), ParseError> {
     for line in src.lines() {
         let b = Block::new(line);
@@ -34,6 +35,13 @@ mod tests {
 
         for src in inputs {
             validate(src).unwrap_err();
+        }
+    }
+
+    quickcheck! {
+        fn validation_doesnt_panic(text: String) -> bool {
+            let _ = validate(&text);
+            true
         }
     }
 }

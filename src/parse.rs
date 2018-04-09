@@ -5,6 +5,8 @@ use core::str::{self, FromStr};
 
 #[cfg(test)]
 use quickcheck::{Arbitrary, Gen};
+#[cfg(test)]
+use rand::{Rand, Rng};
 
 /// A single block of gcodes, usually one line.
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -280,17 +282,6 @@ pub enum ParseError {
     UnexpectedEOF,
 }
 
-#[cfg(test)]
-impl Arbitrary for Number {
-    fn arbitrary<G: Gen>(g: &mut G) -> Self {
-        if g.gen_weighted_bool(2) {
-            Number::Integer(g.gen())
-        } else {
-            Number::Decimal(g.gen(), g.gen())
-        }
-    }
-}
-
 pub struct Words<'a> {
     parent: &'a Block<'a>,
     src: &'a [u8],
@@ -343,6 +334,45 @@ impl<'a> Iterator for Words<'a> {
             }
             Err(e) => Some(Err(e)),
         }
+    }
+}
+
+#[cfg(test)]
+impl Arbitrary for Number {
+    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        g.gen()
+    }
+}
+
+#[cfg(test)]
+impl Rand for Number {
+    fn rand<R: Rng>(r: &mut R) -> Self {
+        if r.gen_weighted_bool(2) {
+            Number::Integer(r.gen())
+        } else {
+            Number::Decimal(r.gen(), r.gen())
+        }
+    }
+}
+
+#[cfg(test)]
+impl Arbitrary for Word {
+    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        let constructors: &[fn(&mut G) -> Self] = &[
+            |g| Word::G(g.gen()),
+            |g| Word::N(g.gen()),
+            |g| Word::T(g.gen()),
+            |g| Word::X(g.gen()),
+            |g| Word::Y(g.gen()),
+            |g| Word::Z(g.gen()),
+            |g| Word::I(g.gen()),
+            |g| Word::J(g.gen()),
+            |g| Word::K(g.gen()),
+        ];
+
+        let constructor = g.choose(constructors).unwrap();
+
+        constructor(g)
     }
 }
 
@@ -488,6 +518,13 @@ mod tests {
             let (_, got) = parse_number(src.as_bytes()).unwrap();
 
             got == n
+        }
+
+        fn round_trip_word(w: Word) -> bool {
+            let src = format!("{}", w);
+            let (_, got) = parse_word(src.as_bytes()).unwrap();
+
+            got == w
         }
     }
 }
