@@ -9,8 +9,21 @@ use quickcheck::{Arbitrary, Gen};
 /// A single block of gcodes, usually one line.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Block<'a> {
-    src: &'a str,
+    src: &'a [u8],
     line_number: Option<usize>,
+}
+
+impl<'a> Block<'a> {
+    pub fn new(src: &'a str) -> Block<'a> {
+        Block {
+            src: src.as_bytes(),
+            line_number: None,
+        }
+    }
+
+    pub fn words(&self) -> Words<'a> {
+        Words::new(self.src)
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -278,9 +291,59 @@ impl Arbitrary for Number {
     }
 }
 
+pub struct Words<'a> {
+    src: &'a [u8],
+}
+
+impl<'a> Words<'a> {
+    fn new(src: &'a [u8]) -> Words<'a> {
+        Words { src }
+    }
+
+    fn skip_junk(&mut self) {
+        loop {
+            let original_length = self.src.len();
+
+            self.src = skip_comments_to_newline(self.src);
+            self.src = skip_whitespace(self.src);
+
+            if self.src.len() == original_length {
+                break;
+            }
+        }
+    }
+
+    fn force_step(&mut self) {
+        if !self.src.is_empty() {
+            self.src = &self.src[1..];
+        }
+    }
+}
+
+impl<'a> Iterator for Words<'a> {
+    type Item = Result<Word, ParseError>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.skip_junk();
+
+        if self.src.is_empty() {
+            return None;
+        }
+
+        match parse_word(self.src) {
+            Ok((rest, word)) => {
+                self.src = rest;
+                Some(Ok(word))
+            }
+            Err(e) => Some(Err(e)),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::prelude::v1::*;
 
     #[test]
     fn parse_an_integer() {
@@ -375,6 +438,22 @@ mod tests {
             let got = str::from_utf8(got).unwrap();
             assert_eq!(got, should_be);
         }
+    }
+
+    #[test]
+    fn parse_gcode_into_words() {
+        let src = "G01 X500.0 Y90Z-52";
+        let should_be = vec![
+            Word::G(Number::Integer(1)),
+            Word::X(500.0),
+            Word::Y(90.0),
+            Word::Z(-52.0),
+        ];
+
+        let got = Words::new(src.as_bytes())
+            .collect::<Result<Vec<Word>, ParseError>>()
+            .unwrap();
+        assert_eq!(got, should_be);
     }
 
     quickcheck! {
