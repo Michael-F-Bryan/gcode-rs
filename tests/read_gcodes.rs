@@ -5,6 +5,7 @@ use gcode::Mnemonic;
 //const PROGRAM_1: &str = include_str!("data/program_1.gcode");
 
 #[test]
+#[ignore]
 fn read_each_line_of_a_file() {
     let src = "O1000
         T1 M6

@@ -128,7 +128,7 @@ pub trait Prescalar {
 
 macro_rules! decl_prescalar {
     ($name:ident => $factor:expr;) => {
-        #[derive(Debug, Copy, Clone, Default, PartialEq)]
+        #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Hash)]
         pub struct $name;
 
         impl Prescalar for $name {

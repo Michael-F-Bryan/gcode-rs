@@ -12,7 +12,7 @@ extern crate quickcheck;
 extern crate rand;
 
 mod lexer;
-mod number;
+pub mod number;
 mod parse;
 mod types;
 

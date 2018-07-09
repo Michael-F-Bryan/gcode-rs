@@ -5,6 +5,7 @@ use types::Span;
 pub struct Lexer<'input> {
     src: &'input str,
     current_index: usize,
+    current_line: usize,
 }
 
 impl<'input> Lexer<'input> {
@@ -12,6 +13,7 @@ impl<'input> Lexer<'input> {
         Lexer {
             src,
             current_index: 0,
+            current_line: 0,
         }
     }
 
@@ -92,10 +94,11 @@ impl<'input> Lexer<'input> {
     fn read_word(&mut self) -> Option<Word> {
         self.try_or_backtrack(|lexy| {
             let start = lexy.current_index;
+            let start_line = lexy.current_line;
             let letter = lexy.read_mnemonic()?;
             let number = lexy.read_number()?;
 
-            let span = Span::new(start, lexy.current_index);
+            let span = Span::new(start, lexy.current_index, start_line);
             Some(Word {
                 letter,
                 number,
@@ -148,6 +151,9 @@ impl<'input> Lexer<'input> {
     fn advance(&mut self) {
         if let Some(c) = self.peek() {
             self.current_index += c.len_utf8();
+            if c == '\n' {
+                self.current_line += 1;
+            }
         }
     }
 
@@ -176,9 +182,9 @@ impl<'input> Iterator for Lexer<'input> {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Word {
-    span: Span,
-    letter: char,
-    number: Number<Thousand>,
+    pub span: Span,
+    pub letter: char,
+    pub number: Number<Thousand>,
 }
 
 #[cfg(test)]
@@ -258,7 +264,7 @@ mod tests {
         let should_be = Word {
             letter: 'G',
             number: Number::from(1),
-            span: Span::new(0, src.len()),
+            span: Span::new(0, src.len(), 0),
         };
 
         let got = Lexer::new(src).next().unwrap();
