@@ -23,6 +23,8 @@ impl Gcode {
     }
 
     pub fn add_argument(&mut self, arg: Word) {
+        self.span = self.span.merge(&arg.span);
+
         match self.arguments.iter().position(|w| w.letter == arg.letter) {
             Some(i) => self.arguments[i] = arg,
             None => {

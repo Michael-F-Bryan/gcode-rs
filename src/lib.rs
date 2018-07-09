@@ -9,9 +9,7 @@ extern crate arrayvec;
 extern crate std;
 #[cfg(test)]
 #[macro_use]
-extern crate quickcheck;
-#[cfg(test)]
-extern crate rand;
+extern crate pretty_assertions;
 
 mod lexer;
 pub mod number;
