@@ -20,7 +20,7 @@ fn read_each_line_of_a_file() {
     let first_line = lines.next().unwrap();
     assert_eq!(first_line.mnemonic, Mnemonic::ProgramNumber);
     assert_eq!(first_line.number, 1000);
-    
+
     let tool_change = lines.next().unwrap();
     assert_eq!(tool_change.mnemonic, Mnemonic::ToolChange);
     assert_eq!(tool_change.number, 1);

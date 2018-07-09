@@ -11,6 +11,8 @@ extern crate quickcheck;
 #[cfg(test)]
 extern crate rand;
 
+mod lexer;
+mod number;
 mod parse;
 mod types;
 
