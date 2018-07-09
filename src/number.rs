@@ -1,11 +1,27 @@
-use core::str::FromStr;
-use core::num::ParseFloatError;
 use core::fmt::{self, Display, Formatter};
+use core::num::ParseFloatError;
+use core::str::FromStr;
+
+pub trait Prescalar {
+    fn scale(&self) -> u32;
+
+    fn digits(&self) -> usize {
+        let mut n = self.scale();
+        let mut digits = 0;
+
+        while n >= 10 {
+            digits += 1;
+            n /= 10;
+        }
+
+        digits
+    }
+}
 
 /// A limited-precision number where extra digits are gained by scaling an
 /// integer by a constant factor. This is designed to work even for platforms
 /// that may not have a built-in FPU.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub struct Number<P: Prescalar = Thousand> {
     base: i32,
     prescalar: P,
@@ -32,9 +48,9 @@ impl<P: Prescalar> Number<P> {
     }
 }
 
-impl<P: Prescalar+ Default> FromStr for Number<P> {
+impl<P: Prescalar + Default> FromStr for Number<P> {
     type Err = ParseFloatError;
-    
+
     fn from_str(s: &str) -> Result<Number<P>, Self::Err> {
         // FIXME: We really shouldn't rely on the f32 impl for this...
         Ok(Number::from(s.parse::<f32>()?))
@@ -110,22 +126,6 @@ impl<P: Prescalar + Copy> PartialEq<u32> for Number<P> {
     }
 }
 
-pub trait Prescalar {
-    fn scale(&self) -> u32;
-
-    fn digits(&self) -> usize {
-        let mut n = self.scale();
-        let mut digits = 0;
-
-        while n >= 10 {
-            digits += 1;
-            n /= 10;
-        }
-
-        digits
-    }
-}
-
 macro_rules! decl_prescalar {
     ($name:ident => $factor:expr;) => {
         #[derive(Debug, Copy, Clone, Default, PartialEq, Eq, Hash)]
@@ -149,10 +149,15 @@ decl_prescalar! {
     Ten => 10;
 }
 
+impl Prescalar for u32 {
+    fn scale(&self) -> u32 {
+        *self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::fmt::Debug;
 
     #[test]
     fn count_the_digits() {

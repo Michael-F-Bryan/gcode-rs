@@ -2,6 +2,8 @@
 
 #![no_std]
 
+extern crate arrayvec;
+
 #[cfg(test)]
 #[macro_use]
 extern crate std;

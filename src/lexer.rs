@@ -1,5 +1,5 @@
-use number::{Number, Prescalar, Thousand};
-use types::Span;
+use number::{Number, Prescalar};
+use types::{Span, Word};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Lexer<'input> {
@@ -82,7 +82,7 @@ impl<'input> Lexer<'input> {
             if lexy.peek() == Some('.') {
                 lexy.advance();
                 lexy.read_integer();
-            } 
+            }
 
             let number = lexy.src[start..lexy.current_index]
                 .parse()
@@ -107,7 +107,7 @@ impl<'input> Lexer<'input> {
         })
     }
 
-    /// Tries to tokenize a thing. If the tokenizing fails then reset the 
+    /// Tries to tokenize a thing. If the tokenizing fails then reset the
     /// `current_index` back to its initial value.
     fn try_or_backtrack<F, T>(&mut self, thunk: F) -> Option<T>
     where
@@ -178,13 +178,6 @@ impl<'input> Iterator for Lexer<'input> {
 
         None
     }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Word {
-    pub span: Span,
-    pub letter: char,
-    pub number: Number<Thousand>,
 }
 
 #[cfg(test)]
