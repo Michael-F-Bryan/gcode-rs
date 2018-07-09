@@ -11,7 +11,8 @@ extern crate quickcheck;
 #[cfg(test)]
 extern crate rand;
 
-pub mod parse;
-mod validate;
+mod parse;
+mod types;
 
-pub use validate::validate;
+pub use parse::parse;
+pub use types::*;
