@@ -76,10 +76,12 @@ impl<'input> Lexer<'input> {
     fn read_number(&mut self) -> Option<f32> {
         self.try_or_backtrack(|lexy| {
             let start = lexy.current_index;
+
+            lexy.chomp('-');
+
             let integral_part = lexy.read_integer()?;
 
-            if lexy.peek() == Some('.') {
-                lexy.advance();
+            if lexy.chomp('.') {
                 lexy.read_integer();
             }
 
@@ -88,6 +90,15 @@ impl<'input> Lexer<'input> {
                 .expect("Parse always succeeds");
             Some(number)
         })
+    }
+
+    fn chomp(&mut self, expected: char) -> bool {
+        if self.peek() == Some(expected) {
+            self.advance();
+            true
+        } else {
+            false
+        }
     }
 
     fn read_word(&mut self) -> Option<Word> {
@@ -194,12 +205,21 @@ mod tests {
     }
 
     #[test]
-    fn tokenize_a_number() {
+    fn tokenize_an_integer() {
         let mut lexy = Lexer::new("123");
 
         let got = lexy.read_integer().unwrap();
 
         assert_eq!(got, 123);
+    }
+
+    #[test]
+    fn tokenize_a_float() {
+        let mut lexy = Lexer::new("-123.456");
+
+        let got = lexy.read_number().unwrap();
+
+        assert_eq!(got, -123.456);
     }
 
     #[test]

@@ -1,5 +1,5 @@
-use core::cmp;
 use arrayvec::ArrayVec;
+use core::cmp;
 
 pub type Words = [Word; 8];
 
@@ -28,7 +28,7 @@ impl Gcode {
             Some(i) => self.arguments[i] = arg,
             None => {
                 let _ = self.arguments.try_push(arg);
-            },
+            }
         }
     }
 }

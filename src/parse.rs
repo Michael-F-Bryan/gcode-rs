@@ -43,35 +43,39 @@ impl<'input> Iterator for Parser<'input> {
     }
 }
 
-fn parse_o<I>(iter: &mut Peekable<I>) -> Gcode 
-    where I: Iterator<Item = Word>
+fn parse_o<I>(iter: &mut Peekable<I>) -> Gcode
+where
+    I: Iterator<Item = Word>,
 {
     let word = iter.next().expect("Already checked");
 
     Gcode::new(Mnemonic::ProgramNumber, word.number, word.span)
 }
 
-fn parse_t<I>(iter: &mut Peekable<I>) -> Gcode 
-    where I: Iterator<Item = Word>
+fn parse_t<I>(iter: &mut Peekable<I>) -> Gcode
+where
+    I: Iterator<Item = Word>,
 {
     let word = iter.next().expect("Already checked");
 
     Gcode::new(Mnemonic::ToolChange, word.number, word.span)
 }
 
-fn parse_machine<I>(iter: &mut Peekable<I>) -> Gcode 
-    where I: Iterator<Item = Word>
+fn parse_machine<I>(iter: &mut Peekable<I>) -> Gcode
+where
+    I: Iterator<Item = Word>,
 {
     let word = iter.next().expect("Already checked");
 
     Gcode::new(Mnemonic::MachineRoutine, word.number, word.span)
 }
 
-fn parse_g<I>(iter: &mut Peekable<I>) -> Gcode 
-    where I: Iterator<Item = Word>
+fn parse_g<I>(iter: &mut Peekable<I>) -> Gcode
+where
+    I: Iterator<Item = Word>,
 {
     let word = iter.next().expect("Already checked");
-    let mut code = Gcode::new(Mnemonic::MachineRoutine, word.number, word.span);
+    let mut code = Gcode::new(Mnemonic::General, word.number, word.span);
 
     parse_args(iter, &mut code);
 
@@ -79,11 +83,16 @@ fn parse_g<I>(iter: &mut Peekable<I>) -> Gcode
 }
 
 fn parse_args<I>(iter: &mut Peekable<I>, code: &mut Gcode)
-    where I: Iterator<Item = Word>
+where
+    I: Iterator<Item = Word>,
 {
     let current_line = code.span.source_line;
 
-    while iter.peek().map(|w| w.span.source_line == current_line && is_arg(w.letter)).unwrap_or(false) {
+    while iter
+        .peek()
+        .map(|w| w.span.source_line == current_line && is_arg(w.letter))
+        .unwrap_or(false)
+    {
         let arg = iter.next().expect("Already checked");
         code.add_argument(arg);
     }
@@ -143,7 +152,7 @@ mod tests {
         });
 
     parse_test!(parse_a_gcode_with_arguments, "G01 X100 Y50.0" => Gcode {
-            mnemonic: Mnemonic::MachineRoutine,
+            mnemonic: Mnemonic::General,
             number: 1.0,
             span: Span::new(0, 14, 0),
             arguments: vec![
