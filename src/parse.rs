@@ -33,51 +33,71 @@ impl<'input> Iterator for Parser<'input> {
     type Item = Gcode;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.peek()?.letter {
-            'O' => Some(parse_o(&mut self.lexer)),
-            'T' => Some(parse_t(&mut self.lexer)),
-            'M' => Some(parse_machine(&mut self.lexer)),
-            'G' => Some(parse_g(&mut self.lexer)),
-            _ => unimplemented!(),
+        let mut last_n = None;
+
+        while let Some(next_letter) = self.peek().map(|w| w.letter) {
+            let got = match next_letter {
+                'O' => parse_o(&mut self.lexer),
+                'T' => parse_t(&mut self.lexer),
+                'M' => parse_machine(&mut self.lexer),
+                'G' => parse_g(&mut self.lexer),
+                'N' => {
+                    last_n = self.lexer.next();
+                    continue;
+                }
+                c => unimplemented!("Unknown code, {:?}", c),
+            };
+
+            match last_n {
+                Some(n) => return Some(got.with_line_number(n)),
+                None => return Some(got),
+            }
         }
+
+        None
     }
 }
+
 
 fn parse_o<I>(iter: &mut Peekable<I>) -> Gcode
 where
     I: Iterator<Item = Word>,
 {
-    let word = iter.next().expect("Already checked");
-
-    Gcode::new(Mnemonic::ProgramNumber, word.number, word.span)
+    do_parse(iter, Mnemonic::ProgramNumber, false)
 }
 
 fn parse_t<I>(iter: &mut Peekable<I>) -> Gcode
 where
     I: Iterator<Item = Word>,
 {
-    let word = iter.next().expect("Already checked");
-
-    Gcode::new(Mnemonic::ToolChange, word.number, word.span)
+    do_parse(iter, Mnemonic::ToolChange, false)
 }
 
 fn parse_machine<I>(iter: &mut Peekable<I>) -> Gcode
 where
     I: Iterator<Item = Word>,
 {
-    let word = iter.next().expect("Already checked");
-
-    Gcode::new(Mnemonic::MachineRoutine, word.number, word.span)
+    do_parse(iter, Mnemonic::MachineRoutine, true)
 }
 
 fn parse_g<I>(iter: &mut Peekable<I>) -> Gcode
 where
     I: Iterator<Item = Word>,
 {
-    let word = iter.next().expect("Already checked");
-    let mut code = Gcode::new(Mnemonic::General, word.number, word.span);
+    do_parse(iter, Mnemonic::General, true)
+}
 
-    parse_args(iter, &mut code);
+fn do_parse<I>(iter: &mut Peekable<I>, mnemonic: Mnemonic, takes_args: bool) -> Gcode 
+where
+    I: Iterator<Item = Word>,
+{
+    let word = iter.next().expect("Already checked");
+
+    let mut code = Gcode::new(mnemonic, word.number, word.span);
+
+    if takes_args {
+        parse_args(iter, &mut code);
+    }
 
     code
 }
@@ -99,7 +119,8 @@ where
 }
 
 fn is_arg(c: char) -> bool {
-    // we just assume all letters except mnemonics are argument material
+    // gcodes are kinda all over the place, so we just assume all letters 
+    // except mnemonics are argument material
     match c.to_ascii_uppercase() {
         'O' | 'M' | 'T' | 'G' => false,
         other if other.is_ascii_alphabetic() => true,
@@ -155,6 +176,7 @@ mod tests {
             mnemonic: Mnemonic::General,
             number: 1.0,
             span: Span::new(0, 14, 0),
+            line_number: None,
             arguments: vec![
                 Word { 
                     letter: 'X', 

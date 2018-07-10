@@ -1,28 +1,52 @@
 use arrayvec::ArrayVec;
 use core::cmp;
 
-pub type Words = [Word; 8];
+pub const MAX_ARGS: usize = 8;
+pub type Words = [Word; MAX_ARGS];
 
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Gcode {
-    pub mnemonic: Mnemonic,
-    pub number: f32,
-    pub arguments: ArrayVec<Words>,
-    pub span: Span,
+    pub(crate) mnemonic: Mnemonic,
+    pub(crate) number: f32,
+    pub(crate) line_number: Option<Word>,
+    pub(crate) arguments: ArrayVec<Words>,
+    pub(crate) span: Span,
 }
 
 impl Gcode {
-    pub fn new(mnemonic: Mnemonic, number: f32, span: Span) -> Gcode {
+    pub fn new<F: Into<f32>>(mnemonic: Mnemonic, number: F, span: Span) -> Gcode {
         Gcode {
             mnemonic,
-            number,
+            number: number.into(),
             span,
-            arguments: ArrayVec::new(),
+            arguments: ArrayVec::default(),
+            line_number: None,
         }
     }
 
+    pub fn mnemonic(&self) -> Mnemonic {
+        self.mnemonic
+    }
+
+    pub fn args(&self) -> &[Word] {
+        &self.arguments
+    }
+
+    pub fn major_number(&self) -> u32 {
+        self.number.trunc() as u32
+    }
+
+    pub fn minor_number(&self) -> Option<u32> {
+        let remainder = self.number.fract();
+        unimplemented!()
+    }
+
+    fn merge_span(&mut self, span: &Span) {
+        self.span = self.span.merge(span);
+    }
+
     pub fn add_argument(&mut self, arg: Word) {
-        self.span = self.span.merge(&arg.span);
+        self.merge_span(&arg.span);
 
         match self.arguments.iter().position(|w| w.letter == arg.letter) {
             Some(i) => self.arguments[i] = arg,
@@ -31,6 +55,18 @@ impl Gcode {
             }
         }
     }
+
+    pub fn with_argument(mut self, arg: Word) -> Self {
+        self.add_argument(arg);
+        self
+    }
+
+    pub fn with_line_number(mut self, number: Word) -> Self {
+        self.merge_span(&number.span);
+        self.line_number = Some(number);
+
+        self
+    }
 }
 
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
@@ -38,6 +74,12 @@ pub struct Word {
     pub span: Span,
     pub letter: char,
     pub number: f32,
+}
+
+impl Word {
+    pub fn new<F: Into<f32>>(letter: char, number: F, span: Span) -> Word {
+        Word { letter, number: number.into(), span }
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
