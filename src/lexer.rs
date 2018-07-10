@@ -109,11 +109,7 @@ impl<'input> Lexer<'input> {
             let number = lexy.read_number()?;
 
             let span = Span::new(start, lexy.current_index, start_line);
-            Some(Word {
-                letter,
-                number,
-                span,
-            })
+            Some(Word::new(letter, number, span))
         })
     }
 
@@ -273,11 +269,7 @@ mod tests {
     #[test]
     fn tokenize_a_word() {
         let src = "G01";
-        let should_be = Word {
-            letter: 'G',
-            number: 1.0,
-            span: Span::new(0, src.len(), 0),
-        };
+        let should_be = Word::new('G', 1.0, Span::new(0, src.len(), 0));
 
         let got = Lexer::new(src).next().unwrap();
 

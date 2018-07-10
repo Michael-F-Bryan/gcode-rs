@@ -54,7 +54,6 @@ macro_rules! parse_fixture {
             let src = include_str!(concat!("data/", $filename));
             let num_gcodes = gcode::parse(src).count();
 
-            println!("{}", src);
             assert_eq!(num_gcodes, $num_codes);
         }
         
@@ -63,4 +62,10 @@ macro_rules! parse_fixture {
 
 parse_fixture!(parse_program_1, "program_1.gcode" => 24);
 parse_fixture!(parse_program_2, "program_2.gcode" => 14);
+// Doesn't work because it uses "S" as a command
+//parse_fixture!(parse_program_3, "program_3.gcode" => 410);
+
+// These guys take forever to parse...
+//parse_fixture!(parse_octocat, "PI_octcat.gcode" => 145362);
+//parse_fixture!(parse_rust_logo, "PI_rustlogo.gcode" => 195701);
 
