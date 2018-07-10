@@ -43,6 +43,11 @@ impl Gcode {
         &self.arguments
     }
 
+    /// Get the line number given to this gode (e.g. the `20` in `N20 G04 P100`).
+    pub fn line_number(&self) -> Option<u32> {
+        self.line_number
+    }
+
     /// The number associated with this `Gcode` (e.g. the `01` in `G01 X123`).
     pub fn number(&self) -> f32 {
         self.number

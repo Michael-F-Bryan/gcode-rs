@@ -11,7 +11,7 @@
 //!     G01 X-75 Y-75 S500 M3 
 //!     G43 Z100 H1
 //!     G01 Z5
-//!     N42 G01 Z-20 F100";
+//!     N20 G01 Z-20 F100";
 //!
 //! let mut lines = gcode::parse(src);
 //!
@@ -31,8 +31,9 @@
 //! assert_eq!(g01.args().len(), 3);
 //! assert_eq!(g01.value_for('X'), Some(-75.0));
 //!
-//! let codes_remaining = lines.count();
-//! assert_eq!(codes_remaining, 4);
+//! let rest: Vec<_> = lines.collect();
+//! assert_eq!(rest.len(), 4);
+//! assert_eq!(rest[3].line_number(), Some(20));
 //! ```
 
 
