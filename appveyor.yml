@@ -8,9 +8,6 @@ environment:
     CRATE_NAME: gcode
 
   matrix:
-    # MinGW
-    - TARGET: x86_64-pc-windows-gnu
-
     # MSVC
     - TARGET: i686-pc-windows-msvc
 

@@ -1,98 +1,65 @@
-//! A crate for parsing gcodes without relying on `std`.
-//!
-//! The crate uses iterators extensively to implement a zero-allocation lexer
-//! and parser.
-//!
+//! A `no_std` gcode parsing library.
 //!
 //! # Examples
 //!
-//! You can manually exercise the entire pipeline as follows:
-//!
 //! ```rust
-//! use gcode::{Tokenizer, Parser};
+//! use gcode::Mnemonic;
 //!
-//! let src = "G00 X10.0 Y20.0; G00 Z-10.0; G01 X55.2 Y-32.0 F500;";
+//! let src = "O1000
+//!     T1 M6
+//!     G90 
+//!     G01 X-75 Y-75 S500 M3 
+//!     G43 Z100 H1
+//!     G01 Z5
+//!     N20 G01 Z-20 F100";
 //!
-//! // Construct a tokenizer and pass it our source code.
-//! let lexer = Tokenizer::new(src.chars());
+//! let mut lines = gcode::parse(src);
 //!
-//! // Ignore any errors we encounter to get a stream of `Token`s.
-//! let tokens = lexer.filter_map(|t| t.ok());
+//! let program_number = lines.next().unwrap();
+//! assert_eq!(program_number.major_number(), 1000);
 //!
-//! // Construct a parser which takes in the tokens.
-//! let parser = Parser::new(tokens);
+//! let tool_change = lines.next().unwrap();
+//! assert_eq!(tool_change.mnemonic(), Mnemonic::ToolChange);
+//! assert_eq!(tool_change.major_number(), 1);
 //!
-//! // Skip all parsing errors and then apply type checking, skipping errors again
-//! let lines = parser.filter_map(|l| l.ok());
+//! // skip the M6 and G90
+//! let _ = lines.next();
+//! let _ = lines.next();
 //!
-//! for line in lines {
-//!     println!("{:?}", line);
-//! }
+//! let g01 = lines.next().unwrap();
+//! assert_eq!(g01.major_number(), 1);
+//! assert_eq!(g01.args().len(), 3);
+//! assert_eq!(g01.value_for('X'), Some(-75.0));
+//!
+//! let rest: Vec<_> = lines.collect();
+//! assert_eq!(rest.len(), 4);
+//! assert_eq!(rest[3].line_number(), Some(20));
 //! ```
-//!
-//! [`Iterator`]: https://doc.rust-lang.org/nightly/core/iter/trait.Iterator.html
-//! [`Tokenizer`]: lexer/struct.Tokenizer.html
-//! [`BasicParser`]: parser/struct.BasicParser.html
-//! [`type_check()`]: high_level/fn.type_check.html
-//! [`Token`]: lexer/struct.Token.html
-//! [`low_level::Line`]: low_level/enum.Line.html
-//! [`high_level::Line`]: high_level/enum.Line.html
+
 
 #![no_std]
 #![deny(missing_docs,
-        missing_debug_implementations,
+        missing_debug_implementations, 
         missing_copy_implementations,
-        trivial_casts,
+        trivial_casts, 
         trivial_numeric_casts,
         unsafe_code,
-        unused_import_braces,
-        unused_qualifications,
-        unstable_features)]
-#![allow(deprecated)]
+        unstable_features,
+        unused_import_braces, 
+        unused_qualifications)]
+
+extern crate arrayvec;
 
 #[cfg(test)]
 #[macro_use]
 extern crate std;
-
 #[cfg(test)]
 #[macro_use]
-extern crate quickcheck;
+extern crate pretty_assertions;
 
-#[cfg(test)]
-extern crate rand;
+mod lexer;
+mod parse;
+mod types;
 
-extern crate arrayvec;
-
-#[deprecated(since="0.2.0", note="Please use the `parser` module instead")]
-pub mod low_level;
-pub mod lexer;
-mod helpers;
-pub mod parser;
-
-pub use parser::Parser;
-pub use lexer::{Tokenizer, Span};
-pub use low_level::BasicParser;
-pub use errors::*;
-
-
-mod errors {
-    use super::*;
-
-    /// An alias for the `Result` type.
-    pub type Result<T> = ::core::result::Result<T, Error>;
-
-    /// The error type.
-    #[derive(Debug, Copy, Clone, PartialEq)]
-    pub enum Error {
-        /// Encountered an unknown token at a particular location.
-        UnknownToken(char, Span),
-        /// Reached the end of input, unexpectedly.
-        UnexpectedEOF,
-
-        /// A syntax error and its location.
-        SyntaxError(&'static str, Span),
-
-        /// During type-checking invalid command conditions were encountered.
-        InvalidCommand(&'static str),
-    }
-}
+pub use parse::parse;
+pub use types::*;

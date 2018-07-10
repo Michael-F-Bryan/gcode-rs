@@ -1,503 +1,278 @@
-//! A module for turning raw gcode into tokens to be processed by the parser.
+use types::{Span, Word};
 
-use core::iter::Peekable;
-use core::fmt::{self, Display, Formatter};
-
-
-#[cfg(test)]
-use quickcheck::{Arbitrary, Gen};
-#[cfg(test)]
-use rand::{Rng, Rand};
-
-use errors::*;
-use helpers::*;
-
-
-/// A zero-allocation tokenizer.
-///
-/// # Examples
-///
-/// ```rust
-/// use gcode::lexer::Tokenizer;
-/// let src = "N40 G90 X1.0";
-/// let tokens: Vec<_> = Tokenizer::new(src.chars()).collect();
-/// ```
-#[derive(Debug)]
-pub struct Tokenizer<I>
-    where I: Iterator<Item = char>
-{
-    src: Peekable<I>,
-    line: usize,
-    column: usize,
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct Lexer<'input> {
+    src: &'input str,
+    current_index: usize,
+    current_line: usize,
 }
 
-
-impl<I> Tokenizer<I>
-    where I: Iterator<Item = char>
-{
-    /// Create a new `Tokenizer` from some `char` iterator.
-    pub fn new(src: I) -> Self {
-        Tokenizer {
-            src: src.peekable(),
-            line: 0,
-            column: 0,
+impl<'input> Lexer<'input> {
+    pub fn new(src: &'input str) -> Lexer<'input> {
+        Lexer {
+            src,
+            current_index: 0,
+            current_line: 0,
         }
     }
 
-    fn next_token(&mut self) -> Option<Result<Token>> {
-        while let Some(peek) = self.next_char() {
-            if peek.is_whitespace() {
-                continue;
+    fn skip(&mut self) -> usize {
+        let mut total_skipped = 0;
+
+        loop {
+            let bytes_skipped = self.skip_whitespace() + self.skip_comments();
+            if bytes_skipped == 0 {
+                break;
+            } else {
+                total_skipped += bytes_skipped;
+            }
+        }
+
+        total_skipped
+    }
+
+    fn skip_whitespace(&mut self) -> usize {
+        self.take_while(|c| c.is_whitespace()).len()
+    }
+
+    fn skip_comments(&mut self) -> usize {
+        match self.peek() {
+            Some('(') => {
+                // consume up to the closing paren
+                let skipped = self.take_while(|c| c != ')');
+                // then consume the paren itself
+                self.advance();
+                skipped.len() + 1
+            }
+            Some(';') => {
+                // skip until the end of the line
+                self.take_while(|c| c != '\n' && c != '\r').len()
+            }
+            _ => 0,
+        }
+    }
+
+    fn read_integer(&mut self) -> Option<u32> {
+        let read = self.take_while(|c| c.is_digit(10));
+
+        if read.is_empty() {
+            None
+        } else {
+            // FIXME: what happens if the number is too long?
+            Some(read.parse().expect("Should never fail"))
+        }
+    }
+
+    fn read_mnemonic(&mut self) -> Option<char> {
+        match self.peek() {
+            Some(c) if c.is_ascii_alphabetic() => {
+                self.advance();
+                Some(c.to_ascii_uppercase())
+            }
+            _ => None,
+        }
+    }
+
+    fn read_number(&mut self) -> Option<f32> {
+        self.try_or_backtrack(|lexy| {
+            let start = lexy.current_index;
+
+            lexy.chomp('-');
+
+            let _integral_part = lexy.read_integer()?;
+
+            if lexy.chomp('.') {
+                lexy.read_integer();
             }
 
-            let span = Span {
-                line: self.line,
-                column: self.column,
-            };
+            let number = lexy.src[start..lexy.current_index]
+                .parse()
+                .expect("Parse always succeeds");
+            Some(number)
+        })
+    }
 
-            let tok = match peek {
-                d if d.is_digit(10) => self.tokenize_number(d, span),
-                a if a.is_alphabetic() => self.tokenize_alpha(a, span),
+    fn chomp(&mut self, expected: char) -> bool {
+        if self.peek() == Some(expected) {
+            self.advance();
+            true
+        } else {
+            false
+        }
+    }
 
-                ';' => {
-                    self.skip_to_end_of_line();
-                    continue;
-                }
-                '(' => {
-                    self.skip_comment();
-                    continue;
-                }
+    fn read_word(&mut self) -> Option<Word> {
+        self.try_or_backtrack(|lexy| {
+            let start = lexy.current_index;
+            let start_line = lexy.current_line;
+            let letter = lexy.read_mnemonic()?;
+            let number = lexy.read_number()?;
 
-                '%' => {
-                    // Explicitly ignore percent signs
-                    continue;
-                    // Ok(Token {
-                    //        kind: TokenKind::Percent,
-                    //        span: span,
-                    //    })
-                }
-                '-' => {
-                    Ok(Token {
-                           kind: TokenKind::Minus,
-                           span: span,
-                       })
-                }
+            let span = Span::new(start, lexy.current_index, start_line);
+            Some(Word::new(letter, number, span))
+        })
+    }
 
-                other => Err(Error::UnknownToken(other, span)),
-            };
+    /// Tries to tokenize a thing. If the tokenizing fails then reset the
+    /// `current_index` back to its initial value.
+    fn try_or_backtrack<F, T>(&mut self, thunk: F) -> Option<T>
+    where
+        F: FnOnce(&mut Lexer) -> Option<T>,
+    {
+        let start = self.current_index;
 
-            return Some(tok);
+        let got = thunk(self);
+        if got.is_none() {
+            self.current_index = start;
+        }
+
+        got
+    }
+
+    fn take_while<F>(&mut self, mut predicate: F) -> &'input str
+    where
+        F: FnMut(char) -> bool,
+    {
+        let start = self.current_index;
+
+        while let Some(c) = self.peek() {
+            if predicate(c) {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        &self.src[start..self.current_index]
+    }
+
+    fn remaining(&self) -> &str {
+        &self.src[self.current_index..]
+    }
+
+    fn peek(&self) -> Option<char> {
+        self.remaining().chars().next()
+    }
+
+    fn advance(&mut self) {
+        if let Some(c) = self.peek() {
+            self.current_index += c.len_utf8();
+            if c == '\n' {
+                self.current_line += 1;
+            }
+        }
+    }
+
+    fn finished(&self) -> bool {
+        self.remaining().is_empty()
+    }
+}
+
+impl<'input> Iterator for Lexer<'input> {
+    type Item = Word;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while !self.finished() {
+            self.skip();
+
+            match self.read_word() {
+                Some(word) => return Some(word),
+                // couldn't find anything. Let's step past it and try again
+                None => self.advance(),
+            }
         }
 
         None
     }
-
-    fn next_char(&mut self) -> Option<char> {
-        let next = self.src.next();
-
-        if let Some(n) = next {
-            self.column += 1;
-            if n == '\n' {
-                self.line += 1;
-                self.column = 0;
-            }
-        }
-
-        next
-    }
-
-    fn tokenize_number(&mut self, first: char, span: Span) -> Result<Token> {
-        // TODO: Make clean... pls
-        let (integer_part, _) = self.tokenize_integer(first);
-
-        match self.src.peek() {
-            Some(&'.') => {}
-            _ => {
-                let kind = TokenKind::Number(integer_part as f32);
-                return Ok(Token { kind, span });
-            }
-        }
-
-        let _ = self.next_char();
-
-        let kind = match self.src.peek().cloned() {
-            Some(d) if d.is_digit(10) => {
-                let next = self.next_char().unwrap();
-                let (fractional_part, length) = self.tokenize_integer(next);
-
-                let number = float_from_integers(integer_part, fractional_part, length);
-                TokenKind::Number(number)
-            }
-            _ => TokenKind::Number(integer_part as f32),
-        };
-
-        Ok(Token { kind, span })
-    }
-
-    fn tokenize_integer(&mut self, first: char) -> (u32, u32) {
-        // We've already established that `first` is 0..9
-        let mut n = first.to_digit(10).unwrap();
-        let mut count = 1;
-
-        while let Some(peek) = self.src.peek().cloned() {
-            if !peek.is_digit(10) {
-                break;
-            }
-
-            // If next() was None, the `while let ...` would never get here
-            let next = self.next_char().unwrap();
-
-            // TODO: What happens when `n` overflows
-            n = n * 10 + next.to_digit(10).unwrap();
-            count += 1;
-        }
-
-        (n, count)
-    }
-
-    fn tokenize_alpha(&mut self, first: char, span: Span) -> Result<Token> {
-        let kind = match first.uppercase() {
-            'G' => TokenKind::G,
-            'M' => TokenKind::M,
-            'T' => TokenKind::T,
-            'N' => TokenKind::N,
-
-            'X' => TokenKind::X,
-            'Y' => TokenKind::Y,
-            'Z' => TokenKind::Z,
-            'R' => TokenKind::R,
-            'F' => TokenKind::FeedRate,
-            'O' => TokenKind::O,
-            'S' => TokenKind::S,
-            'H' => TokenKind::H,
-            'P' => TokenKind::P,
-            'I' => TokenKind::I,
-            'J' => TokenKind::J,
-            'E' => TokenKind::E,
-
-            _ => TokenKind::Other(first),
-        };
-
-        Ok(Token { kind, span })
-    }
-
-    fn skip_to_end_of_line(&mut self) {
-        while let Some(peek) = self.src.peek().cloned() {
-            if peek == '\n' {
-                let _ = self.next_char();
-                break;
-            }
-
-            let _ = self.next_char();
-        }
-    }
-
-    fn skip_comment(&mut self) {
-        while self.src.peek().map_or(false, |&peek| peek != ')') {
-            let _ = self.next_char();
-        }
-
-        let _ = self.next_char();
-    }
 }
-
-
-impl<I> Iterator for Tokenizer<I>
-    where I: Iterator<Item = char>
-{
-    type Item = Result<Token>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.next_token()
-    }
-}
-
-
-/// A gcode Token.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Token {
-    kind: TokenKind,
-    span: Span,
-}
-
-impl Token {
-    /// Which kind of token is this?
-    #[inline]
-    pub fn kind(&self) -> TokenKind {
-        self.kind
-    }
-
-    /// Get the location of the token in the source code.
-    #[inline]
-    pub fn span(&self) -> Span {
-        self.span
-    }
-}
-
-
-/// A `gcode` token.
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[allow(missing_docs)]
-pub enum TokenKind {
-    /// A floating point number.
-    Number(f32),
-
-    // Command Types
-    G,
-    T,
-    N,
-    O,
-
-    // arguments
-    X,
-    Y,
-    Z,
-    FeedRate,
-    M,
-    S,
-    R,
-    H,
-    P,
-    I,
-    J,
-    E,
-
-    Minus,
-    Percent,
-
-    /// An escape hatch which matches any other single alphabetic character.
-    ///
-    /// # Note
-    ///
-    /// This probably shouldn't be used outside the crate, if you end up
-    /// matching on a TokenKind::Other chances are you need to amend the
-    /// `TokenKind` definition.
-    #[doc(hidden)]
-    Other(char),
-}
-
-
-/// A representation of a position in source code.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Span {
-    /// The line number (counting from zero).
-    pub line: usize,
-    /// The column number (counting from zero).
-    pub column: usize,
-}
-
-
-impl From<(usize, usize)> for Span {
-    fn from(other: (usize, usize)) -> Self {
-        Span {
-            line: other.0,
-            column: other.1,
-        }
-    }
-}
-
-impl Display for Span {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        write!(f, "line: {}, column: {}", self.line, self.column)
-    }
-}
-
-impl PartialEq<TokenKind> for Token {
-    fn eq(&self, other: &TokenKind) -> bool {
-        self.kind == *other
-    }
-}
-
-impl From<TokenKind> for Token {
-    fn from(other: TokenKind) -> Self {
-        Token {
-            kind: other,
-            span: Span::default(),
-        }
-    }
-}
-
-
-#[cfg(test)]
-impl Rand for TokenKind {
-    fn rand<R: Rng>(rng: &mut R) -> Self {
-        loop {
-            // TODO: Update this every time `TokenKind` gains a variant
-            let tk = match rng.gen::<u8>() {
-                1 => TokenKind::Number(rng.gen()),
-                2 => TokenKind::G,
-                3 => TokenKind::T,
-                4 => TokenKind::N,
-                5 => TokenKind::O,
-                6 => TokenKind::X,
-                7 => TokenKind::Y,
-                8 => TokenKind::Z,
-                9 => TokenKind::FeedRate,
-                10 => TokenKind::M,
-                11 => TokenKind::S,
-                12 => TokenKind::R,
-                13 => TokenKind::H,
-                14 => TokenKind::P,
-                15 => TokenKind::I,
-                16 => TokenKind::J,
-                17 => TokenKind::E,
-                18 => TokenKind::Minus,
-                19 => TokenKind::Percent,
-                _ => continue,
-            };
-
-            return tk;
-        }
-    }
-}
-
-#[cfg(test)]
-impl Rand for Token {
-    fn rand<R: Rng>(rng: &mut R) -> Self {
-        Token::from(rng.gen::<TokenKind>())
-    }
-}
-
-#[cfg(test)]
-impl Arbitrary for Token {
-    fn arbitrary<G: Gen>(gen: &mut G) -> Self {
-        gen.gen()
-    }
-}
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn lex_single_letter_tokens() {
-        let inputs = [("G", TokenKind::G),
-                      ("N", TokenKind::N),
-                      ("T", TokenKind::T),
-                      ("O", TokenKind::O),
+    fn skip_whitespace() {
+        let mut lexy = Lexer::new("   ");
+        assert!(!lexy.finished());
 
-                      ("X", TokenKind::X),
-                      ("Y", TokenKind::Y),
-                      ("Z", TokenKind::Z),
-                      ("F", TokenKind::FeedRate),
-                      ("M", TokenKind::M),
-                      ("S", TokenKind::S),
-                      ("R", TokenKind::R),
-                      ("H", TokenKind::H),
-                      ("P", TokenKind::P),
-                      ("I", TokenKind::I),
-                      ("J", TokenKind::J),
-                      ("E", TokenKind::E),
+        lexy.skip_whitespace();
 
-                      ("w", TokenKind::Other('w'))];
+        assert!(lexy.finished());
+    }
 
-        for &(src, should_be) in &inputs {
-            let mut tokenizer = Tokenizer::new(src.chars());
-            let first = tokenizer.next_token().unwrap().unwrap();
+    #[test]
+    fn tokenize_an_integer() {
+        let mut lexy = Lexer::new("123");
 
-            assert_eq!(first, should_be);
+        let got = lexy.read_integer().unwrap();
+
+        assert_eq!(got, 123);
+    }
+
+    #[test]
+    fn tokenize_a_float() {
+        let mut lexy = Lexer::new("-123.456");
+
+        let got = lexy.read_number().unwrap();
+
+        assert_eq!(got, -123.456);
+    }
+
+    #[test]
+    fn tokenize_a_character() {
+        let inputs = vec![
+            ("G123", Some('G')),
+            ("A", Some('A')),
+            ("a", Some('A')),
+            ("$", None),
+            ("123", None),
+            (" ", None),
+        ];
+
+        for (src, should_be) in inputs {
+            let mut lexy = Lexer::new(src);
+            let got = lexy.read_mnemonic();
+            assert_eq!(got, should_be);
         }
     }
 
     #[test]
-    fn tokenize_numbers() {
-        let inputs = [("100000000", TokenKind::Number(100000000.0)),
-                      ("0", TokenKind::Number(0.0)),
-                      ("12", TokenKind::Number(12.0)),
-                      ("12.", TokenKind::Number(12.0)),
-                      ("12.34", TokenKind::Number(12.34)),
-                      ("00012312.00000001", TokenKind::Number(12312.00000001)),
-                      ("12.34.", TokenKind::Number(12.34))];
+    fn skip_a_bracket_comment() {
+        let src = "(this is a comment)";
+        let mut lexy = Lexer::new(src);
 
-        for &(src, should_be) in &inputs {
-            println!("{} => {:?}", src, should_be);
-            let mut tokenizer = Tokenizer::new(src.chars());
-            let first = tokenizer.next_token().unwrap().unwrap();
+        lexy.skip_comments();
 
-            assert_eq!(first, should_be);
-        }
+        assert!(lexy.finished());
     }
 
     #[test]
-    fn tokenize_integers() {
-        let inputs = [("12", (12, 2)),
-                      ("1", (1, 1)),
-                      ("12.34", (12, 2)),
-                      ("12.34.", (12, 2))];
+    fn skip_a_line_comment() {
+        let src = ";this is a comment\n";
+        let mut lexy = Lexer::new(src);
 
-        for &(src, should_be) in &inputs {
-            let mut tokenizer = Tokenizer::new(src.chars());
-            let next = tokenizer.src.next().unwrap();
-            let first = tokenizer.tokenize_integer(next);
+        lexy.skip_comments();
 
-            assert_eq!(first, should_be);
-        }
+        assert_eq!(lexy.current_index, src.len() - 1);
     }
 
     #[test]
-    fn tokenizer_skips_comments() {
-        let src = "(hello world)7";
-        let mut tokenizer = Tokenizer::new(src.chars());
-        tokenizer.skip_comment();
-        assert_eq!(tokenizer.src.next(), Some('7'));
+    fn skip_a_line_comment_without_trailing_newline() {
+        let src = ";this is a comment";
+        let mut lexy = Lexer::new(src);
+
+        lexy.skip_comments();
+
+        assert!(lexy.finished());
     }
 
     #[test]
-    fn tokenizer_skips_to_end_of_line() {
-        let src = "awleifr 238r\n7";
-        let mut tokenizer = Tokenizer::new(src.chars());
-        tokenizer.skip_to_end_of_line();
-        assert_eq!(tokenizer.src.next(), Some('7'));
-    }
+    fn tokenize_a_word() {
+        let src = "G01";
+        let should_be = Word::new('G', 1.0, Span::new(0, src.len(), 0));
 
-    #[test]
-    fn case_insensitive_tokens() {
-        let lower = Tokenizer::new("g".chars()).next();
-        let upper = Tokenizer::new("G".chars()).next();
+        let got = Lexer::new(src).next().unwrap();
 
-        assert_eq!(lower, upper);
-    }
-
-    #[allow(trivial_casts)]
-    mod qc {
-        use super::*;
-        use std::prelude::v1::*;
-        use quickcheck::TestResult;
-
-        quickcheck!{
-            fn lexer_doesnt_panic(src: String) -> () {
-                let tokenizer = Tokenizer::new(src.chars());
-                for token in tokenizer{
-                    println!("{:?}", token);
-                }
-            }
-
-            fn lex_number(src: String) -> TestResult {
-                let mut chars = src.chars();
-                let first = match chars.next() {
-                    Some(c) if c.is_digit(10) => c,
-                    _ => return TestResult::discard(),
-                };
-
-                let mut tokenizer = Tokenizer::new(chars);
-                let n = tokenizer.tokenize_number(first, Span::default());
-
-                TestResult::from_bool(n.is_ok())
-            }
-
-            fn lex_alpha(src: String) -> TestResult {
-                let mut chars = src.chars();
-                let first = match chars.next() {
-                    Some(c) if c.is_alphabetic() => c,
-                    _ => return TestResult::discard(),
-                };
-
-                let mut tokenizer = Tokenizer::new(chars);
-                let n = tokenizer.tokenize_alpha(first, Span::default());
-
-                TestResult::from_bool(n.is_ok())
-            }
-        }
+        assert_eq!(got, should_be);
     }
 }
