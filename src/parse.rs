@@ -20,6 +20,7 @@ impl<'input> Parser<'input> {
         }
     }
 
+    #[cfg(test)]
     fn is_finished(&mut self) -> bool {
         self.peek().is_none()
     }
@@ -49,7 +50,7 @@ impl<'input> Iterator for Parser<'input> {
             };
 
             match last_n {
-                Some(n) => return Some(got.with_line_number(n)),
+                Some(n) => return Some(got.with_line_number(n.number.abs().trunc() as u32, n.span)),
                 None => return Some(got),
             }
         }

@@ -1,7 +1,7 @@
-extern crate arrayvec;
+#[macro_use]
+extern crate pretty_assertions;
 extern crate gcode;
 
-use arrayvec::ArrayVec;
 use gcode::{Gcode, Mnemonic, Span, Word};
 
 #[test]
@@ -13,7 +13,7 @@ fn read_each_line_of_a_file() {
         G54 X-75 Y-75 S500 M3  (Position 6)
         G43 Z100 H1
         G01 Z5
-        G01 Z-20 F100";
+        N42 G01 Z-20 F100";
 
     let got: Vec<_> = gcode::parse(src).collect();
 
@@ -39,8 +39,9 @@ fn read_each_line_of_a_file() {
         Gcode::new(Mnemonic::General, 1.0, Span::new(162, 168, 6))
             .with_argument(Word::new('Z', 5.0, Span::new(166, 168, 6))),
         Gcode::new(Mnemonic::General, 1.0, Span::new(177, 190, 7))
-            .with_argument(Word::new('Z', -20.0, Span::new(181, 185, 7)))
-            .with_argument(Word::new('F', 100.0, Span::new(186, 190, 7))),
+            .with_argument(Word::new('Z', -20.0, Span::new(185, 189, 7)))
+            .with_argument(Word::new('F', 100.0, Span::new(190, 194, 7)))
+            .with_line_number(42, Span::new(186, 194, 7)),
     ];
 
     assert_eq!(got, should_be);

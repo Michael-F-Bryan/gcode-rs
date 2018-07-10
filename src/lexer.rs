@@ -79,7 +79,7 @@ impl<'input> Lexer<'input> {
 
             lexy.chomp('-');
 
-            let integral_part = lexy.read_integer()?;
+            let _integral_part = lexy.read_integer()?;
 
             if lexy.chomp('.') {
                 lexy.read_integer();

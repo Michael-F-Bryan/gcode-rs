@@ -8,7 +8,7 @@ pub type Words = [Word; MAX_ARGS];
 pub struct Gcode {
     pub(crate) mnemonic: Mnemonic,
     pub(crate) number: f32,
-    pub(crate) line_number: Option<Word>,
+    pub(crate) line_number: Option<u32>,
     pub(crate) arguments: ArrayVec<Words>,
     pub(crate) span: Span,
 }
@@ -41,12 +41,12 @@ impl Gcode {
         unimplemented!()
     }
 
-    fn merge_span(&mut self, span: &Span) {
+    fn merge_span(&mut self, span: Span) {
         self.span = self.span.merge(span);
     }
 
     pub fn add_argument(&mut self, arg: Word) {
-        self.merge_span(&arg.span);
+        self.merge_span(arg.span);
 
         match self.arguments.iter().position(|w| w.letter == arg.letter) {
             Some(i) => self.arguments[i] = arg,
@@ -61,8 +61,8 @@ impl Gcode {
         self
     }
 
-    pub fn with_line_number(mut self, number: Word) -> Self {
-        self.merge_span(&number.span);
+    pub fn with_line_number(mut self, number: u32, span: Span) -> Self {
+        self.merge_span(span);
         self.line_number = Some(number);
 
         self
@@ -117,7 +117,7 @@ impl Span {
         }
     }
 
-    pub fn merge(&self, other: &Span) -> Span {
+    pub fn merge(&self, other: Span) -> Span {
         Span {
             start: cmp::min(self.start, other.start),
             end: cmp::max(self.end, other.end),
