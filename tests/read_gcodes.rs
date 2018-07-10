@@ -20,17 +20,17 @@ fn read_each_line_of_a_file() {
 
     let first_line = lines.next().unwrap();
     assert_eq!(first_line.mnemonic, Mnemonic::ProgramNumber);
-    assert_eq!(first_line.number, 1000);
+    assert_eq!(first_line.number, 1000.0);
 
     let tool_change = lines.next().unwrap();
     assert_eq!(tool_change.mnemonic, Mnemonic::ToolChange);
-    assert_eq!(tool_change.number, 1);
+    assert_eq!(tool_change.number, 1.0);
 
     let m6 = lines.next().unwrap();
     assert_eq!(m6.mnemonic, Mnemonic::MachineRoutine);
-    assert_eq!(m6.number, 6);
+    assert_eq!(m6.number, 6.0);
 
     let g0 = lines.next().unwrap();
     assert_eq!(g0.mnemonic, Mnemonic::General);
-    assert_eq!(g0.number, 0);
+    assert_eq!(g0.number, 0.0);
 }

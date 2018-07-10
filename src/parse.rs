@@ -48,7 +48,7 @@ fn parse_o<I>(iter: &mut Peekable<I>) -> Gcode
 {
     let word = iter.next().expect("Already checked");
 
-    Gcode::new(Mnemonic::ProgramNumber, word.number.convert(), word.span)
+    Gcode::new(Mnemonic::ProgramNumber, word.number, word.span)
 }
 
 fn parse_t<I>(iter: &mut Peekable<I>) -> Gcode 
@@ -56,7 +56,7 @@ fn parse_t<I>(iter: &mut Peekable<I>) -> Gcode
 {
     let word = iter.next().expect("Already checked");
 
-    Gcode::new(Mnemonic::ToolChange, word.number.convert(), word.span)
+    Gcode::new(Mnemonic::ToolChange, word.number, word.span)
 }
 
 fn parse_machine<I>(iter: &mut Peekable<I>) -> Gcode 
@@ -64,14 +64,14 @@ fn parse_machine<I>(iter: &mut Peekable<I>) -> Gcode
 {
     let word = iter.next().expect("Already checked");
 
-    Gcode::new(Mnemonic::MachineRoutine, word.number.convert(), word.span)
+    Gcode::new(Mnemonic::MachineRoutine, word.number, word.span)
 }
 
 fn parse_g<I>(iter: &mut Peekable<I>) -> Gcode 
     where I: Iterator<Item = Word>
 {
     let word = iter.next().expect("Already checked");
-    let mut code = Gcode::new(Mnemonic::MachineRoutine, word.number.convert(), word.span);
+    let mut code = Gcode::new(Mnemonic::MachineRoutine, word.number, word.span);
 
     parse_args(iter, &mut code);
 
@@ -102,7 +102,6 @@ fn is_arg(c: char) -> bool {
 mod tests {
     use super::*;
     use types::Span;
-    use number::Number;
 
     macro_rules! parse_test {
         ($name:ident, $src:expr => $should_be:expr) => {
@@ -124,38 +123,38 @@ mod tests {
 
     parse_test!(parse_a_program_number, "O123" => Gcode {
             mnemonic: Mnemonic::ProgramNumber,
-            number: Number::from(123),
+            number: 123.0,
             span: Span::new(0, 4, 0),
             ..Default::default()
         });
 
     parse_test!(parse_a_tool_change, "T6" => Gcode {
             mnemonic: Mnemonic::ToolChange,
-            number: Number::from(6),
+            number: 6.0,
             span: Span::new(0, 2, 0),
             ..Default::default()
         });
 
     parse_test!(parse_a_machine_code, "M30" => Gcode {
             mnemonic: Mnemonic::MachineRoutine,
-            number: Number::from(30),
+            number: 30.0,
             span: Span::new(0, 3, 0),
             ..Default::default()
         });
 
     parse_test!(parse_a_gcode_with_arguments, "G01 X100 Y50.0" => Gcode {
             mnemonic: Mnemonic::MachineRoutine,
-            number: Number::from(1),
+            number: 1.0,
             span: Span::new(0, 14, 0),
             arguments: vec![
                 Word { 
                     letter: 'X', 
-                    number: Number::from(100), 
+                    number: 100.0, 
                 span: Span::new(4, 8, 0),
                 },
                 Word { 
                     letter: 'Y', 
-                    number: Number::from(50.0), 
+                    number: 50.0, 
                     span: Span::new(9, 14, 0) 
                 },
             ].into_iter()

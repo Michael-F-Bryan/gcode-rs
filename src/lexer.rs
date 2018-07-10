@@ -1,4 +1,3 @@
-use number::{Number, Prescalar};
 use types::{Span, Word};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -74,7 +73,7 @@ impl<'input> Lexer<'input> {
         }
     }
 
-    fn read_number<P: Prescalar + Default>(&mut self) -> Option<Number<P>> {
+    fn read_number(&mut self) -> Option<f32> {
         self.try_or_backtrack(|lexy| {
             let start = lexy.current_index;
             let integral_part = lexy.read_integer()?;
@@ -256,7 +255,7 @@ mod tests {
         let src = "G01";
         let should_be = Word {
             letter: 'G',
-            number: Number::from(1),
+            number: 1.0,
             span: Span::new(0, src.len(), 0),
         };
 

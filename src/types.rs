@@ -1,5 +1,4 @@
 use core::cmp;
-use number::{Number, Ten, Thousand};
 use arrayvec::ArrayVec;
 
 pub type Words = [Word; 8];
@@ -7,13 +6,13 @@ pub type Words = [Word; 8];
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Gcode {
     pub mnemonic: Mnemonic,
-    pub number: Number<Ten>,
+    pub number: f32,
     pub arguments: ArrayVec<Words>,
     pub span: Span,
 }
 
 impl Gcode {
-    pub fn new(mnemonic: Mnemonic, number: Number<Ten>, span: Span) -> Gcode {
+    pub fn new(mnemonic: Mnemonic, number: f32, span: Span) -> Gcode {
         Gcode {
             mnemonic,
             number,
@@ -38,7 +37,7 @@ impl Gcode {
 pub struct Word {
     pub span: Span,
     pub letter: char,
-    pub number: Number<Thousand>,
+    pub number: f32,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]

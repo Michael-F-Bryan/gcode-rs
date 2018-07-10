@@ -12,7 +12,6 @@ extern crate std;
 extern crate pretty_assertions;
 
 mod lexer;
-pub mod number;
 mod parse;
 mod types;
 
