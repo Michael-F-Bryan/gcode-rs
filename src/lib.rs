@@ -1,6 +1,18 @@
-//! A `no_std` gcode parsing library.
+//! A gcode parsing library designed for `no_std` environments.
 //!
 //! # Examples
+//!
+//! The `gcode` API is extremely minimal, containing a single `parse()`
+//! function which takes a string and returns an iterator over the `Gcode`s it
+//! contains.
+//!
+//! Parsing is done on a best-effort basis, with any syntax errors being
+//! silently ignored. Because of this, you'll probably want to ensure a file is
+//! well formed. 
+//!
+//! > **Note:** The [examples/] folder in this project's repository contains a
+//! > simple program that will read an input file and print out any `Gcode`s it
+//! > sees.
 //!
 //! ```rust
 //! use gcode::Mnemonic;
@@ -35,6 +47,8 @@
 //! assert_eq!(rest.len(), 4);
 //! assert_eq!(rest[3].line_number(), Some(20));
 //! ```
+//!
+//! [examples/]: https://github.com/Michael-F-Bryan/gcode-rs/tree/master/examples
 
 
 #![no_std]
