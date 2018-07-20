@@ -9,7 +9,7 @@ pub fn parse<'input>(src: &'input str) -> impl Iterator<Item = Gcode> + 'input {
 
 /// A gcode parser which is extremely permissive in what input it will accept.
 #[derive(Debug, Clone)]
-struct Parser<'input> {
+pub(crate) struct Parser<'input> {
     lexer: Peekable<Lexer<'input>>,
 }
 
