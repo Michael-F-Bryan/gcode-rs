@@ -22,7 +22,7 @@
 //! let src = "G01 X-52.4 G4 P50.0";
 //!
 //! unsafe {
-//!     let success = ffi::parser_new(parser, src.as_ptr() as *const i8, src.len() as i32);
+//!     let success = ffi::parser_new(parser, src.as_ptr(), src.len() as i32);
 //!     assert!(success, "Creation failed");
 //!
 //!     let mut gcode_memory = [0; SIZE_OF_GCODE];
@@ -83,13 +83,13 @@ pub struct Parser {
 ///
 /// If creating the parser was successful.
 #[no_mangle]
-pub unsafe extern "C" fn parser_new(parser: *mut Parser, src: *const i8, src_len: i32) -> bool {
+pub unsafe extern "C" fn parser_new(parser: *mut Parser, src: *const u8, src_len: i32) -> bool {
     if src.is_null() || parser.is_null() {
         return false;
     }
 
     // first, turn the input into a proper UTF-8 string
-    let src = slice::from_raw_parts(src as *const u8, src_len as usize);
+    let src = slice::from_raw_parts(src, src_len as usize);
     let src = match str::from_utf8(src) {
         Ok(s) => s,
         Err(_) => return false,
