@@ -4,9 +4,16 @@ name = "gcode"
 version = "0.3.0"
 description = "A gcode parser for no-std applications."
 license = "MIT"
+build = "build.rs"
 
 [dev-dependencies]
 pretty_assertions = "0.5.1"
 
 [dependencies]
 arrayvec = "0.4.7"
+
+[lib]
+crate-type = ["rlib", "cdylib", "staticlib"]
+
+[build-dependencies]
+cbindgen = "0.6.0"

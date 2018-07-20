@@ -113,6 +113,7 @@ impl Gcode {
 
 /// A single `Word` in the `gcode` language (e.g. `X-12.3`).
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
+#[repr(C)]
 pub struct Word {
     /// The letter associated with this word (e.g. the `X` in `X12.3`).
     pub letter: char,
@@ -131,6 +132,7 @@ impl Word {
 
 /// A general command category.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[repr(C)]
 pub enum Mnemonic {
     /// A program number (`O555`).
     ProgramNumber,
@@ -154,6 +156,7 @@ impl Default for Mnemonic {
 /// The indices are set up such that `&original_text[start .. end]` will yield
 /// the selected text.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+#[repr(C)]
 pub struct Span {
     /// The starting index.
     pub start: usize,
