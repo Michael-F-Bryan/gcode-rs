@@ -10,7 +10,7 @@ generate_docs() {
 generate_bundle() {
     test -f Cargo.lock || cargo generate-lockfile
 
-    cross rustc --lib --target $TARGET --release -- -C lto
+    cross build --target $TARGET --release
     cp target/$TARGET/release/libgcode.{so,a} $stage/
 
     # We need the cbindgen tool for generating our header file
