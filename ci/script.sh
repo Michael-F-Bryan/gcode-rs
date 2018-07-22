@@ -14,8 +14,10 @@ main() {
     cross test --target $TARGET --release
 
     # We also want to test the C example
-    cd ffi-example
-    make && LD_LIBRARY_PATH=. ./example
+    if [ $TRAVIS_OS_NAME = linux ]; then
+        cd ffi-example
+        make && LD_LIBRARY_PATH=. ./example
+    fi
 }
 
 # we don't run the "test phase" when doing deploys
