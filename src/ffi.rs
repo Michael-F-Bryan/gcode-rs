@@ -8,8 +8,8 @@
 //! # Examples
 //!
 //! ```rust
-//! use gcode::ffi::{self, SIZE_OF_PARSER, SIZE_OF_GCODE, Parser};
-//! use gcode::Gcode;
+//! use gcode::ffi::{self, SIZE_OF_PARSER, SIZE_OF_GCODE};
+//! use gcode::{Parser, Gcode};
 //! use std::mem;
 //!
 //! // allocate some space on the stack for our parser. Normally you'd just use
@@ -58,17 +58,11 @@ use core::mem;
 use core::str;
 use core::ptr;
 use core::slice;
-use parse::Parser as MyParser;
+use parse::Parser;
 use types::{Gcode, Mnemonic, Word, Span};
 
 pub const SIZE_OF_PARSER: usize = 64;
 pub const SIZE_OF_GCODE: usize = 312;
-
-#[derive(Debug)]
-#[allow(missing_copy_implementations)]
-pub struct Parser {
-    __cant_construct: ()
-}
 
 /// Create a new parser.
 ///
@@ -96,10 +90,10 @@ pub unsafe extern "C" fn parser_new(parser: *mut Parser, src: *const u8, src_len
     };
 
     // create our parser, Parser<'input>
-    let local_parser = MyParser::new(src);
+    let local_parser = Parser::new(src);
     
     // Copy it to the destination
-    ptr::copy_nonoverlapping(&local_parser, parser as *mut MyParser, 1);
+    ptr::copy_nonoverlapping(&local_parser, parser, 1);
     
     // it is now the caller's responsibility to clean up `parser`, forget our
     // local copy
@@ -112,7 +106,7 @@ pub unsafe extern "C" fn parser_new(parser: *mut Parser, src: *const u8, src_len
 /// the input.
 #[no_mangle]
 pub unsafe extern "C" fn parser_next(parser: *mut Parser, gcode: *mut Gcode) -> bool {
-    let parser = &mut *(parser as *mut MyParser);
+    let parser = &mut *parser;
 
     match parser.next() {
         Some(got) => {
@@ -189,7 +183,7 @@ pub unsafe extern "C" fn parser_destroy(parser: *mut Parser) {
         return;
     }
 
-    ptr::drop_in_place(parser as *mut MyParser);
+    ptr::drop_in_place(parser);
 }
 
 
@@ -200,12 +194,13 @@ mod tests {
 
     #[test]
     fn constant_definitions_are_correct() {
-        assert_eq!(SIZE_OF_PARSER, mem::size_of::<MyParser>());
+        assert_eq!(SIZE_OF_PARSER, mem::size_of::<Parser>());
         assert_eq!(SIZE_OF_GCODE, mem::size_of::<Gcode>());
     }
 
     #[test]
     fn all_ffi_types_are_trivial() {
-        assert!(!mem::needs_drop::<MyParser>());
+        assert!(!mem::needs_drop::<Parser>());
+        // assert!(!mem::needs_drop::<Gcode>());
     }
 }

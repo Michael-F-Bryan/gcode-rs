@@ -23,7 +23,7 @@ before_cache:
 before_deploy:
   - cargo doc --all --verbose
   - cbindgen --output gcode.h
-  - cp target/release/libgcode.{a,so} .
+  - cp target/$TARGET/release/libgcode.{a,so} .
   - export VERSION=$(cat Cargo.toml | awk '$1 == "version" { print $3 }' | tr -d '"')
   - zip gcode.v$VERSION.$TARGET.zip gcode.h libgcode.so libgcode.a
 

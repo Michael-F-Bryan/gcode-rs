@@ -76,5 +76,5 @@ mod parse;
 mod types;
 pub mod ffi;
 
-pub use parse::parse;
+pub use parse::{parse, Parserj;
 pub use types::*;

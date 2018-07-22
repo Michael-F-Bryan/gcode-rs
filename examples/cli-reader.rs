@@ -4,7 +4,7 @@ use std::env;
 use std::process;
 use std::error::Error as StdError;
 use std::fs::File;
-use std::io::{self, Read, Error, ErrorKind, BufReader, BufRead};
+use std::io::{self, Read, Error, BufReader, BufRead};
 
 fn run() -> Result<(), Error> {
     let input = parse_args()?;

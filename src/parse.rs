@@ -3,18 +3,18 @@ use lexer::Lexer;
 use types::{Gcode, Mnemonic, Word};
 
 /// Parse a string of text into a stream of `Gcode`s.
-pub fn parse<'input>(src: &'input str) -> impl Iterator<Item = Gcode> + 'input {
+pub fn parse(src: &str) -> Parser {
     Parser::new(src)
 }
 
 /// A gcode parser which is extremely permissive in what input it will accept.
 #[derive(Debug, Clone)]
-pub(crate) struct Parser<'input> {
+pub struct Parser<'input> {
     lexer: Peekable<Lexer<'input>>,
 }
 
 impl<'input> Parser<'input> {
-    pub fn new(src: &'input str) -> Parser<'input> {
+    pub(crate) fn new(src: &'input str) -> Parser<'input> {
         Parser {
             lexer: Lexer::new(src).peekable(),
         }
