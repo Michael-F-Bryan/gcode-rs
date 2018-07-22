@@ -61,8 +61,17 @@ use core::slice;
 use parse::Parser;
 use types::{Gcode, Mnemonic, Word, Span};
 
-pub const SIZE_OF_PARSER: usize = 64;
-pub const SIZE_OF_GCODE: usize = 312;
+cfg_if!{
+    if #[cfg(target_pointer_width = "64")] {
+        pub const SIZE_OF_PARSER: usize = 64;
+        pub const SIZE_OF_GCODE: usize = 312;
+    } else if #[cfg(target_pointer_width = "32")] {
+        pub const SIZE_OF_PARSER: usize = 32;
+        pub const SIZE_OF_GCODE: usize = 156;
+    } else {
+        compile_error!("The size of a Parser and Gcode is unknown");
+    }
+}
 
 /// Create a new parser.
 ///

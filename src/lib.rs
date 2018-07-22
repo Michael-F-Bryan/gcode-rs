@@ -63,6 +63,8 @@
         unused_qualifications)]
 
 extern crate arrayvec;
+#[macro_use]
+extern crate cfg_if;
 
 #[cfg(test)]
 #[macro_use]

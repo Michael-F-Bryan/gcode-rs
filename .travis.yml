@@ -1,21 +1,28 @@
 language: rust
-rust:
-  - 1.27.0
-  - stable
-  - nightly
 
 cache:
   - cargo
 
+matrix:
+  include:
+    # Make sure we have a known working minimum rustc version
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: "1.23.0"
+
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: stable
+
+    - env: TARGET=i686-unknown-linux-gnu
+      rust: stable
+
 install:
   - source ~/.cargo/env || true
   - command -v cbindgen >/dev/null 2>&1 || cargo install --debug cbindgen
+  - rustup target list | grep "$TARGET (\(installed\|default\))" || rustup target install $TARGET
 
 script:
   - cargo build --verbose --target $TARGET
   - cargo test --verbose --target $TARGET
-  - cargo build --release --verbose --target $TARGET
-  - cargo test --release --verbose --target $TARGET
 
 before_cache:
   - chmod -R a+r $HOME/.cargo
@@ -25,6 +32,7 @@ before_deploy:
   - cargo doc --all --verbose
   - echo '<head><meta http-equiv="refresh" content="0; URL=gcode/index.html" /></head>' > target/doc/index.html
   # The release bundle
+  - cargo build --target $TARGET --release
   - cbindgen --output gcode.h
   - cp target/$TARGET/release/libgcode.{a,so} .
   - export VERSION=$(cat Cargo.toml | awk '$1 == "version" { print $3 }' | tr -d '"')
@@ -32,7 +40,6 @@ before_deploy:
 
 env:
   global:
-  - TARGET=x86_64-unknown-linux-gnu
   - secure: KYlhj8S0cH4AT1fkrecOIMmJrvnC3nUDQZ+fTtstVvm+rrV6KqwRqy6WfekRNq3Le6S7SsH5SyyJFfdFFkHVtpUSnYvd2pxy7mrYpgFba/9vJxndJYSqI6TuxJ5tx+HxouCEFVNZg8f1De+RtGayD2f4xOixRbSHQO3kzH2Cz0pzTBMas5cfveImjHwc+abwp/tp0VKgCz/91V698/cDC0RWVX6aUSe3z1lBN/mmnqXLiDLqcT1xlQqq5JJZ2SjCnLoSnwqMPZzWGBIxz9mvqsE9531pgj1YWYUkQGGNLotwdrpkRhTALVTZJBoKcDqN9rAvdIrw32ufJ2RwO6AjBonurCcZwCYzGDxSulyjrXchKN+hPQ/qpz5kwAh8o9vLfExVYP/gKaDTKVAiva8Zdi3tT/8WYhXm2P+UH2U4qFuhgYxr/bi/HIsVqPRgurKtgK0keCHh+h6VqGOpy49Td9r3uCzWdCiC2vawThQEPNl3NF0BhA5mpQkEEtAcO7tKagvptBaZTLP1gxtT1eTcYvWypff4Eo3m1TXFf4dkKk23gblK9UAzdbqrH0WqFWLLyHv+vwCNA6hdV4BfiiS/dseuB/66tQ6so3vwoVcTyPEy9U1cFzCxu64J1OcmTY1h72fToAiBNjoDevzofbZPduQruVYLqZj74e1tvl4xPOM=
 
 deploy:
