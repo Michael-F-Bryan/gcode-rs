@@ -1,14 +1,10 @@
-# Based on the "trust" template v0.1.1
-# https://github.com/japaric/trust/tree/v0.1.1
-
 environment:
   global:
-    RUST_VERSION: nightly
+    RUST_VERSION: stable
 
     CRATE_NAME: gcode
 
   matrix:
-    # MSVC
     - TARGET: i686-pc-windows-msvc
 
 install:

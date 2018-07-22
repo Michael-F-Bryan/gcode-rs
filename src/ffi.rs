@@ -196,10 +196,16 @@ pub unsafe extern "C" fn parser_destroy(parser: *mut Parser) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::mem;
 
     #[test]
     fn constant_definitions_are_correct() {
         assert_eq!(SIZE_OF_PARSER, mem::size_of::<MyParser>());
         assert_eq!(SIZE_OF_GCODE, mem::size_of::<Gcode>());
+    }
+
+    #[test]
+    fn all_ffi_types_are_trivial() {
+        assert!(!mem::needs_drop::<MyParser>());
     }
 }
