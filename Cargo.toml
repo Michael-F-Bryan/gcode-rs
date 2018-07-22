@@ -4,6 +4,13 @@ name = "gcode"
 version = "0.3.1-alpha.0"
 description = "A gcode parser for no-std applications."
 license = "MIT"
+repository = "https://github.com/Michael-F-Bryan/gcode-rs"
+keywords = ["gcode", "parser"]
+categories = ["no-std", "parser-implementations", "embedded"]
+
+[badges]
+appveyor = { repository = "Michael-F-Bryan/gcode-rs" }
+travis-ci = { repository = "Michael-F-Bryan/gcode-rs" }
 
 [dev-dependencies]
 pretty_assertions = "0.5.1"

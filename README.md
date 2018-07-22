@@ -6,6 +6,34 @@
 
 A gcode parser designed for use in `#[no_std]` environments.
 
+## Getting Started
+
+The parser API itself is quite minimal, consisting of a single `parse()`
+function that returns a stream of `Gcode` structs.
+
+```rust
+extern crate gcode;
+
+fn main() {
+    let src = "O1000
+        T1 M6
+        (Linear / Feed - Absolute)
+        G0 G90 G40 G21 G17 G94 G80
+        G54 X-75 Y-75 S500 M3  (Position 6)
+        G43 Z100 H1
+        G01 Z5
+        N42 G01 Z-20 F100";
+
+    for instruction in gcode::parse(src) {
+        println!("{:?} {}", instruction.mnemonic(), instruction.number());
+
+        for arg in instruction.args() {
+            println!("\t{}{}", arg.letter, arg.value);
+        }
+    }
+}
+```
+
 ## Useful Links
 
 - [The thread that kicked this idea off][thread]

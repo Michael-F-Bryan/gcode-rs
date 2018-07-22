@@ -13,6 +13,9 @@ main() {
     cross test --target $TARGET
     cross test --target $TARGET --release
 
+    # Make sure our README example stays up-to-date
+    cross rustdoc README.md --test --extern gcode=target/debug/deps/libgcode.rlib -L target/debug/deps
+
     # We also want to test the C example
     if [ $TRAVIS_OS_NAME = linux ]; then
         cd ffi-example
