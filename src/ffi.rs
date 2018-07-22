@@ -66,10 +66,10 @@ cfg_if!{
         pub const SIZE_OF_PARSER: usize = 64;
         pub const SIZE_OF_GCODE: usize = 312;
     } else if #[cfg(target_pointer_width = "32")] {
-        pub const SIZE_OF_PARSER: usize = 32;
+        pub const SIZE_OF_PARSER: usize = 36;
         pub const SIZE_OF_GCODE: usize = 156;
     } else {
-        compile_error!("The size of a Parser and Gcode is unknown");
+        compile_error!("FFI bindings aren't (yet) supported on this platform because we can't determine size of `Parser` or `Gcode`");
     }
 }
 

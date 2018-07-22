@@ -63,6 +63,7 @@
         unused_qualifications)]
 
 extern crate arrayvec;
+#[cfg(feature = "ffi")]
 #[macro_use]
 extern crate cfg_if;
 
@@ -76,6 +77,7 @@ extern crate pretty_assertions;
 mod lexer;
 mod parse;
 mod types;
+#[cfg(feature = "ffi")]
 pub mod ffi;
 
 pub use parse::{parse, Parser};

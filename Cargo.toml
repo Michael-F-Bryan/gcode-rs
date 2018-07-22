@@ -10,7 +10,11 @@ pretty_assertions = "0.5.1"
 
 [dependencies]
 arrayvec = "0.4.7"
-cfg-if = "0.1.4"
+cfg-if = { version = "0.1.4", optional = true }
 
 [lib]
 crate-type = ["rlib", "cdylib", "staticlib"]
+
+[features]
+default = ["ffi"]
+ffi = ["cfg-if"]
