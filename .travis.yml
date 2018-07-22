@@ -25,7 +25,8 @@ matrix:
     - env: TARGET=thumbv7em-none-eabihf
 
     # Make sure we support a minimum rustc version
-    - rust: 1.24.0
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: 1.24.0
 
 before_install:
   - set -e
