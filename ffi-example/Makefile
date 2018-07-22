@@ -10,7 +10,8 @@ ifeq ($(CARGO_PROFILE), release)
 	CARGO_FLAGS := $(CARGO_FLAGS) --release
 endif
 
-example: main.c gcode.h libgcode.so
+
+example: main.c gcode.h $(GCODE_SO)
 	$(CC) main.c $(CFLAGS) -o example $(LIBRARIES)
 
 cargo_build:
@@ -19,11 +20,11 @@ cargo_build:
 gcode.h: 
 	cbindgen --output gcode.h $(GCODE_RS_DIR) 2>/dev/null
 
-libgcode.so: cargo_build
-	cp $(GCODE_RS_DIR)/target/$(CARGO_PROFILE)/libgcode.so .
+$(GCODE_SO): cargo_build
+	cp $(GCODE_RS_DIR)/target/$(CARGO_PROFILE)/$(GCODE_SO) .
 
 clean:
-	$(RM) libgcode.so
+	$(RM) $(GCODE_SO)
 	$(RM) gcode.h
 	$(RM) example
 

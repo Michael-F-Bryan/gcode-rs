@@ -86,7 +86,11 @@
 //! 0000000000005d70 T parser_next
 //! ```
 //!
+//! The repository also contains [a basic example] showing how this library can
+//! be used from a normal C program.
+//!
 //! [examples/]: https://github.com/Michael-F-Bryan/gcode-rs/tree/master/examples
+//! [a basic example]: https://github.com/Michael-F-Bryan/gcode-rs/blob/master/ffi-example/main.c
 
 
 #![no_std]
