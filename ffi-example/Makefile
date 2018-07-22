@@ -3,7 +3,7 @@ CARGO_FLAGS :=
 GCODE_SO := libgcode.so
 GCODE_RS_DIR := ..
 INCLUDES := gcode.h
-CFLAGS := -L. -Wall -Wpedantic -Wno-pointer-sign -g
+CFLAGS := -std=c99 -L. -Wall -Wpedantic -Wno-pointer-sign -g
 LIBRARIES := -lgcode
 
 ifeq ($(CARGO_PROFILE), release)
