@@ -11,7 +11,12 @@ generate_bundle() {
     test -f Cargo.lock || cargo generate-lockfile
 
     cross build --target $TARGET --release
-    cp target/$TARGET/release/libgcode.{so,a} $stage/
+    cp target/$TARGET/release/libgcode.a $stage/
+    if [ $TRAVIS_OS_NAME = linux ]; then
+        cp target/$TARGET/release/libgcode.so $stage/
+    else
+        cp target/$TARGET/release/libgcode.dylib $stage/
+    fi
 
     # We need the cbindgen tool for generating our header file
     if [ -f $HOME/.cargo/env ]; then source $HOME/.cargo/env; fi

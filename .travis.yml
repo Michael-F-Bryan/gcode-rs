@@ -22,7 +22,7 @@ matrix:
       os: osx
 
     # Bare metal
-    - env: TARGET=thumbv7em-none-eabihf
+    - env: TARGET=thumbv7em-none-eabihf DISABLE_TESTS=1
 
     # Make sure we support a minimum rustc version
     - env: TARGET=x86_64-unknown-linux-gnu
