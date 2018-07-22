@@ -21,7 +21,10 @@ before_cache:
   - chmod -R a+r $HOME/.cargo
 
 before_deploy:
+  # Online docs
   - cargo doc --all --verbose
+  - echo '<head><meta http-equiv="refresh" content="0; URL=gcode/index.html" /></head>' > target/doc/index.html
+  # The release bundle
   - cbindgen --output gcode.h
   - cp target/$TARGET/release/libgcode.{a,so} .
   - export VERSION=$(cat Cargo.toml | awk '$1 == "version" { print $3 }' | tr -d '"')
@@ -40,4 +43,5 @@ deploy:
     local-dir: target/doc
     on:
       branch: master
+      rust: stable
 
