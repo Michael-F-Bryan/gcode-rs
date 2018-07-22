@@ -7,17 +7,13 @@ use std::fs::File;
 use std::io::{self, Read, Error, BufReader, BufRead};
 
 fn run() -> Result<(), Error> {
-    let input = parse_args()?;
+    let mut input = parse_args()?;
 
-    for line in BufReader::new(input).lines() {
-        match line {
-            Ok(line) => {
-                for code in gcode::parse(&line) {
-                    println!("{:#?}", code);
-                }
-            },
-            Err(e) => return Err(e),
-        }
+    let mut src = String::new();
+    input.read_to_string(&mut src)?;
+
+    for code in gcode::parse(&src) {
+        println!("{:#?}", code);
     }
 
     Ok(())
