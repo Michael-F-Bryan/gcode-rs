@@ -48,7 +48,6 @@
 //!     assert_eq!(num_gcodes, 2);
 //!     assert_eq!(cumulative_x, -52.4);
 //!     assert_eq!(cumulative_y, 0.0);
-//!     ffi::parser_destroy(parser);
 //! }
 //! ```
 
@@ -185,16 +184,6 @@ pub unsafe extern "C" fn gcode_line_number(gcode: *const Gcode, line_number: *mu
         } 
         None => false,
     }
-}
-
-/// Destroy a `Parser` once it is no longer needed.
-#[no_mangle]
-pub unsafe extern "C" fn parser_destroy(parser: *mut Parser) {
-    if parser.is_null() {
-        return;
-    }
-
-    ptr::drop_in_place(parser);
 }
 
 
