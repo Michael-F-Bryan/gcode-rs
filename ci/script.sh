@@ -15,7 +15,7 @@ main() {
 
     # We also want to test the C example
     cd ffi-example
-    make && ./example
+    make && LD_LIBRARY_PATH=. ./example
 }
 
 # we don't run the "test phase" when doing deploys
