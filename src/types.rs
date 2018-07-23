@@ -1,5 +1,6 @@
 use arrayvec::ArrayVec;
 use core::cmp;
+use core::fmt::{self, Formatter, Display};
 
 /// The maximum number of arguments a `Gcode` can have.
 pub const MAX_ARGS: usize = 8;
@@ -111,6 +112,23 @@ impl Gcode {
     }
 }
 
+impl Display for Gcode {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        if let Some(n) = self.line_number() {
+            write!(f, "N{} ", n)?;
+        }
+
+        write!(f, "{}", self.mnemonic())?;
+        write!(f, "{}", self.number())?;
+
+        for arg in self.args() {
+            write!(f, " {}", arg)?;
+        }
+
+        Ok(())
+    }
+}
+
 /// A single `Word` in the `gcode` language (e.g. `X-12.3`).
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
 #[repr(C)]
@@ -127,6 +145,12 @@ impl Word {
     /// Create a new `Word`.
     pub fn new(letter: char, value: f32, span: Span) -> Word {
         Word { letter, value, span }
+    }
+}
+
+impl Display for Word {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}{}", self.letter, self.value)
     }
 }
 
@@ -147,6 +171,19 @@ pub enum Mnemonic {
 impl Default for Mnemonic {
     fn default() -> Mnemonic {
         Mnemonic::General
+    }
+}
+
+impl Display for Mnemonic {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let c = match *self {
+            Mnemonic::ProgramNumber => 'O',
+            Mnemonic::ToolChange => 'T',
+            Mnemonic::MachineRoutine => 'M',
+            Mnemonic::General => 'G',
+        };
+
+        write!(f, "{}", c)
     }
 }
 
@@ -195,5 +232,36 @@ impl Span {
     /// to.
     pub fn selected_text<'input>(&self, src: &'input str) -> Option<&'input str> {
         src.get(self.start..self.end)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_gcode_repr() {
+        let thing = Gcode::new(Mnemonic::General, 1.2, Span::default())
+                .with_line_number(10, Span::default())
+                .with_argument(Word::new('X', 500.0, Span::default()))
+                .with_argument(Word::new('Y', -1.23, Span::default()));
+        let should_be = "N10 G1.2 X500 Y-1.23";
+
+        let got = format!("{}", thing);
+        assert_eq!(got, should_be);
+    }
+
+    #[test]
+    fn you_can_round_trip_a_gcode() {
+        let original = Gcode::new(Mnemonic::General, 1.2, Span::new(0, 20, 0))
+                .with_line_number(10, Span::default())
+                .with_argument(Word::new('X', 500.0, Span::new(9, 13, 0)))
+                .with_argument(Word::new('Y', -1.23, Span::new(14, 20, 0)));
+
+        let serialized = format!("{}", original);
+
+        let got = ::parse(&serialized).next().unwrap();
+
+        assert_eq!(got, original);
     }
 }

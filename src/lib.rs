@@ -124,3 +124,17 @@ pub mod ffi;
 
 pub use parse::{parse, Parser};
 pub use types::*;
+
+use core::fmt::{self, Write};
+
+/// Print a bunch of gcodes as ASCII text.
+pub fn dump<W, I>(mut writer: W, gcodes: I) -> fmt::Result
+where W: Write,
+      I: IntoIterator<Item = Gcode>
+{
+    for item in gcodes {
+        writeln!(writer, "{}", item)?;
+    }
+
+    Ok(())
+}
