@@ -3,14 +3,14 @@
 set -ex
 
 generate_docs() {
-    cargo doc --all --verbose
+    cargo doc --all --verbose --all-features
     echo '<head><meta http-equiv="refresh" content="0; URL=gcode/index.html" /></head>' > target/doc/index.html
 }
 
 generate_bundle() {
     test -f Cargo.lock || cargo generate-lockfile
 
-    cross build --target $TARGET --release
+    cross build --target $TARGET --release --all-features
     cp target/$TARGET/release/libgcode.a $stage/
     if [ $TRAVIS_OS_NAME = linux ]; then
         cp target/$TARGET/release/libgcode.so $stage/
