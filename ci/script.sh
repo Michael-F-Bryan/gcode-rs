@@ -14,7 +14,9 @@ main() {
     cross test --target $TARGET --release
 
     # Make sure our README example stays up-to-date
-    cross rustdoc README.md --test --extern gcode=target/debug/deps/libgcode.rlib -L target/debug/deps
+    if [ "$TRAVIS_RUST_VERSION" = nightly ]; then
+        cross rustdoc --test --extern gcode=target/debug/deps/libgcode.rlib -L target/debug/deps README.md 
+    fi
 
     # We also want to test the C example
     if [ $TRAVIS_OS_NAME = linux ]; then

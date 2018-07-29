@@ -28,6 +28,10 @@ matrix:
     - env: TARGET=x86_64-unknown-linux-gnu
       rust: 1.24.0
 
+    # Use nightly for ensuring our README example compiles
+    - env: TARGET=x86_64-unknown-linux-gnu
+      rust: nightly
+
 before_install:
   - set -e
   - rustup self update
