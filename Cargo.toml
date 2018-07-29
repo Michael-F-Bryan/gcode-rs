@@ -23,5 +23,5 @@ cfg-if = { version = "0.1.4", optional = true }
 crate-type = ["rlib", "cdylib", "staticlib"]
 
 [features]
-default = ["ffi"]
+default = []
 ffi = ["cfg-if"]

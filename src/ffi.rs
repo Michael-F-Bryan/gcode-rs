@@ -102,13 +102,9 @@ pub unsafe extern "C" fn parser_new(parser: *mut Parser, src: *const u8, src_len
     // create our parser, Parser<'input>
     let local_parser = Parser::new(src);
     
-    // Copy it to the destination
-    ptr::copy_nonoverlapping(&local_parser, parser, 1);
+    // Copy it to the destination, passing ownership to the caller
+    ptr::write(parser, local_parser);
     
-    // it is now the caller's responsibility to clean up `parser`, forget our
-    // local copy
-    mem::forget(local_parser);
-
     true
 }
 
@@ -120,8 +116,7 @@ pub unsafe extern "C" fn parser_next(parser: *mut Parser, gcode: *mut Gcode) -> 
 
     match parser.next() {
         Some(got) => {
-            ptr::copy_nonoverlapping(&got, gcode, 1);
-            mem::forget(got);
+            ptr::write(gcode, got);
             true
         }
         None => false,
