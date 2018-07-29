@@ -13,15 +13,17 @@ main() {
     cross test --target $TARGET
     cross test --target $TARGET --release
 
-    # Make sure our README example stays up-to-date
-    if [ "$TRAVIS_RUST_VERSION" = nightly ]; then
-        cross rustdoc --test --extern gcode=target/debug/deps/libgcode.rlib -L target/debug/deps README.md 
-    fi
-
     # We also want to test the C example
     if [ $TRAVIS_OS_NAME = linux ]; then
         cd ffi-example
         make && LD_LIBRARY_PATH=. ./example
+    fi
+
+    # Make sure our README example stays up-to-date. For some reason, we can't
+    # use `cross rustdoc ...` so we need to recompile
+    if [ "$TRAVIS_RUST_VERSION" = nightly ]; then
+        cargo build
+        rustdoc --test -L target/debug/deps --extern gcode=target/debug/deps/libgcode.rlib README.md 
     fi
 }
 
