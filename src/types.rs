@@ -10,7 +10,7 @@ type Words = [Word; MAX_ARGS];
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Gcode {
     mnemonic: Mnemonic,
-    number: f32,
+    number: (u32, Option<u8>),
     line_number: Option<u32>,
     // invariant 1: All arguments are uppercase
     arguments: ArrayVec<Words>,
@@ -19,7 +19,11 @@ pub struct Gcode {
 
 impl Gcode {
     /// Create a new `Gcode`.
-    pub fn new(mnemonic: Mnemonic, number: f32, span: Span) -> Gcode {
+    pub fn new2(
+        mnemonic: Mnemonic,
+        number: (u32, Option<u8>),
+        span: Span,
+    ) -> Gcode {
         Gcode {
             mnemonic,
             number,
@@ -27,6 +31,18 @@ impl Gcode {
             arguments: ArrayVec::default(),
             line_number: None,
         }
+    }
+
+    /// Create a new `Gcode`.
+    pub fn new(mnemonic: Mnemonic, number: f32, span: Span) -> Gcode {
+        let integral = number.trunc() as u32;
+        let decimal_digit = (number.abs().fract() * 10.0).round().floor() as u8;
+        let decimal = if decimal_digit == 0 {
+            None
+        } else {
+            Some(decimal_digit)
+        };
+        Gcode::new2(mnemonic, (integral, decimal), span)
     }
 
     /// Get the `Mnemonic` used by this `Gcode`.
@@ -50,24 +66,23 @@ impl Gcode {
     }
 
     /// The number associated with this `Gcode` (e.g. the `01` in `G01 X123`).
+    #[deprecated = "Use the `major_number` and `minor_number` methods instead"]
     pub fn number(&self) -> f32 {
-        self.number
+        let (integral, fractional) = self.number;
+        let integral = integral as f32;
+        let fractional = fractional.map(f32::from).unwrap_or(0.0);
+
+        integral + fractional / 10.0
     }
 
     /// The integral part of the `Gcode`'s number field.
     pub fn major_number(&self) -> u32 {
-        self.number.trunc() as u32
+        self.number.0
     }
 
     /// Any number after the decimal point.
     pub fn minor_number(&self) -> Option<u32> {
-        let remainder = self.number.fract();
-
-        if remainder == 0.0 {
-            None
-        } else {
-            unimplemented!()
-        }
+        self.number.1.map(u32::from)
     }
 
     fn merge_span(&mut self, span: Span) {
@@ -253,6 +268,7 @@ mod tests {
             .with_line_number(10, Span::default())
             .with_argument(Word::new('X', 500.0, Span::default()))
             .with_argument(Word::new('Y', -1.23, Span::default()));
+        println!("{:?}", thing);
         let should_be = "N10 G1.2 X500 Y-1.23";
 
         let got = format!("{}", thing);

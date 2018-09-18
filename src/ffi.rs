@@ -194,21 +194,3 @@ pub unsafe extern "C" fn gcode_line_number(
         None => false,
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use core::mem;
-
-    #[test]
-    fn constant_definitions_are_correct() {
-        assert_eq!(SIZE_OF_PARSER, mem::size_of::<Parser>());
-        assert_eq!(SIZE_OF_GCODE, mem::size_of::<Gcode>());
-    }
-
-    #[test]
-    fn all_ffi_types_are_trivial() {
-        assert!(!mem::needs_drop::<Parser>());
-        // assert!(!mem::needs_drop::<Gcode>());
-    }
-}
