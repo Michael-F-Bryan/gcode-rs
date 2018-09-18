@@ -6,7 +6,8 @@ use prescaled::{Prescaled, Scalar, TenThousand};
 /// The maximum number of arguments a `Gcode` can have.
 pub const MAX_ARGS: usize = 8;
 type Words = [Word; MAX_ARGS];
-type Number = Prescaled<TenThousand>;
+/// The type used for all decimal numbers.
+pub type Number = Prescaled<TenThousand>;
 
 /// A single command in the `gcode` programming language.
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -111,7 +112,7 @@ impl Gcode {
     }
 
     /// Find the value for the desired argument.
-    pub fn value_for(&self, letter: char) -> Option<f32> {
+    pub fn value_for(&self, letter: char) -> Option<Number> {
         let letter = letter.to_ascii_uppercase();
 
         self.arguments
@@ -145,14 +146,14 @@ pub struct Word {
     /// The letter associated with this word (e.g. the `X` in `X12.3`).
     pub letter: char,
     /// The numeric part of the word.
-    pub value: f32,
+    pub value: Number,
     /// The word's location in its original text.
     pub span: Span,
 }
 
 impl Word {
     /// Create a new `Word`.
-    pub fn new(letter: char, value: f32, span: Span) -> Word {
+    pub fn new(letter: char, value: Number, span: Span) -> Word {
         Word {
             letter,
             value,
@@ -259,8 +260,12 @@ mod tests {
     fn get_gcode_repr() {
         let thing = Gcode::new(Mnemonic::General, 1.2, Span::default())
             .with_line_number(10, Span::default())
-            .with_argument(Word::new('X', 500.0, Span::default()))
-            .with_argument(Word::new('Y', -1.23, Span::default()));
+            .with_argument(Word::new('X', 500.0.into(), Span::default()))
+            .with_argument(Word::new(
+                'Y',
+                Number::from(-1.23),
+                Span::default(),
+            ));
         println!("{:?}", thing);
         let should_be = "N10 G1.2 X500 Y-1.23";
 
@@ -270,10 +275,17 @@ mod tests {
 
     #[test]
     fn you_can_round_trip_a_gcode() {
-        let original = Gcode::new(Mnemonic::General, 1.2, Span::new(0, 20, 0))
-            .with_line_number(10, Span::default())
-            .with_argument(Word::new('X', 500.0, Span::new(9, 13, 0)))
-            .with_argument(Word::new('Y', -1.23, Span::new(14, 20, 0)));
+        let original = Gcode::new2(
+            Mnemonic::General,
+            Number::from(1.2),
+            Span::new(0, 20, 0),
+        ).with_line_number(10, Span::default())
+        .with_argument(Word::new('X', Number::from(500.0), Span::new(9, 13, 0)))
+        .with_argument(Word::new(
+            'Y',
+            Number::from(-1.23),
+            Span::new(14, 20, 0),
+        ));
 
         let serialized = format!("{}", original);
 

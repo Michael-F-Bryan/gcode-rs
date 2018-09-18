@@ -15,7 +15,7 @@
 //! > sees.
 //!
 //! ```rust
-//! use gcode::Mnemonic;
+//! use gcode::{Mnemonic, Number};
 //!
 //! let src = "O1000
 //!     T1 M6
@@ -41,7 +41,7 @@
 //! let g01 = lines.next().unwrap();
 //! assert_eq!(g01.major_number(), 1);
 //! assert_eq!(g01.args().len(), 3);
-//! assert_eq!(g01.value_for('X'), Some(-75.0));
+//! assert_eq!(g01.value_for('X'), Some(Number::from(-75.0)));
 //!
 //! let rest: Vec<_> = lines.collect();
 //! assert_eq!(rest.len(), 4);

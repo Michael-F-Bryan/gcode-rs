@@ -167,7 +167,7 @@ pub unsafe extern "C" fn gcode_arg_value(
 ) -> bool {
     match (&*gcode).value_for(letter) {
         Some(n) => {
-            *value = n;
+            *value = f64::from(n) as f32;
             true
         }
         None => false,

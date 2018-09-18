@@ -5,7 +5,7 @@
 use core::cmp::Ordering;
 use core::fmt::{self, Display, Formatter};
 use core::marker::PhantomData;
-use core::ops::{Add, Div, Mul, Sub};
+use core::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 use core::str::FromStr;
 
 /// A fixed-precision decimal number.
@@ -64,7 +64,7 @@ impl<S: Scalar> From<Prescaled<S>> for f64 {
 impl<S: Scalar> From<f64> for Prescaled<S> {
     fn from(other: f64) -> Prescaled<S> {
         let integral = other.trunc() as i64;
-        let fractional = (other.fract() * S::SCALE as f64) as i64;
+        let fractional = (other.fract() * S::SCALE as f64).round() as i64;
 
         Prescaled::new(integral, fractional)
     }
@@ -107,6 +107,19 @@ impl<S> Add for Prescaled<S> {
     type Output = Prescaled<S>;
     fn add(self, other: Prescaled<S>) -> Prescaled<S> {
         Prescaled(self.0 + other.0, PhantomData)
+    }
+}
+
+impl<S> AddAssign for Prescaled<S> {
+    fn add_assign(&mut self, other: Prescaled<S>) {
+        self.0 += other.0;
+    }
+}
+
+impl<S> Neg for Prescaled<S> {
+    type Output = Prescaled<S>;
+    fn neg(self) -> Prescaled<S> {
+        Prescaled(-self.0, PhantomData)
     }
 }
 

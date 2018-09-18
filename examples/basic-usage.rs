@@ -1,6 +1,6 @@
 extern crate gcode;
 
-use gcode::Mnemonic;
+use gcode::{Mnemonic, Number};
 
 const PROGRAM_1: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -11,7 +11,7 @@ fn main() {
     let mut g_codes = 0;
     let mut m_codes = 0;
     let mut total_args = 0;
-    let mut cumulative_x = 0.0;
+    let mut cumulative_x = Number::from(0.0);
 
     for block in gcode::parse(PROGRAM_1) {
         println!("{:#?}", block);
