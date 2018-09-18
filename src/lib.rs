@@ -122,6 +122,7 @@ extern crate pretty_assertions;
 pub mod ffi;
 mod lexer;
 mod parse;
+pub mod prescaled;
 mod types;
 
 pub use parse::{parse, Parser};
