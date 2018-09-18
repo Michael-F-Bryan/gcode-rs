@@ -1,4 +1,4 @@
-use types::{Span, Word};
+use types::{Span, Value, Word};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Lexer<'input> {
@@ -73,7 +73,7 @@ impl<'input> Lexer<'input> {
         }
     }
 
-    fn read_number(&mut self) -> Option<f32> {
+    fn read_number(&mut self) -> Option<Value> {
         self.try_or_backtrack(|lexy| {
             let start = lexy.current_index;
 
@@ -269,7 +269,7 @@ mod tests {
     #[test]
     fn tokenize_a_word() {
         let src = "G01";
-        let should_be = Word::new('G', 1.0, Span::new(0, src.len(), 0));
+        let should_be = Word::new('G', 1.0.into(), Span::new(0, src.len(), 0));
 
         let got = Lexer::new(src).next().unwrap();
 

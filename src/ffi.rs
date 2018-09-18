@@ -8,31 +8,27 @@
 //! # Examples
 //!
 //! ```rust
-//! use gcode::ffi::{self, SIZE_OF_PARSER, SIZE_OF_GCODE};
-//! use gcode::{Parser, Gcode};
+//! use gcode::ffi;
+//! use gcode::{Parser, Gcode, Mnemonic};
 //! use std::mem;
 //!
-//! // allocate some space on the stack for our parser. Normally you'd just use
-//! // malloc(), but because we don't have an allocator, we create an
-//! // appropriately sized byte buffer and use pointer casts to "pretend"
-//! // it's the right thing.
-//! let mut parser = [0_u8; SIZE_OF_PARSER];
-//! let parser = parser.as_mut_ptr() as *mut Parser;
-//!
-//! let src = "G01 X-52.4 G4 P50.0";
+//! let src = "O1000\nG01 X-52.4 G4 P50.0";
 //!
 //! unsafe {
-//!     let success = ffi::parser_new(parser, src.as_ptr(), src.len() as i32);
-//!     assert!(success, "Creation failed");
+//!     let parser = ffi::parser_new(src.as_ptr(), src.len() as i32);
+//!     assert!(!parser.is_null(), "Creation failed");
 //!
-//!     let mut gcode_memory = [0; SIZE_OF_GCODE];
-//!     let mut code = gcode_memory.as_mut_ptr() as *mut Gcode;
+//!     let mut code = ffi::gcode_new();
 //!     let mut num_gcodes = 0;
 //!     let mut cumulative_x = 0.0;
 //!     let mut cumulative_y = 0.0;
 //!
 //!     while ffi::parser_next(parser, code) {
 //!         let mut x = 0.0;
+//!         if ffi::gcode_mnemonic(code) == Mnemonic::General {
+//!             num_gcodes += 1;
+//!         }
+//!
 //!         if ffi::gcode_arg_value(code, 'X', &mut x) {
 //!             cumulative_x += x;
 //!         }
@@ -41,75 +37,62 @@
 //!         if ffi::gcode_arg_value(code, 'Y', &mut y) {
 //!             cumulative_y += y;
 //!         }
-//!
-//!         num_gcodes += 1;
 //!     }
 //!
 //!     assert_eq!(num_gcodes, 2);
 //!     assert_eq!(cumulative_x, -52.4);
 //!     assert_eq!(cumulative_y, 0.0);
+//!
+//!     ffi::parser_destroy(parser);
 //! }
 //! ```
 
 #![allow(missing_docs, unsafe_code)]
 
-use core::mem;
-use core::ptr;
-use core::slice;
-use core::str;
-use parse::Parser;
+use parse::Parser as MyParser;
+use std::prelude::v1::*;
+use std::ptr;
+use std::slice;
+use std::str;
 use types::{Gcode, Mnemonic, Span, Word};
 
-cfg_if!{
-    if #[cfg(target_pointer_width = "64")] {
-        pub const SIZE_OF_PARSER: usize = 64;
-        pub const SIZE_OF_GCODE: usize = 312;
-    } else if #[cfg(target_pointer_width = "32")] {
-        pub const SIZE_OF_PARSER: usize = 36;
-        pub const SIZE_OF_GCODE: usize = 196;
-    } else {
-        compile_error!("FFI bindings aren't (yet) supported on this platform \
-                        because we can't statically determine size of `Parser` \
-                        and `Gcode`");
-    }
-}
+#[derive(Debug)]
+pub struct Parser(MyParser<'static>);
 
 /// Create a new parser.
 ///
 /// # Safety
 ///
-/// In order to maintain memory safety, there are two invariants which **must**
-/// be upheld:
-///
-/// 1. The `Parser` must not outlive the source string
-/// 2. You must allocate `SIZE_OF_PARSER` bytes (e.g. as an array on the stack)
-///    for the `Parser` to be placed in
-///
-/// If creating the parser was successful.
+/// In order to maintain memory safety, the `Parser` must not outlive the source
+/// string.
 #[no_mangle]
 pub unsafe extern "C" fn parser_new(
-    parser: *mut Parser,
     src: *const u8,
     src_len: i32,
-) -> bool {
-    if src.is_null() || parser.is_null() {
-        return false;
+) -> *mut Parser {
+    if src.is_null() {
+        return ptr::null_mut();
     }
 
     // first, turn the input into a proper UTF-8 string
     let src = slice::from_raw_parts(src, src_len as usize);
     let src = match str::from_utf8(src) {
         Ok(s) => s,
-        Err(_) => return false,
+        Err(_) => return ptr::null_mut(),
     };
 
-    // create our parser, Parser<'input>
-    let local_parser = Parser::new(src);
+    Box::into_raw(Box::new(Parser(MyParser::new(src))))
+}
 
-    // Copy it to the destination, passing ownership to the caller
-    ptr::write(parser, local_parser);
+/// Destroy a `Parser` once you are done with it.
+#[no_mangle]
+pub unsafe extern "C" fn parser_destroy(parser: *mut Parser) {
+    if parser.is_null() {
+        return;
+    }
 
-    true
+    let boxed = Box::from_raw(parser);
+    drop(boxed);
 }
 
 /// Get the next `Gcode`, returning `false` when there are no more `Gcode`s in
@@ -119,7 +102,7 @@ pub unsafe extern "C" fn parser_next(
     parser: *mut Parser,
     gcode: *mut Gcode,
 ) -> bool {
-    let parser = &mut *parser;
+    let parser = &mut (*parser).0;
 
     match parser.next() {
         Some(got) => {
@@ -130,15 +113,26 @@ pub unsafe extern "C" fn parser_next(
     }
 }
 
+/// Create a new empty `Gcode`.
+#[no_mangle]
+pub unsafe extern "C" fn gcode_new() -> *mut Gcode {
+    Box::into_raw(Box::new(Gcode::default()))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn gcode_destroy(code: *mut Gcode) {
+    if code.is_null() {
+        return;
+    }
+
+    let boxed = Box::from_raw(code);
+    drop(boxed);
+}
+
 /// The overall category this `Gcode` belongs to.
 #[no_mangle]
 pub unsafe extern "C" fn gcode_mnemonic(gcode: *const Gcode) -> Mnemonic {
     (&*gcode).mnemonic()
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn gcode_number(gcode: *const Gcode) -> f32 {
-    (&*gcode).number()
 }
 
 #[no_mangle]
@@ -167,7 +161,7 @@ pub unsafe extern "C" fn gcode_arg_value(
 ) -> bool {
     match (&*gcode).value_for(letter) {
         Some(n) => {
-            *value = n;
+            *value = f64::from(n) as f32;
             true
         }
         None => false,
@@ -192,23 +186,5 @@ pub unsafe extern "C" fn gcode_line_number(
             true
         }
         None => false,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use core::mem;
-
-    #[test]
-    fn constant_definitions_are_correct() {
-        assert_eq!(SIZE_OF_PARSER, mem::size_of::<Parser>());
-        assert_eq!(SIZE_OF_GCODE, mem::size_of::<Gcode>());
-    }
-
-    #[test]
-    fn all_ffi_types_are_trivial() {
-        assert!(!mem::needs_drop::<Parser>());
-        // assert!(!mem::needs_drop::<Gcode>());
     }
 }

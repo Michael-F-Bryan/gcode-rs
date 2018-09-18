@@ -15,7 +15,7 @@
 //! > sees.
 //!
 //! ```rust
-//! use gcode::Mnemonic;
+//! use gcode::{Mnemonic, Value};
 //!
 //! let src = "O1000
 //!     T1 M6
@@ -41,7 +41,7 @@
 //! let g01 = lines.next().unwrap();
 //! assert_eq!(g01.major_number(), 1);
 //! assert_eq!(g01.args().len(), 3);
-//! assert_eq!(g01.value_for('X'), Some(-75.0));
+//! assert_eq!(g01.value_for('X'), Some(Value::from(-75.0)));
 //!
 //! let rest: Vec<_> = lines.collect();
 //! assert_eq!(rest.len(), 4);
@@ -107,11 +107,8 @@
 )]
 
 extern crate arrayvec;
-#[cfg(feature = "ffi")]
-#[macro_use]
-extern crate cfg_if;
 
-#[cfg(test)]
+#[cfg(any(test, feature = "ffi"))]
 #[macro_use]
 extern crate std;
 #[cfg(test)]
@@ -122,6 +119,7 @@ extern crate pretty_assertions;
 pub mod ffi;
 mod lexer;
 mod parse;
+pub mod prescaled;
 mod types;
 
 pub use parse::{parse, Parser};
