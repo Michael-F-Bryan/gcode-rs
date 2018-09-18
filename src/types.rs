@@ -1,6 +1,6 @@
 use arrayvec::ArrayVec;
 use core::cmp;
-use core::fmt::{self, Formatter, Display};
+use core::fmt::{self, Display, Formatter};
 
 /// The maximum number of arguments a `Gcode` can have.
 pub const MAX_ARGS: usize = 8;
@@ -106,7 +106,8 @@ impl Gcode {
     pub fn value_for(&self, letter: char) -> Option<f32> {
         let letter = letter.to_ascii_uppercase();
 
-        self.arguments.iter()
+        self.arguments
+            .iter()
             .find(|word| letter == word.letter)
             .map(|word| word.value)
     }
@@ -144,7 +145,11 @@ pub struct Word {
 impl Word {
     /// Create a new `Word`.
     pub fn new(letter: char, value: f32, span: Span) -> Word {
-        Word { letter, value, span }
+        Word {
+            letter,
+            value,
+            span,
+        }
     }
 }
 
@@ -230,7 +235,10 @@ impl Span {
 
     /// Given the original text, retrieve the substring this `Span` corresponds
     /// to.
-    pub fn selected_text<'input>(&self, src: &'input str) -> Option<&'input str> {
+    pub fn selected_text<'input>(
+        &self,
+        src: &'input str,
+    ) -> Option<&'input str> {
         src.get(self.start..self.end)
     }
 }
@@ -242,9 +250,9 @@ mod tests {
     #[test]
     fn get_gcode_repr() {
         let thing = Gcode::new(Mnemonic::General, 1.2, Span::default())
-                .with_line_number(10, Span::default())
-                .with_argument(Word::new('X', 500.0, Span::default()))
-                .with_argument(Word::new('Y', -1.23, Span::default()));
+            .with_line_number(10, Span::default())
+            .with_argument(Word::new('X', 500.0, Span::default()))
+            .with_argument(Word::new('Y', -1.23, Span::default()));
         let should_be = "N10 G1.2 X500 Y-1.23";
 
         let got = format!("{}", thing);
@@ -254,9 +262,9 @@ mod tests {
     #[test]
     fn you_can_round_trip_a_gcode() {
         let original = Gcode::new(Mnemonic::General, 1.2, Span::new(0, 20, 0))
-                .with_line_number(10, Span::default())
-                .with_argument(Word::new('X', 500.0, Span::new(9, 13, 0)))
-                .with_argument(Word::new('Y', -1.23, Span::new(14, 20, 0)));
+            .with_line_number(10, Span::default())
+            .with_argument(Word::new('X', 500.0, Span::new(9, 13, 0)))
+            .with_argument(Word::new('Y', -1.23, Span::new(14, 20, 0)));
 
         let serialized = format!("{}", original);
 

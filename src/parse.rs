@@ -50,7 +50,14 @@ impl<'input> Iterator for Parser<'input> {
             };
 
             match last_n {
-                Some(n) => return Some(got.with_line_number(n.value.abs().trunc() as u32, n.span)),
+                Some(n) => {
+                    return Some(
+                        got.with_line_number(
+                            n.value.abs().trunc() as u32,
+                            n.span,
+                        ),
+                    )
+                }
                 None => return Some(got),
             }
         }
@@ -58,7 +65,6 @@ impl<'input> Iterator for Parser<'input> {
         None
     }
 }
-
 
 fn parse_o<I>(iter: &mut Peekable<I>) -> Gcode
 where
@@ -88,7 +94,11 @@ where
     do_parse(iter, Mnemonic::General, true)
 }
 
-fn do_parse<I>(iter: &mut Peekable<I>, mnemonic: Mnemonic, takes_args: bool) -> Gcode 
+fn do_parse<I>(
+    iter: &mut Peekable<I>,
+    mnemonic: Mnemonic,
+    takes_args: bool,
+) -> Gcode
 where
     I: Iterator<Item = Word>,
 {
@@ -120,7 +130,7 @@ where
 }
 
 fn is_arg(c: char) -> bool {
-    // gcodes are kinda all over the place, so we just assume all letters 
+    // gcodes are kinda all over the place, so we just assume all letters
     // except mnemonics are argument material
     match c.to_ascii_uppercase() {
         'O' | 'M' | 'T' | 'G' => false,

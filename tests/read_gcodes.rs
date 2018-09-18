@@ -48,7 +48,7 @@ fn read_each_line_of_a_file() {
 }
 
 macro_rules! parse_fixture {
-    ($test_name:ident, $filename:expr => $num_codes:expr) => (
+    ($test_name:ident, $filename:expr => $num_codes:expr) => {
         #[test]
         fn $test_name() {
             let src = include_str!(concat!("data/", $filename));
@@ -56,8 +56,7 @@ macro_rules! parse_fixture {
 
             assert_eq!(num_gcodes, $num_codes);
         }
-        
-    )
+    };
 }
 
 parse_fixture!(parse_program_1, "program_1.gcode" => 24);
@@ -68,4 +67,3 @@ parse_fixture!(parse_program_2, "program_2.gcode" => 14);
 // These guys take forever to parse...
 //parse_fixture!(parse_octocat, "PI_octcat.gcode" => 145362);
 //parse_fixture!(parse_rust_logo, "PI_rustlogo.gcode" => 195701);
-

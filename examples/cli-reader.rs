@@ -1,10 +1,10 @@
 extern crate gcode;
 
 use std::env;
-use std::process;
 use std::error::Error as StdError;
 use std::fs::File;
-use std::io::{self, Read, Error};
+use std::io::{self, Error, Read};
+use std::process;
 
 fn run() -> Result<(), Error> {
     let mut input = parse_args()?;
@@ -30,7 +30,6 @@ fn main() {
             cause = c.cause();
         }
     }
-
 }
 
 fn parse_args() -> Result<Box<Read>, Error> {

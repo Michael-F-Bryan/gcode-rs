@@ -14,7 +14,7 @@
 //!
 //! // allocate some space on the stack for our parser. Normally you'd just use
 //! // malloc(), but because we don't have an allocator, we create an
-//! // appropriately sized byte buffer and use pointer casts to "pretend" 
+//! // appropriately sized byte buffer and use pointer casts to "pretend"
 //! // it's the right thing.
 //! let mut parser = [0_u8; SIZE_OF_PARSER];
 //! let parser = parser.as_mut_ptr() as *mut Parser;
@@ -54,11 +54,11 @@
 #![allow(missing_docs, unsafe_code)]
 
 use core::mem;
-use core::str;
 use core::ptr;
 use core::slice;
+use core::str;
 use parse::Parser;
-use types::{Gcode, Mnemonic, Word, Span};
+use types::{Gcode, Mnemonic, Span, Word};
 
 cfg_if!{
     if #[cfg(target_pointer_width = "64")] {
@@ -87,7 +87,11 @@ cfg_if!{
 ///
 /// If creating the parser was successful.
 #[no_mangle]
-pub unsafe extern "C" fn parser_new(parser: *mut Parser, src: *const u8, src_len: i32) -> bool {
+pub unsafe extern "C" fn parser_new(
+    parser: *mut Parser,
+    src: *const u8,
+    src_len: i32,
+) -> bool {
     if src.is_null() || parser.is_null() {
         return false;
     }
@@ -101,17 +105,20 @@ pub unsafe extern "C" fn parser_new(parser: *mut Parser, src: *const u8, src_len
 
     // create our parser, Parser<'input>
     let local_parser = Parser::new(src);
-    
+
     // Copy it to the destination, passing ownership to the caller
     ptr::write(parser, local_parser);
-    
+
     true
 }
 
 /// Get the next `Gcode`, returning `false` when there are no more `Gcode`s in
 /// the input.
 #[no_mangle]
-pub unsafe extern "C" fn parser_next(parser: *mut Parser, gcode: *mut Gcode) -> bool {
+pub unsafe extern "C" fn parser_next(
+    parser: *mut Parser,
+    gcode: *mut Gcode,
+) -> bool {
     let parser = &mut *parser;
 
     match parser.next() {
@@ -153,12 +160,16 @@ pub unsafe extern "C" fn gcode_args(gcode: *const Gcode) -> *const Word {
 
 /// Get the value for the argument with a particular letter.
 #[no_mangle]
-pub unsafe extern "C" fn gcode_arg_value(gcode: *const Gcode, letter: char, value: *mut f32) -> bool {
+pub unsafe extern "C" fn gcode_arg_value(
+    gcode: *const Gcode,
+    letter: char,
+    value: *mut f32,
+) -> bool {
     match (&*gcode).value_for(letter) {
         Some(n) => {
             *value = n;
             true
-        } 
+        }
         None => false,
     }
 }
@@ -171,16 +182,18 @@ pub unsafe extern "C" fn gcode_span(gcode: *const Gcode) -> Span {
 
 /// Get a `Gcode`'s line number (the `N20` argument), if it was assigned.
 #[no_mangle]
-pub unsafe extern "C" fn gcode_line_number(gcode: *const Gcode, line_number: *mut u32) -> bool {
+pub unsafe extern "C" fn gcode_line_number(
+    gcode: *const Gcode,
+    line_number: *mut u32,
+) -> bool {
     match (&*gcode).line_number() {
         Some(n) => {
             *line_number = n;
             true
-        } 
+        }
         None => false,
     }
 }
-
 
 #[cfg(test)]
 mod tests {
