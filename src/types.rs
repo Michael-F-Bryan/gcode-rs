@@ -1,16 +1,18 @@
 use arrayvec::ArrayVec;
 use core::cmp;
 use core::fmt::{self, Display, Formatter};
+use prescaled::{Prescaled, Scalar, TenThousand};
 
 /// The maximum number of arguments a `Gcode` can have.
 pub const MAX_ARGS: usize = 8;
 type Words = [Word; MAX_ARGS];
+type Number = Prescaled<TenThousand>;
 
 /// A single command in the `gcode` programming language.
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct Gcode {
     mnemonic: Mnemonic,
-    number: (u32, Option<u8>),
+    number: Number,
     line_number: Option<u32>,
     // invariant 1: All arguments are uppercase
     arguments: ArrayVec<Words>,
@@ -19,11 +21,7 @@ pub struct Gcode {
 
 impl Gcode {
     /// Create a new `Gcode`.
-    pub fn new2(
-        mnemonic: Mnemonic,
-        number: (u32, Option<u8>),
-        span: Span,
-    ) -> Gcode {
+    pub fn new2(mnemonic: Mnemonic, number: Number, span: Span) -> Gcode {
         Gcode {
             mnemonic,
             number,
@@ -35,14 +33,7 @@ impl Gcode {
 
     /// Create a new `Gcode`.
     pub fn new(mnemonic: Mnemonic, number: f32, span: Span) -> Gcode {
-        let integral = number.trunc() as u32;
-        let decimal_digit = (number.abs().fract() * 10.0).round().floor() as u8;
-        let decimal = if decimal_digit == 0 {
-            None
-        } else {
-            Some(decimal_digit)
-        };
-        Gcode::new2(mnemonic, (integral, decimal), span)
+        Gcode::new2(mnemonic, (number as f64).into(), span)
     }
 
     /// Get the `Mnemonic` used by this `Gcode`.
@@ -68,21 +59,23 @@ impl Gcode {
     /// The number associated with this `Gcode` (e.g. the `01` in `G01 X123`).
     #[deprecated = "Use the `major_number` and `minor_number` methods instead"]
     pub fn number(&self) -> f32 {
-        let (integral, fractional) = self.number;
-        let integral = integral as f32;
-        let fractional = fractional.map(f32::from).unwrap_or(0.0);
-
-        integral + fractional / 10.0
+        f64::from(self.number) as f32
     }
 
     /// The integral part of the `Gcode`'s number field.
     pub fn major_number(&self) -> u32 {
-        self.number.0
+        self.number.integral_part() as u32
     }
 
     /// Any number after the decimal point.
     pub fn minor_number(&self) -> Option<u32> {
-        self.number.1.map(u32::from)
+        let single_digit =
+            self.number.fractional_part() * 10 / TenThousand::SCALE;
+        if single_digit == 0 {
+            None
+        } else {
+            Some(single_digit as u32)
+        }
     }
 
     fn merge_span(&mut self, span: Span) {
@@ -135,7 +128,7 @@ impl Display for Gcode {
         }
 
         write!(f, "{}", self.mnemonic())?;
-        write!(f, "{}", self.number())?;
+        write!(f, "{}", self.number)?;
 
         for arg in self.args() {
             write!(f, " {}", arg)?;
