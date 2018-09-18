@@ -1,13 +1,15 @@
 use arrayvec::ArrayVec;
 use core::cmp;
 use core::fmt::{self, Display, Formatter};
-use prescaled::{Prescaled, Scalar, TenThousand};
+use prescaled::{Prescaled, Scalar, Ten, TenThousand};
 
 /// The maximum number of arguments a `Gcode` can have.
 pub const MAX_ARGS: usize = 8;
 type Words = [Word; MAX_ARGS];
-/// The type used for all decimal numbers.
-pub type Number = Prescaled<TenThousand>;
+/// The type used for the decimal numbers used in motion.
+pub type Value = Prescaled<TenThousand>;
+/// A number with 1 decimal place, typically used for the `31.1` in `G31.1`.
+pub type Number = Prescaled<Ten>;
 
 /// A single command in the `gcode` programming language.
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -22,7 +24,7 @@ pub struct Gcode {
 
 impl Gcode {
     /// Create a new `Gcode`.
-    pub fn new2(mnemonic: Mnemonic, number: Number, span: Span) -> Gcode {
+    pub fn new(mnemonic: Mnemonic, number: Number, span: Span) -> Gcode {
         Gcode {
             mnemonic,
             number,
@@ -30,11 +32,6 @@ impl Gcode {
             arguments: ArrayVec::default(),
             line_number: None,
         }
-    }
-
-    /// Create a new `Gcode`.
-    pub fn new(mnemonic: Mnemonic, number: f32, span: Span) -> Gcode {
-        Gcode::new2(mnemonic, (number as f64).into(), span)
     }
 
     /// Get the `Mnemonic` used by this `Gcode`.
@@ -57,18 +54,12 @@ impl Gcode {
         self.line_number
     }
 
-    /// The number associated with this `Gcode` (e.g. the `01` in `G01 X123`).
-    #[deprecated = "Use the `major_number` and `minor_number` methods instead"]
-    pub fn number(&self) -> f32 {
-        f64::from(self.number) as f32
-    }
-
-    /// The integral part of the `Gcode`'s number field.
+    /// The integral part of the `Gcode`'s number field (i.e. the `1` in `G31.2`).
     pub fn major_number(&self) -> u32 {
         self.number.integral_part() as u32
     }
 
-    /// Any number after the decimal point.
+    /// The first digit after the decimal place (i.e. the `2` in `G31.2`).
     pub fn minor_number(&self) -> Option<u32> {
         let single_digit =
             self.number.fractional_part() * 10 / TenThousand::SCALE;
@@ -112,7 +103,7 @@ impl Gcode {
     }
 
     /// Find the value for the desired argument.
-    pub fn value_for(&self, letter: char) -> Option<Number> {
+    pub fn value_for(&self, letter: char) -> Option<Value> {
         let letter = letter.to_ascii_uppercase();
 
         self.arguments
@@ -146,14 +137,14 @@ pub struct Word {
     /// The letter associated with this word (e.g. the `X` in `X12.3`).
     pub letter: char,
     /// The numeric part of the word.
-    pub value: Number,
+    pub value: Value,
     /// The word's location in its original text.
     pub span: Span,
 }
 
 impl Word {
     /// Create a new `Word`.
-    pub fn new(letter: char, value: Number, span: Span) -> Word {
+    pub fn new(letter: char, value: Value, span: Span) -> Word {
         Word {
             letter,
             value,
@@ -258,14 +249,17 @@ mod tests {
 
     #[test]
     fn get_gcode_repr() {
-        let thing = Gcode::new(Mnemonic::General, 1.2, Span::default())
-            .with_line_number(10, Span::default())
-            .with_argument(Word::new('X', 500.0.into(), Span::default()))
-            .with_argument(Word::new(
-                'Y',
-                Number::from(-1.23),
-                Span::default(),
-            ));
+        let thing = Gcode::new(
+            Mnemonic::General,
+            Prescaled::from(1.2),
+            Span::default(),
+        ).with_line_number(10, Span::default())
+        .with_argument(Word::new('X', 500.0.into(), Span::default()))
+        .with_argument(Word::new(
+            'Y',
+            Value::from(-1.23),
+            Span::default(),
+        ));
         println!("{:?}", thing);
         let should_be = "N10 G1.2 X500 Y-1.23";
 
@@ -275,15 +269,15 @@ mod tests {
 
     #[test]
     fn you_can_round_trip_a_gcode() {
-        let original = Gcode::new2(
+        let original = Gcode::new(
             Mnemonic::General,
-            Number::from(1.2),
+            Prescaled::from(1.2),
             Span::new(0, 20, 0),
         ).with_line_number(10, Span::default())
-        .with_argument(Word::new('X', Number::from(500.0), Span::new(9, 13, 0)))
+        .with_argument(Word::new('X', Value::from(500.0), Span::new(9, 13, 0)))
         .with_argument(Word::new(
             'Y',
-            Number::from(-1.23),
+            Value::from(-1.23),
             Span::new(14, 20, 0),
         ));
 

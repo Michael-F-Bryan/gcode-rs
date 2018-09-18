@@ -47,6 +47,10 @@ impl<S: Scalar> Prescaled<S> {
     pub fn fractional_part(&self) -> i64 {
         self.0 % S::SCALE
     }
+
+    pub fn change_base<B: Scalar>(self) -> Prescaled<B> {
+        Prescaled((self.0 * B::SCALE) / S::SCALE, PhantomData)
+    }
 }
 
 impl<S> Default for Prescaled<S> {

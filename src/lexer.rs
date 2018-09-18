@@ -1,4 +1,4 @@
-use types::{Number, Span, Word};
+use types::{Span, Value, Word};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Lexer<'input> {
@@ -73,7 +73,7 @@ impl<'input> Lexer<'input> {
         }
     }
 
-    fn read_number(&mut self) -> Option<Number> {
+    fn read_number(&mut self) -> Option<Value> {
         self.try_or_backtrack(|lexy| {
             let start = lexy.current_index;
 
