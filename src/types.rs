@@ -44,6 +44,11 @@ impl Gcode {
         &self.arguments
     }
 
+    /// Get a mutable reference to the `Gcode`'s arguments.
+    pub fn args_mut(&mut self) -> &mut [Word] {
+        &mut self.arguments
+    }
+
     /// Get the line number given to this gode (e.g. the `20` in `N20 G04 P100`).
     pub fn line_number(&self) -> Option<u32> {
         self.line_number
@@ -253,6 +258,7 @@ impl Span {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use parse::parse;
 
     #[test]
     fn get_gcode_repr() {
@@ -301,6 +307,37 @@ mod tests {
 
             assert_eq!(g.major_number(), major);
             assert_eq!(g.minor_number(), minor);
+        }
+    }
+
+    /// An example of applying a transform to `Gcode`s on the fly, from
+    /// @MicroJoe in Michael-F-Bryan/gcode-rs#4
+    #[test]
+    fn transform_gcodes_on_the_fly() {
+        fn translate_x(mut code: Gcode, dx: f32) -> Gcode {
+            for arg in code.args_mut() {
+                if arg.letter == 'X' {
+                    arg.value += dx;
+                }
+            }
+
+            code
+        }
+
+        let src = "O1000
+                   T1 M6
+                   G90
+                   G01 X-75 Y-75 S500 M3
+                   G43 Z100 H1
+                   G01 Z5
+                   N20 G01 Z-20 F100";
+
+        let dx = 42.0;
+
+        let translated = parse(src).map(|g| translate_x(g, dx));
+
+        for code in translated {
+            println!("{}", code);
         }
     }
 }
