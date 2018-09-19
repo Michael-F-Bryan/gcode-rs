@@ -50,6 +50,7 @@ impl Gcode {
     }
 
     /// The number associated with this `Gcode` (e.g. the `01` in `G01 X123`).
+    #[deprecated = "You probably want the `Gcode::major_number()` and `Gcode::minor_number()` methods instead"]
     pub fn number(&self) -> f32 {
         self.number
     }
@@ -61,12 +62,13 @@ impl Gcode {
 
     /// Any number after the decimal point.
     pub fn minor_number(&self) -> Option<u32> {
-        let remainder = self.number.fract();
+        let fraction = self.number.abs().fract();
+        let first_digit = (fraction / 0.1).round() as u32;
 
-        if remainder == 0.0 {
+        if first_digit == 0 {
             None
         } else {
-            unimplemented!()
+            Some(first_digit)
         }
     }
 
@@ -120,7 +122,7 @@ impl Display for Gcode {
         }
 
         write!(f, "{}", self.mnemonic())?;
-        write!(f, "{}", self.number())?;
+        write!(f, "{}", self.number)?;
 
         for arg in self.args() {
             write!(f, " {}", arg)?;
@@ -271,5 +273,29 @@ mod tests {
         let got = ::parse(&serialized).next().unwrap();
 
         assert_eq!(got, original);
+    }
+
+    #[test]
+    fn major_and_minor_numbers_make_sense() {
+        let inputs = vec![
+            (1.0, 1, None),
+            (1.1, 1, Some(1)),
+            (1.2, 1, Some(2)),
+            (1.3, 1, Some(3)),
+            (1.4, 1, Some(4)),
+            (1.5, 1, Some(5)),
+            (1.6, 1, Some(6)),
+            (1.7, 1, Some(7)),
+            (1.8, 1, Some(8)),
+            (1.9, 1, Some(9)),
+            (2.0, 2, None),
+        ];
+
+        for (src, major, minor) in inputs {
+            let g = Gcode::new(Mnemonic::General, src, Span::default());
+
+            assert_eq!(g.major_number(), major);
+            assert_eq!(g.minor_number(), minor);
+        }
     }
 }
