@@ -60,7 +60,12 @@ impl Gcode {
         self.number.trunc() as u32
     }
 
-    /// Any number after the decimal point.
+    /// The first digit after the decimal point, if there was one.
+    ///
+    /// # Note
+    ///
+    /// For all intents and purposes, a gcode like `G1.0` doesn't really have
+    /// a minor number.
     pub fn minor_number(&self) -> Option<u32> {
         let fraction = self.number.abs().fract();
         let first_digit = (fraction / 0.1).round() as u32;

@@ -29,7 +29,7 @@ matrix:
 
     # Make sure we support a minimum rustc version
     - env: TARGET=x86_64-unknown-linux-gnu
-      rust: 1.24.0
+      rust: 1.26.0
 
     # Use nightly for ensuring our README example compiles
     - env: TARGET=x86_64-unknown-linux-gnu
