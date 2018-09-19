@@ -10,6 +10,7 @@ environment:
   matrix:
     # MSVC
     - TARGET: x86_64-pc-windows-msvc
+    - TARGET: i686-pc-windows-msvc
 
 install:
   - ps: >-
