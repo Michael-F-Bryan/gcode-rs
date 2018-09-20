@@ -20,15 +20,9 @@ fn main() {
 }
 
 fn running_in_ci() -> bool {
-    let ci_vars = &["CI", "TRAVIS", "APPVEYOR"];
-
-    for var in ci_vars {
-        if env::var(var).is_ok() {
-            return true;
-        }
-    }
-
-    false
+    ["CI", "TRAVIS", "APPVEYOR"]
+        .into_iter()
+        .any(|var| env::var(var).is_ok())
 }
 
 fn run_the_example_on_some_input(temp: &Path, exe: &Path) {

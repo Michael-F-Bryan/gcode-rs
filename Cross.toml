@@ -1,0 +1,8 @@
+[build.env]
+passthrough = [
+    "RUST_BACKTRACE",
+    "RUST_LOG",
+    "CI",
+    "TRAVIS",
+    "APPVEYOR",
+]
