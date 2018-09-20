@@ -9,7 +9,7 @@ void print_mnemonic(Gcode* gcode);
 void print_args(Gcode* gcode);
 void die (int line_number, const char * format, ...);
 
-int main() {
+int main(int argc, char **argv) {
     const char* src = "G01 X123 Y-20.5 G04 P500\nN20 G1";
 
     Parser *parser = parser_new(src, strlen(src));
@@ -39,7 +39,7 @@ void print_gcode(Gcode* gcode) {
     }
 
     print_mnemonic(gcode);
-    printf("%d", gcode_major_number(gcode));
+    printf("%02d", gcode_major_number(gcode));
 
     int minor = gcode_minor_number(gcode);
     if (minor) {
