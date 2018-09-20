@@ -1,4 +1,4 @@
-//! A FFI interface to the `gcode` library.
+//! A FFI interface to the `gcode` crate.
 //!
 //! # Error Handling
 //!
@@ -20,8 +20,8 @@
 extern crate gcode;
 
 use gcode::{Gcode as _Gcode, Parser as _Parser};
-use std::mem;
 use std::ops::{Deref, DerefMut};
+use std::os::raw::{c_char, c_float, c_int};
 use std::ptr;
 use std::slice;
 use std::str;
@@ -75,15 +75,15 @@ impl DerefMut for Gcode {
 /// source string.
 #[no_mangle]
 pub unsafe extern "C" fn parser_new(
-    src: *const u8,
-    src_len: i32,
+    src: *const c_char,
+    src_len: c_int,
 ) -> *mut Parser {
     if src.is_null() {
         return ptr::null_mut();
     }
 
     // first, turn the input into a proper UTF-8 string
-    let src = slice::from_raw_parts(src, src_len as usize);
+    let src = slice::from_raw_parts(src as *const u8, src_len as usize);
     let src = match str::from_utf8(src) {
         Ok(s) => s,
         Err(_) => return ptr::null_mut(),
@@ -92,6 +92,7 @@ pub unsafe extern "C" fn parser_new(
     Box::into_raw(Box::new(Parser(gcode::parse(src))))
 }
 
+/// Destroy the `Parser` once you no longer need it.
 #[no_mangle]
 pub unsafe extern "C" fn parser_destroy(parser: *mut Parser) {
     if parser.is_null() {
@@ -102,12 +103,30 @@ pub unsafe extern "C" fn parser_destroy(parser: *mut Parser) {
     drop(boxed);
 }
 
+/// Allocate a new, empty `Gcode`.
+#[no_mangle]
+pub unsafe extern "C" fn gcode_new() -> *mut Gcode {
+    Box::into_raw(Box::new(Gcode(None)))
+}
+
+/// Free the `Gcode`.
+#[no_mangle]
+pub unsafe extern "C" fn gcode_destroy(gcode: *mut Gcode) {
+    if gcode.is_null() {
+        return;
+    }
+
+    let boxed = Box::from_raw(gcode);
+    drop(boxed);
+}
+
 /// Get the next `Gcode`, returning `false` when there are no more `Gcode`s in
 /// the input.
 ///
 /// # Note
 ///
-/// You can either pass in a newly created `Gcode` or reuse an existing one.
+/// To avoid unnecessary allocations, you can either pass in a newly created
+/// `Gcode` or reuse an existing one.
 #[no_mangle]
 pub unsafe extern "C" fn parser_next(
     parser: *mut Parser,
@@ -132,19 +151,19 @@ pub unsafe extern "C" fn gcode_mnemonic(gcode: *const Gcode) -> Mnemonic {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn gcode_major_number(gcode: *const Gcode) -> u32 {
-    (&*gcode).major_number()
+pub unsafe extern "C" fn gcode_major_number(gcode: *const Gcode) -> c_int {
+    (&*gcode).major_number() as c_int
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn gcode_minor_number(gcode: *const Gcode) -> u32 {
-    (&*gcode).minor_number().unwrap_or(0)
+pub unsafe extern "C" fn gcode_minor_number(gcode: *const Gcode) -> c_int {
+    (&*gcode).minor_number().unwrap_or(0) as c_int
 }
 
 /// The number of arguments in this `Gcode`.
 #[no_mangle]
-pub unsafe extern "C" fn gcode_arg_count(gcode: *const Gcode) -> i32 {
-    (&*gcode).args().len() as i32
+pub unsafe extern "C" fn gcode_arg_count(gcode: *const Gcode) -> c_int {
+    (&*gcode).args().len() as c_int
 }
 
 /// Get a pointer to this `Gcode`'s arguments.
@@ -158,7 +177,7 @@ pub unsafe extern "C" fn gcode_args(gcode: *const Gcode) -> *const Word {
 pub unsafe extern "C" fn gcode_arg_value(
     gcode: *const Gcode,
     letter: char,
-    value: *mut f32,
+    value: *mut c_float,
 ) -> bool {
     match (&*gcode).value_for(letter) {
         Some(n) => {
@@ -179,11 +198,11 @@ pub unsafe extern "C" fn gcode_span(gcode: *const Gcode) -> Span {
 #[no_mangle]
 pub unsafe extern "C" fn gcode_line_number(
     gcode: *const Gcode,
-    line_number: *mut u32,
+    line_number: *mut c_int,
 ) -> bool {
     match (&*gcode).line_number() {
         Some(n) => {
-            *line_number = n;
+            *line_number = n as c_int;
             true
         }
         None => false,

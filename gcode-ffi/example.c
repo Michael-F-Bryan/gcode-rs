@@ -1,54 +1,51 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include "gcode.h"
 
-// These *should* normally be part of "gcode.h", but due to a bug in cbindgen
-// (eqrion/cbindgen#174) they aren't being exported properly.
-#define SIZE_OF_PARSER 64
-#define SIZE_OF_GCODE 312
-
 void print_gcode(Gcode* gcode);
 void print_mnemonic(Gcode* gcode);
 void print_args(Gcode* gcode);
+void die (int line_number, const char * format, ...);
 
 int main() {
-    bool success = true;
     const char* src = "G01 X123 Y-20.5 G04 P500\nN20 G1";
 
-    // "allocate" some memory for our parser and the parsed gcode. Of course,
-    // normally you can just use malloc()
-    char parser_buf[SIZE_OF_PARSER];
-    char gcode_buf[SIZE_OF_GCODE];
-
-    Parser* parser = (Parser*)parser_buf;
-    Gcode* gcode = (Gcode*)gcode_buf;
-
-    success = parser_new(parser, src, strlen(src));
-    if (success) {
-        while (parser_next(parser, gcode)) {
-            print_gcode(gcode);
-        }
+    Parser *parser = parser_new(src, strlen(src));
+    if (!parser) {
+        die(__LINE__, "Unable to create a parser");
     }
 
-    if (success) {
-        return 0;
-    } else {
-        printf("Error!\n");
-        return 1;
+    Gcode *gcode = gcode_new();
+    if (!gcode) {
+        die(__LINE__, "Unable to allocate our gcode");
     }
+
+    while (parser_next(parser, gcode)) {
+        print_gcode(gcode);
+    }
+
+    gcode_destroy(gcode);
+    parser_destroy(parser);
 }
 
 
 void print_gcode(Gcode* gcode) {
-    uint32_t line_number;
+    int line_number;
 
     if (gcode_line_number(gcode, &line_number)) {
         printf("N%d ", line_number);
     }
 
     print_mnemonic(gcode);
-    printf("%g", gcode_number(gcode));
+    printf("%d", gcode_major_number(gcode));
+
+    int minor = gcode_minor_number(gcode);
+    if (minor) {
+        printf(".%d", minor);
+    }
+
     print_args(gcode);
 
     printf("\n");
@@ -78,8 +75,21 @@ void print_mnemonic(Gcode* gcode) {
 void print_args(Gcode* gcode) {
     const Word* args = gcode_args(gcode);
 
-    for(int i = 0; i < gcode_num_args(gcode); i++) {
+    for(int i = 0; i < gcode_arg_count(gcode); i++) {
         Word word = args[i];
         printf(" %c%g", word.letter, word.value);
     }
 }
+
+void die (int line_number, const char * format, ...)
+{
+    va_list vargs;
+
+    va_start(vargs, format);
+    fprintf(stderr, "%d: ", line_number);
+    vfprintf(stderr, format, vargs);
+    fprintf(stderr, ".\n");
+    va_end(vargs);
+    exit(1);
+}
+
