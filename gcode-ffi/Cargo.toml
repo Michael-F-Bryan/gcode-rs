@@ -23,3 +23,9 @@ cbindgen = "0.6"
 
 [dev-dependencies]
 tempfile = "3.0"
+pretty_assertions = "0.5.1"
+
+[[test]]
+name = "example"
+path = "tests/run_c_example.rs"
+harness = false

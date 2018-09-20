@@ -1,25 +1,55 @@
+#[macro_use]
+extern crate pretty_assertions;
+extern crate gcode;
 extern crate tempfile;
 
 use std::env;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use tempfile::TempDir;
 
-#[test]
-fn the_example_compiles() {
-    let (_temp, _exe) = compile_example();
+fn main() {
+    if running_in_ci() {
+        eprintln!("We don't run the example in CI");
+        return;
+    }
+
+    let (temp, exe) = compile_example();
+    run_the_example_on_some_input(temp.path(), &exe);
 }
 
-#[test]
-fn run_the_example() {
-    let (_temp, exe) = compile_example();
+fn running_in_ci() -> bool {
+    let ci_vars = &["CI", "TRAVIS", "APPVEYOR"];
 
-    let output = Command::new(exe).stdout(Stdio::piped()).output().unwrap();
+    for var in ci_vars {
+        if env::var(var).is_ok() {
+            return true;
+        }
+    }
+
+    false
+}
+
+fn run_the_example_on_some_input(temp: &Path, exe: &Path) {
+    let src = "G01 X123 Y-20.5\nG04 P500\nN20 G01";
+
+    let input = temp.join("input.txt");
+    fs::write(&input, src.as_bytes()).unwrap();
+
+    let output = Command::new(exe)
+        .arg(&input)
+        .stdout(Stdio::piped())
+        .output()
+        .unwrap();
+
     assert!(output.status.success());
 
     let stdout = String::from_utf8(output.stdout).unwrap();
+    let should_be: Vec<_> = gcode::parse(src).collect();
+    let got: Vec<_> = gcode::parse(&stdout).collect();
 
-    panic!("{:?}", stdout);
+    assert_eq!(got, should_be);
 }
 
 fn executable_exists(exe: &str) -> bool {

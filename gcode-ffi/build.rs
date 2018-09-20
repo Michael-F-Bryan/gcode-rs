@@ -6,6 +6,10 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
+    if running_in_ci() {
+        return;
+    }
+
     let crate_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let target_dir = crate_dir.parent().unwrap().join("target");
     let header = target_dir.join("gcode.h");
@@ -31,4 +35,16 @@ fn main() {
         .generate()
         .expect("Unable to generate bindings")
         .write_to_file(header);
+}
+
+fn running_in_ci() -> bool {
+    let ci_vars = &["CI", "TRAVIS", "APPVEYOR"];
+
+    for var in ci_vars {
+        if env::var(var).is_ok() {
+            return true;
+        }
+    }
+
+    false
 }

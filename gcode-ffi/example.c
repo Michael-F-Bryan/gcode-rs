@@ -4,7 +4,7 @@
 #include <string.h>
 #include "gcode.h"
 
-void print_gcode(Gcode* gcode);
+void print_gcode(Gcode *gcode);
 void print_mnemonic(Gcode* gcode);
 void print_args(Gcode* gcode);
 void die (int line_number, const char * format, ...);
