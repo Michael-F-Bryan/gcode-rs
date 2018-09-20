@@ -1,0 +1,15 @@
+[package]
+name = "gcode-ffi"
+version = "0.3.2-alpha.0"
+license = "MIT"
+repository = "https://github.com/Michael-F-Bryan/gcode-rs"
+authors = ["Michael Bryan <michaelfbryan@gmail.com>"]
+keywords = ["gcode", "parser"]
+categories = ["no-std", "parser-implementations", "embedded"]
+
+[badges]
+appveyor = { repository = "Michael-F-Bryan/gcode-rs" }
+travis-ci = { repository = "Michael-F-Bryan/gcode-rs" }
+
+[dependencies]
+gcode = { path = "../gcode" }

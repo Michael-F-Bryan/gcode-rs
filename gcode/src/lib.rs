@@ -107,9 +107,6 @@
 )]
 
 extern crate arrayvec;
-#[cfg(feature = "ffi")]
-#[macro_use]
-extern crate cfg_if;
 
 #[cfg(test)]
 #[macro_use]
@@ -118,8 +115,6 @@ extern crate std;
 #[macro_use]
 extern crate pretty_assertions;
 
-#[cfg(feature = "ffi")]
-pub mod ffi;
 mod lexer;
 mod parse;
 mod types;

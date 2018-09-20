@@ -1,0 +1,19 @@
+[package]
+authors = ["Michael-F-Bryan <michaelfbryan@gmail.com>"]
+name = "gcode"
+version = "0.3.2-alpha.0"
+description = "A gcode parser for no-std applications."
+license = "MIT"
+repository = "https://github.com/Michael-F-Bryan/gcode-rs"
+keywords = ["gcode", "parser"]
+categories = ["no-std", "parser-implementations", "embedded"]
+
+[badges]
+appveyor = { repository = "Michael-F-Bryan/gcode-rs" }
+travis-ci = { repository = "Michael-F-Bryan/gcode-rs" }
+
+[dev-dependencies]
+pretty_assertions = "0.5.1"
+
+[dependencies]
+arrayvec = "0.4.7"

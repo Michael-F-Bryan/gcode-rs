@@ -51,28 +51,26 @@
 //! }
 //! ```
 
+#![no_std]
+#![deny(
+    missing_docs,
+    missing_debug_implementations,
+    missing_copy_implementations,
+    trivial_casts,
+    trivial_numeric_casts,
+    unstable_features,
+    unused_import_braces,
+    unused_qualifications
+)]
 #![allow(missing_docs, unsafe_code)]
+
+extern crate gcode;
 
 use core::mem;
 use core::ptr;
 use core::slice;
 use core::str;
-use parse::Parser;
-use types::{Gcode, Mnemonic, Span, Word};
-
-cfg_if!{
-    if #[cfg(target_pointer_width = "64")] {
-        pub const SIZE_OF_PARSER: usize = 64;
-        pub const SIZE_OF_GCODE: usize = 312;
-    } else if #[cfg(target_pointer_width = "32")] {
-        pub const SIZE_OF_PARSER: usize = 36;
-        pub const SIZE_OF_GCODE: usize = 196;
-    } else {
-        compile_error!("FFI bindings aren't (yet) supported on this platform \
-                        because we can't statically determine size of `Parser` \
-                        and `Gcode`");
-    }
-}
+use gcode::{Gcode, Mnemonic, Parser, Span, Word};
 
 /// Create a new parser.
 ///
@@ -104,7 +102,7 @@ pub unsafe extern "C" fn parser_new(
     };
 
     // create our parser, Parser<'input>
-    let local_parser = Parser::new(src);
+    let local_parser = gcode::parse(src);
 
     // Copy it to the destination, passing ownership to the caller
     ptr::write(parser, local_parser);
@@ -192,23 +190,5 @@ pub unsafe extern "C" fn gcode_line_number(
             true
         }
         None => false,
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use core::mem;
-
-    #[test]
-    fn constant_definitions_are_correct() {
-        assert_eq!(SIZE_OF_PARSER, mem::size_of::<Parser>());
-        assert_eq!(SIZE_OF_GCODE, mem::size_of::<Gcode>());
-    }
-
-    #[test]
-    fn all_ffi_types_are_trivial() {
-        assert!(!mem::needs_drop::<Parser>());
-        // assert!(!mem::needs_drop::<Gcode>());
     }
 }
