@@ -13,13 +13,6 @@ main() {
     cross test --target $TARGET --all-features
     cross test --target $TARGET --release --all-features
 
-    # We also want to test the C example
-    if [ $TRAVIS_OS_NAME = linux ]; then
-        pushd ffi-example
-        make && LD_LIBRARY_PATH=. ./example
-        popd
-    fi
-
     # Make sure our README example stays up-to-date. For some reason, we can't
     # use `cross rustdoc ...` so we need to recompile
     if [ "$TRAVIS_RUST_VERSION" = nightly ]; then

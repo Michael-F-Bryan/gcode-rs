@@ -21,6 +21,8 @@ impl<'input> Lexer<'input> {
         match next {
             '\n' => Some(self.tokenize_newline()),
             '(' | ';' => Some(self.tokenize_comment()),
+            '%' => Some(self.tokenize_percent()),
+            '/' => Some(self.tokenize_forward_slash()),
             other if other.is_ascii_alphabetic() => {
                 Some(self.tokenize_letter())
             }
@@ -43,6 +45,29 @@ impl<'input> Lexer<'input> {
         }
 
         &self.src[start..self.current_index]
+    }
+
+    fn tokenize_forward_slash(&mut self) -> Token<'input> {
+        let slash = self.advance().unwrap();
+        debug_assert!(slash == '/');
+
+        Token::ForwardSlash
+    }
+
+    fn tokenize_percent(&mut self) -> Token<'input> {
+        let percent = self.advance().unwrap();
+        debug_assert!(percent == '%');
+
+        let comment = self.take_while(|c| c != '\n');
+
+        // skip past the newline
+        let _ = self.advance();
+
+        if comment.is_empty() {
+            Token::Percent(None)
+        } else {
+            Token::Percent(Some(comment))
+        }
     }
 
     fn tokenize_comment(&mut self) -> Token<'input> {
@@ -122,7 +147,9 @@ enum Token<'input> {
     Number(f32),
     Comment(&'input str),
     Newline,
-    Percent,
+    ForwardSlash,
+    /// A `%` delimiter with optional comment.
+    Percent(Option<&'input str>),
 }
 
 impl<'input> From<char> for Token<'input> {
@@ -180,6 +207,10 @@ mod tests {
     lexer_test!(lex_a_letter, "W" => Token::Letter('W'));
     lexer_test!(lex_a_lowercase_letter, "g" => 'g');
     lexer_test!(lex_comment_in_parens, "(this is a comment)" => "(this is a comment)");
+    lexer_test!(lex_bare_percent, "%" => Token::Percent(None));
+    lexer_test!(lex_bare_percent_with_newline, "%\n" => Token::Percent(None));
+    lexer_test!(lex_percent_with_comment, "% This is a comment\n" => Token::Percent(Some(" This is a comment")));
+    lexer_test!(lex_a_forward_slash, "/" => Token::ForwardSlash);
 
     #[test]
     fn recognise_a_newline() {
