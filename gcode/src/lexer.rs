@@ -1,14 +1,5 @@
 use types::Span;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-enum Token<'input> {
-    Letter(char),
-    Number(f32),
-    Comment(&'input str),
-    Newline,
-    Percent,
-}
-
 struct Lexer<'input> {
     src: &'input str,
     current_index: usize,
@@ -24,15 +15,66 @@ impl<'input> Lexer<'input> {
         }
     }
 
-    fn parse_letter(&mut self) -> Option<Token<'input>> {
-        let c = self.peek()?;
+    fn step(&mut self) -> Option<Token<'input>> {
+        let next = self.peek()?;
 
-        if c.is_ascii_alphabetic() {
-            self.advance();
-            Some(Token::Letter(c))
-        } else {
-            None
+        match next {
+            '\n' => Some(self.tokenize_newline()),
+            '(' | ';' => Some(self.tokenize_comment()),
+            other if other.is_ascii_alphabetic() => {
+                Some(self.tokenize_letter())
+            }
+            _ => unimplemented!(),
         }
+    }
+
+    fn take_while<P>(&mut self, mut predicate: P) -> &'input str
+    where
+        P: FnMut(char) -> bool,
+    {
+        let start = self.current_index;
+
+        while let Some(c) = self.peek() {
+            if predicate(c) {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+
+        &self.src[start..self.current_index]
+    }
+
+    fn tokenize_comment(&mut self) -> Token<'input> {
+        let start = self.current_index;
+        let comment_char = self.advance().unwrap();
+
+        let end_of_comment = match comment_char {
+            '(' => ')',
+            ';' => '\n',
+            _ => unreachable!(),
+        };
+
+        // skip the comment body
+        let _ = self.take_while(|c| c != end_of_comment);
+        // step past the end-of-comment character
+        let _ = self.advance();
+
+        Token::Comment(&self.src[start..self.current_index])
+    }
+
+    fn tokenize_letter(&mut self) -> Token<'input> {
+        let c = self.advance().unwrap();
+        debug_assert!(c.is_ascii_alphabetic());
+
+        Token::Letter(c)
+    }
+
+    fn tokenize_newline(&mut self) -> Token<'input> {
+        let c = self.advance().unwrap();
+        debug_assert!(c == '\n');
+
+        Token::Newline
     }
 
     fn advance(&mut self) -> Option<char> {
@@ -67,10 +109,43 @@ impl<'input> Iterator for Lexer<'input> {
     fn next(&mut self) -> Option<Self::Item> {
         let mut span = self.here();
 
-        let letter = self.parse_letter()?;
+        let tok = self.step()?;
         span.end = self.current_index;
 
-        Some((letter, span))
+        Some((tok, span))
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+enum Token<'input> {
+    Letter(char),
+    Number(f32),
+    Comment(&'input str),
+    Newline,
+    Percent,
+}
+
+impl<'input> From<char> for Token<'input> {
+    fn from(other: char) -> Self {
+        Token::Letter(other)
+    }
+}
+
+impl<'input> From<f32> for Token<'input> {
+    fn from(other: f32) -> Self {
+        Token::Number(other)
+    }
+}
+
+impl<'input> From<i32> for Token<'input> {
+    fn from(other: i32) -> Self {
+        Token::Number(other as f32)
+    }
+}
+
+impl<'input> From<&'input str> for Token<'input> {
+    fn from(other: &'input str) -> Self {
+        Token::Comment(other)
     }
 }
 
@@ -78,20 +153,51 @@ impl<'input> Iterator for Lexer<'input> {
 mod tests {
     use super::*;
 
+    macro_rules! lexer_test {
+        ($name:ident, $src:expr => $should_be:expr) => {
+            #[test]
+            fn $name() {
+                let src = $src;
+                let should_be = Token::from($should_be);
+                let mut lexy = Lexer::new(src);
+
+                let (token, span) = lexy.next().unwrap();
+
+                assert_eq!(token, should_be);
+                assert_eq!(
+                    span,
+                    Span {
+                        start: 0,
+                        end: src.len(),
+                        source_line: 0,
+                    }
+                );
+                assert_eq!(lexy.current_index, src.len());
+            }
+        };
+    }
+
+    lexer_test!(lex_a_letter, "W" => Token::Letter('W'));
+    lexer_test!(lex_a_lowercase_letter, "g" => 'g');
+    lexer_test!(lex_comment_in_parens, "(this is a comment)" => "(this is a comment)");
+
     #[test]
-    fn parse_a_letter() {
-        let src = "W";
+    fn recognise_a_newline() {
+        let src = "\n";
+        let should_be = Token::Newline;
+        let mut lexy = Lexer::new(src);
 
-        let (token, span) = Lexer::new(src).next().unwrap();
+        let (token, span) = lexy.next().unwrap();
 
-        assert_eq!(token, Token::Letter('W'));
+        assert_eq!(token, should_be);
         assert_eq!(
             span,
             Span {
                 start: 0,
-                end: 1,
-                source_line: 0
+                end: src.len(),
+                source_line: 0,
             }
         );
+        assert_eq!(lexy.current_line, 1);
     }
 }
