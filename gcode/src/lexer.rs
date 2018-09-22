@@ -1,3 +1,4 @@
+use arrayvec::ArrayString;
 use types::Span;
 
 struct Lexer<'input> {
@@ -23,6 +24,8 @@ impl<'input> Lexer<'input> {
             '(' | ';' => Some(self.tokenize_comment()),
             '%' => Some(self.tokenize_percent()),
             '/' => Some(self.tokenize_forward_slash()),
+            '.' => Some(self.tokenize_number()),
+            other if other.is_numeric() => Some(self.tokenize_number()),
             other if other.is_ascii_alphabetic() => {
                 Some(self.tokenize_letter())
             }
@@ -45,6 +48,52 @@ impl<'input> Lexer<'input> {
         }
 
         &self.src[start..self.current_index]
+    }
+
+    fn tokenize_number(&mut self) -> Token<'input> {
+        // gcode numbers are funny. They can sometimes contain internal
+        // whitespace, so we can't directly use `f32::from_str()`. Instead we
+        // copy to a temporary buffer, read the number, then try to parse that.
+        let mut buffer: ArrayString<[u8; 32]> = ArrayString::new();
+        let mut seen_decimal = false;
+        let mut input_is_malformed = false;
+        let start = self.current_index;
+
+        while let Some(next) = self.peek() {
+            if next == '\n' || next == '\r' {
+                break;
+            }
+
+            if next == '.' {
+                if seen_decimal {
+                    break;
+                } else {
+                    seen_decimal = true;
+                }
+            }
+
+            if next != '.' && !next.is_numeric() && !next.is_whitespace() {
+                break;
+            }
+
+            if !next.is_whitespace() && !input_is_malformed {
+                if buffer.try_push(next).is_err() {
+                    // Pushing any more characters would overflow our buffer.
+                    // You can't really parse a 32-digit number without loss of
+                    // precision anyway, so from here on we're going to pretend
+                    // the whole thing is malformed and garbage.
+                    input_is_malformed = true;
+                }
+            }
+
+            let _ = self.advance();
+        }
+
+        if input_is_malformed {
+            Token::GarbageNumber(&self.src[start..self.current_index])
+        } else {
+            Token::Number(buffer.parse().expect("Parse should never fail"))
+        }
     }
 
     fn tokenize_forward_slash(&mut self) -> Token<'input> {
@@ -115,8 +164,12 @@ impl<'input> Lexer<'input> {
         next
     }
 
+    fn rest(&self) -> &'input str {
+        &self.src[self.current_index..]
+    }
+
     fn peek(&self) -> Option<char> {
-        self.src[self.current_index..].chars().next()
+        self.rest().chars().next()
     }
 
     fn here(&self) -> Span {
@@ -142,7 +195,7 @@ impl<'input> Iterator for Lexer<'input> {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-enum Token<'input> {
+pub(crate) enum Token<'input> {
     Letter(char),
     Number(f32),
     Comment(&'input str),
@@ -150,6 +203,19 @@ enum Token<'input> {
     ForwardSlash,
     /// A `%` delimiter with optional comment.
     Percent(Option<&'input str>),
+    /// A stupidly long decimal number was encountered. It'd normally overflow
+    /// and break stuff if we tried to parse it, so pass it through to the
+    /// parser as an erroneous variant.
+    GarbageNumber(&'input str),
+}
+
+impl<'input> Token<'input> {
+    pub fn is_err(&self) -> bool {
+        match self {
+            Token::GarbageNumber(_) => true,
+            _ => false,
+        }
+    }
 }
 
 impl<'input> From<char> for Token<'input> {
@@ -211,6 +277,13 @@ mod tests {
     lexer_test!(lex_bare_percent_with_newline, "%\n" => Token::Percent(None));
     lexer_test!(lex_percent_with_comment, "% This is a comment\n" => Token::Percent(Some(" This is a comment")));
     lexer_test!(lex_a_forward_slash, "/" => Token::ForwardSlash);
+    lexer_test!(integer, "42" => 42);
+    lexer_test!(decimal, "1.23" => 1.23);
+    lexer_test!(integer_with_space, "1 23" => 123);
+    lexer_test!(funky_spaces, "1 23. 4 5" => 123.45);
+    lexer_test!(ignore_long_numbers_as_malformed, "1234567890 1234567890 1234567890 1234567890" =>
+                Token::GarbageNumber("1234567890 1234567890 1234567890 1234567890"));
+    lexer_test!(no_leading_zero, ".5" => 0.5);
 
     #[test]
     fn recognise_a_newline() {
