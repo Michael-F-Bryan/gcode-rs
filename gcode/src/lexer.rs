@@ -1,7 +1,8 @@
 use arrayvec::ArrayString;
 use types::Span;
 
-struct Lexer<'input> {
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub(crate) struct Lexer<'input> {
     src: &'input str,
     current_index: usize,
     current_line: usize,
@@ -14,6 +15,10 @@ impl<'input> Lexer<'input> {
             current_index: 0,
             current_line: 0,
         }
+    }
+
+    pub fn src(&self) -> &'input str {
+        self.src
     }
 
     fn step(&mut self) -> Option<Token<'input>> {
@@ -131,10 +136,17 @@ impl<'input> Lexer<'input> {
 
         // skip the comment body
         let _ = self.take_while(|c| c != end_of_comment);
+        let mut end = self.current_index;
+
         // step past the end-of-comment character
         let _ = self.advance();
 
-        Token::Comment(&self.src[start..self.current_index])
+        // we want to include the closing paren, but ignore a trailing newline
+        if end_of_comment == ')' {
+            end = self.current_index;
+        }
+
+        Token::Comment(&self.src[start..end])
     }
 
     fn tokenize_letter(&mut self) -> Token<'input> {
@@ -248,24 +260,29 @@ mod tests {
 
     macro_rules! lexer_test {
         ($name:ident, $src:expr => $should_be:expr) => {
+            lexer_test!($name, $src => $should_be;
+                        |span, src| assert_eq!(span,
+                                               Span {
+                                                   start: 0,
+                                                   end: src.len(),
+                                                   source_line: 0
+                                               }));
+        };
+        (ignore_span $name:ident, $src:expr => $should_be:expr) => {
+            lexer_test!($name, $src => $should_be; |span, src| {});
+        };
+        ($name:ident, $src:expr => $should_be:expr; |$span_name:ident, $src_name:ident| $span_check:expr) => {
             #[test]
             fn $name() {
-                let src = $src;
+                let $src_name = $src;
                 let should_be = Token::from($should_be);
-                let mut lexy = Lexer::new(src);
+                let mut lexy = Lexer::new($src_name);
 
-                let (token, span) = lexy.next().unwrap();
+                let (token, $span_name) = lexy.next().unwrap();
 
                 assert_eq!(token, should_be);
-                assert_eq!(
-                    span,
-                    Span {
-                        start: 0,
-                        end: src.len(),
-                        source_line: 0,
-                    }
-                );
-                assert_eq!(lexy.current_index, src.len());
+                assert_eq!(lexy.current_index, $src_name.len());
+                $span_check;
             }
         };
     }
@@ -273,6 +290,7 @@ mod tests {
     lexer_test!(lex_a_letter, "W" => Token::Letter('W'));
     lexer_test!(lex_a_lowercase_letter, "g" => 'g');
     lexer_test!(lex_comment_in_parens, "(this is a comment)" => "(this is a comment)");
+    lexer_test!(ignore_span lex_newline_comment, "; this is a comment\n" =>"; this is a comment");
     lexer_test!(lex_bare_percent, "%" => Token::Percent(None));
     lexer_test!(lex_bare_percent_with_newline, "%\n" => Token::Percent(None));
     lexer_test!(lex_percent_with_comment, "% This is a comment\n" => Token::Percent(Some(" This is a comment")));

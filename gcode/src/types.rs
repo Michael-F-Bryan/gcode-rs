@@ -1,12 +1,17 @@
 use arrayvec::ArrayVec;
 #[cfg(not(feature = "std"))]
+#[allow(unused_imports)]
 use libm::F32Ext;
 
-const INLINE_COMMENT_COUNT: usize = 3;
+const COMMENT_COUNT: usize = 3;
 const ARGUMENT_COUNT: usize = 10;
+const COMMAND_COUNT: usize = 10;
+type Comments<'input> = ArrayVec<[Comment<'input>; COMMENT_COUNT]>;
 type Arguments = ArrayVec<[Argument; ARGUMENT_COUNT]>;
+type Commands = ArrayVec<[Gcode; COMMAND_COUNT]>;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(C)]
 pub struct Span {
     pub start: usize,
     pub end: usize,
@@ -25,6 +30,13 @@ impl Span {
     pub fn is_placeholder(&self) -> bool {
         *self == Span::placeholder()
     }
+
+    pub fn text_from_source<'input>(
+        &self,
+        src: &'input str,
+    ) -> Option<&'input str> {
+        src.get(self.start..self.end)
+    }
 }
 
 impl Default for Span {
@@ -33,31 +45,99 @@ impl Default for Span {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+/// A block containing `Gcode` commands and/or comments.
+#[derive(Debug, Clone, PartialEq)]
 pub struct Block<'input> {
-    src: &'input str,
+    src: Option<&'input str>,
+    commands: Commands,
+    comments: Comments<'input>,
+    deleted: bool,
     span: Span,
+}
+
+impl<'input> Block<'input> {
+    pub(crate) fn empty() -> Block<'input> {
+        Block {
+            src: None,
+            commands: Commands::default(),
+            comments: Comments::default(),
+            deleted: false,
+            span: Span::placeholder(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.commands.is_empty() && self.comments.is_empty()
+    }
+
+    pub fn into_commands(self) -> impl Iterator<Item = Gcode> {
+        self.commands.into_iter()
+    }
+
+    pub fn commands(&self) -> &[Gcode] {
+        &self.commands
+    }
+
+    pub fn commands_mut(&mut self) -> &mut [Gcode] {
+        &mut self.commands
+    }
+
+    pub fn comments(&self) -> &[Comment<'input>] {
+        &self.comments
+    }
+
+    /// The original source text of the `Block`, if available.
+    pub fn src(&self) -> Option<&'input str> {
+        self.src
+    }
+
+    pub(crate) fn set_src(&mut self, src: &'input str) {
+        self.src = Some(src);
+    }
+
+    pub fn span(&self) -> Span {
+        self.span
+    }
+
+    pub fn deleted(&self) -> bool {
+        self.deleted
+    }
+
+    pub fn delete(&mut self, delete: bool) {
+        self.deleted = delete;
+    }
+
+    pub fn push_comment(&mut self, comment: Comment<'input>) {
+        self.merge_span(comment.span);
+        self.comments.push(comment);
+    }
+
+    fn merge_span(&mut self, span: Span) {
+        if self.span.is_placeholder() {
+            self.span = span;
+        } else {
+            unimplemented!()
+        }
+    }
 }
 
 /// A single gcode command.
 #[derive(Debug, Clone, PartialEq)]
-pub struct Gcode<'input> {
+pub struct Gcode {
     line_number: Option<usize>,
     mnemonic: Mnemonic,
     number: f32,
-    comments: ArrayVec<[Comment<'input>; INLINE_COMMENT_COUNT]>,
     arguments: Arguments,
     span: Span,
 }
 
-impl<'input> Gcode<'input> {
-    pub fn new(mnemonic: Mnemonic, number: f32) -> Gcode<'input> {
+impl Gcode {
+    pub fn new(mnemonic: Mnemonic, number: f32) -> Gcode {
         debug_assert!(number > 0.0, "The number should always be positive");
         Gcode {
             mnemonic,
             number: number as f32,
             line_number: None,
-            comments: Default::default(),
             arguments: Default::default(),
             span: Default::default(),
         }
@@ -108,11 +188,6 @@ impl<'input> Gcode<'input> {
         self
     }
 
-    pub fn with_comment(&mut self, comment: Comment<'input>) -> &mut Self {
-        self.comments.push(comment);
-        self
-    }
-
     pub fn with_argument(&mut self, arg: Argument) -> &mut Self {
         self.arguments.push(arg);
         self
@@ -126,6 +201,7 @@ impl<'input> Gcode<'input> {
 
 /// A command argument.
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(C)]
 pub struct Argument {
     pub letter: char,
     pub value: f32,
