@@ -1,7 +1,7 @@
-use arrayvec::ArrayVec;
 use lexer::{Lexer, Token};
+#[cfg(not(feature = "std"))]
 use libm::F32Ext;
-use types::{Block, Comment, Span};
+use types::{Block, Comment, Mnemonic, Span};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Parser<'input, C> {
@@ -39,6 +39,15 @@ impl<'input, C: Callbacks> Parser<'input, C> {
                 }
                 State::ReadingLineNumber(n_span) => {
                     self.step_read_line_number(token, span, n_span, &mut block);
+                }
+                State::ReadingWord(letter, letter_span) => {
+                    self.step_read_word(
+                        token,
+                        span,
+                        letter,
+                        letter_span,
+                        &mut block,
+                    );
                 }
                 State::Done => {}
             }
@@ -90,8 +99,34 @@ impl<'input, C: Callbacks> Parser<'input, C> {
             Token::Letter('N') | Token::Letter('n') => {
                 self.state = State::ReadingLineNumber(span);
             }
+            Token::Letter(other) => {
+                self.state = State::ReadingWord(other, span);
+            }
             _ => unimplemented!(),
         }
+    }
+
+    fn step_read_word(
+        &mut self,
+        token: Token<'input>,
+        token_span: Span,
+        letter: char,
+        letter_span: Span,
+        block: &mut Block<'input>,
+    ) {
+        let number = match token {
+            Token::Number(n) => n,
+            other => {
+                self.callbacks.unexpected_token(
+                    other.kind(),
+                    token_span,
+                    &[Token::NUMBER],
+                );
+                unimplemented!();
+            }
+        };
+
+        unimplemented!();
     }
 
     fn step_read_line_number(
@@ -108,7 +143,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
                     token_span.merge(n_span),
                 );
             }
-            other => {
+            _ => {
                 self.callbacks.unexpected_token(
                     token.kind(),
                     token_span,
@@ -127,6 +162,8 @@ enum State {
     Preamble,
     /// Started reading a line number.
     ReadingLineNumber(Span),
+    /// We're reading a word (i.e. `G90`).
+    ReadingWord(char, Span),
     /// Finished reading a line.
     Done,
 }
@@ -155,24 +192,6 @@ pub trait Callbacks {
 pub struct Nop;
 
 impl Callbacks for Nop {}
-
-#[derive(Debug, Clone, PartialEq)]
-struct Lookahead<I: Iterator> {
-    iter: I,
-    buffer: ArrayVec<[I::Item; 3]>,
-}
-
-impl<I: Iterator> Iterator for Lookahead<I> {
-    type Item = I::Item;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if !self.buffer.is_empty() {
-            Some(self.buffer.remove(0))
-        } else {
-            self.iter.next()
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -210,5 +229,21 @@ mod tests {
         assert_eq!(block.line_number(), Some(42));
         assert!(block.comments().is_empty());
         assert!(block.commands().is_empty());
+    }
+
+    #[test]
+    fn read_a_g90() {
+        let mut parser = Parser::new("G90");
+
+        let block = parser.next().unwrap();
+
+        assert!(block.line_number().is_none());
+        assert!(block.comments().is_empty());
+
+        assert_eq!(block.commands().len(), 1);
+        let g90 = &block.commands()[0];
+
+        assert_eq!(g90.mnemonic(), Mnemonic::General);
+        assert!(g90.args().is_empty());
     }
 }

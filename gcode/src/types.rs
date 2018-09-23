@@ -1,8 +1,13 @@
+#![allow(dead_code)]
+
 use arrayvec::ArrayVec;
+#[cfg(not(feature = "std"))]
 use core::cmp;
 #[cfg(not(feature = "std"))]
 #[allow(unused_imports)]
 use libm::F32Ext;
+#[cfg(feature = "std")]
+use std::cmp;
 
 const COMMENT_COUNT: usize = 3;
 const ARGUMENT_COUNT: usize = 10;
@@ -59,18 +64,26 @@ impl Default for Span {
 pub struct Block<'input> {
     src: Option<&'input str>,
     line_number: Option<usize>,
-    commands: Commands,
-    comments: Comments<'input>,
     deleted: bool,
     span: Span,
+
+    #[cfg(not(feature = "std"))]
+    commands: Commands,
+    #[cfg(feature = "std")]
+    commands: Vec<Gcode>,
+
+    #[cfg(not(feature = "std"))]
+    comments: Comments<'input>,
+    #[cfg(feature = "std")]
+    comments: Vec<Comment<'input>>,
 }
 
 impl<'input> Block<'input> {
     pub(crate) fn empty() -> Block<'input> {
         Block {
             src: None,
-            commands: Commands::default(),
-            comments: Comments::default(),
+            commands: Default::default(),
+            comments: Default::default(),
             deleted: false,
             line_number: None,
             span: Span::placeholder(),
@@ -151,8 +164,12 @@ pub struct Gcode {
     line_number: Option<usize>,
     mnemonic: Mnemonic,
     number: f32,
-    arguments: Arguments,
     span: Span,
+
+    #[cfg(not(feature = "std"))]
+    arguments: Arguments,
+    #[cfg(feature = "std")]
+    arguments: Vec<Argument>,
 }
 
 impl Gcode {

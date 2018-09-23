@@ -81,14 +81,15 @@ impl<'input> Lexer<'input> {
                 break;
             }
 
-            if !next.is_whitespace() && !input_is_malformed {
-                if buffer.try_push(next).is_err() {
-                    // Pushing any more characters would overflow our buffer.
-                    // You can't really parse a 32-digit number without loss of
-                    // precision anyway, so from here on we're going to pretend
-                    // the whole thing is malformed and garbage.
-                    input_is_malformed = true;
-                }
+            if !next.is_whitespace()
+                && !input_is_malformed
+                && buffer.try_push(next).is_err()
+            {
+                // Pushing any more characters would overflow our buffer.
+                // You can't really parse a 32-digit number without loss of
+                // precision anyway, so from here on we're going to pretend
+                // the whole thing is malformed and garbage.
+                input_is_malformed = true;
             }
 
             let _ = self.advance();
@@ -291,7 +292,7 @@ mod tests {
                                                }));
         };
         (ignore_span $name:ident, $src:expr => $should_be:expr) => {
-            lexer_test!($name, $src => $should_be; |span, src| {});
+            lexer_test!($name, $src => $should_be; |_span, _src| {});
         };
         ($name:ident, $src:expr => $should_be:expr; |$span_name:ident, $src_name:ident| $span_check:expr) => {
             #[test]
