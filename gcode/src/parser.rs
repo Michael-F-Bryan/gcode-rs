@@ -72,6 +72,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
                     }
                 }
                 Token::Letter(_) => return,
+                Token::Newline => return,
                 _ => unimplemented!(),
             }
         }
@@ -143,6 +144,8 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         let mnemonic = match letter {
             'g' | 'G' => Mnemonic::General,
             'm' | 'M' => Mnemonic::Miscellaneous,
+            'o' | 'O' => Mnemonic::ProgramNumber,
+            't' | 'T' => Mnemonic::ToolChange,
             other => unimplemented!(
                 "Found {}. What happens when command names are elided?",
                 other,
@@ -210,10 +213,29 @@ impl Callbacks for Nop {}
 mod tests {
     use super::*;
 
+    struct Fail;
+
+    impl Callbacks for Fail {
+        fn unexpected_token(
+            &mut self,
+            found: &str,
+            span: Span,
+            expected: &[&str],
+        ) {
+            panic!(
+                "Unexpected token, \"{}\" at {:?}. Expected {:?}",
+                found, span, expected
+            );
+        }
+        fn unexpected_eof(&mut self, expected: &[&str]) {
+            panic!("Unexpected EOF. Expected {:?}", expected);
+        }
+    }
+
     #[test]
     fn parse_a_comment_block() {
         let src = "; This is a comment\n";
-        let mut parser = Parser::new(src);
+        let mut parser = Parser::new_with_callbacks(src, Fail);
 
         let block = parser.next().unwrap();
 
@@ -235,7 +257,7 @@ mod tests {
 
     #[test]
     fn read_a_line_number() {
-        let mut parser = Parser::new("N42");
+        let mut parser = Parser::new_with_callbacks("N42", Fail);
 
         let block = parser.next().unwrap();
 
@@ -246,7 +268,7 @@ mod tests {
 
     #[test]
     fn read_a_g90() {
-        let mut parser = Parser::new("G90");
+        let mut parser = Parser::new_with_callbacks("G90", Fail);
 
         let block = parser.next().unwrap();
 
@@ -263,7 +285,7 @@ mod tests {
 
     #[test]
     fn read_a_deleted_g90() {
-        let mut parser = Parser::new("/N20 G90");
+        let mut parser = Parser::new_with_callbacks("/N20 G90", Fail);
 
         let block = parser.next().unwrap();
 
