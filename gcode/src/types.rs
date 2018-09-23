@@ -1,4 +1,5 @@
 use arrayvec::ArrayVec;
+use core::cmp;
 #[cfg(not(feature = "std"))]
 #[allow(unused_imports)]
 use libm::F32Ext;
@@ -37,6 +38,14 @@ impl Span {
     ) -> Option<&'input str> {
         src.get(self.start..self.end)
     }
+
+    pub fn merge(&self, other: Span) -> Span {
+        Span {
+            start: cmp::min(self.start, other.start),
+            end: cmp::max(self.end, other.end),
+            source_line: cmp::min(self.source_line, other.source_line),
+        }
+    }
 }
 
 impl Default for Span {
@@ -49,6 +58,7 @@ impl Default for Span {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Block<'input> {
     src: Option<&'input str>,
+    line_number: Option<usize>,
     commands: Commands,
     comments: Comments<'input>,
     deleted: bool,
@@ -62,12 +72,15 @@ impl<'input> Block<'input> {
             commands: Commands::default(),
             comments: Comments::default(),
             deleted: false,
+            line_number: None,
             span: Span::placeholder(),
         }
     }
 
     pub fn is_empty(&self) -> bool {
-        self.commands.is_empty() && self.comments.is_empty()
+        self.commands.is_empty()
+            && self.comments.is_empty()
+            && self.line_number.is_none()
     }
 
     pub fn into_commands(self) -> impl Iterator<Item = Gcode> {
@@ -91,12 +104,23 @@ impl<'input> Block<'input> {
         self.src
     }
 
-    pub(crate) fn set_src(&mut self, src: &'input str) {
+    pub fn with_src(&mut self, src: &'input str) -> &mut Self {
         self.src = Some(src);
+        self
     }
 
     pub fn span(&self) -> Span {
         self.span
+    }
+
+    pub fn line_number(&self) -> Option<usize> {
+        self.line_number
+    }
+
+    pub fn with_line_number(&mut self, number: usize, span: Span) -> &mut Self {
+        self.merge_span(span);
+        self.line_number = Some(number);
+        self
     }
 
     pub fn deleted(&self) -> bool {
@@ -116,7 +140,7 @@ impl<'input> Block<'input> {
         if self.span.is_placeholder() {
             self.span = span;
         } else {
-            unimplemented!()
+            self.span = self.span.merge(span);
         }
     }
 }

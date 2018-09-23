@@ -222,10 +222,32 @@ pub(crate) enum Token<'input> {
 }
 
 impl<'input> Token<'input> {
+    pub const LETTER: &'static str = "letter";
+    pub const NUMBER: &'static str = "number";
+    pub const COMMENT: &'static str = "comment";
+    pub const NEWLINE: &'static str = "newline";
+    pub const FORWARD_SLASH: &'static str = "forward-slash";
+    pub const PERCENT: &'static str = "percent";
+    pub const PERCENT_WITH_COMMENT: &'static str = "percent-with-comment";
+    pub const GARBAGE: &'static str = "garbage";
+
     pub fn is_err(&self) -> bool {
         match self {
             Token::GarbageNumber(_) => true,
             _ => false,
+        }
+    }
+
+    pub fn kind(&self) -> &'static str {
+        match *self {
+            Token::Letter(_) => Self::LETTER,
+            Token::Number(_) => Self::NUMBER,
+            Token::Comment(_) => Self::COMMENT,
+            Token::Newline => Self::NEWLINE,
+            Token::ForwardSlash => Self::FORWARD_SLASH,
+            Token::Percent(None) => Self::PERCENT,
+            Token::Percent(Some(_)) => Self::PERCENT_WITH_COMMENT,
+            Token::GarbageNumber(_) => Self::GARBAGE,
         }
     }
 }
