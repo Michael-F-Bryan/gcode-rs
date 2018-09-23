@@ -1,13 +1,14 @@
+use core::iter::Peekable;
 use lexer::{Lexer, Token};
 #[cfg(not(feature = "std"))]
 use libm::F32Ext;
-use types::{Block, Comment, Mnemonic, Span};
+use types::{Argument, Block, Comment, Mnemonic, Span};
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Parser<'input, C> {
-    lexer: Lexer<'input>,
+    src: &'input str,
+    lexer: Peekable<Lexer<'input>>,
     callbacks: C,
-    state: State,
 }
 
 impl<'input> Parser<'input, Nop> {
@@ -22,150 +23,96 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         callbacks: C,
     ) -> Parser<'input, C> {
         Parser {
-            lexer: Lexer::new(src),
+            lexer: Lexer::new(src).peekable(),
+            src,
             callbacks,
-            state: State::Preamble,
         }
+    }
+
+    /// Access the inner `Callbacks` object.
+    pub fn callbacks(&mut self) -> &mut C {
+        &mut self.callbacks
     }
 
     fn parse_block(&mut self) -> Option<Block<'input>> {
         let mut block = Block::empty();
-        self.state = State::Preamble;
 
-        while let Some((token, span)) = self.lexer.next() {
-            match self.state {
-                State::Preamble => {
-                    self.step_start(token, span, &mut block);
-                }
-                State::ReadingLineNumber(n_span) => {
-                    self.step_read_line_number(token, span, n_span, &mut block);
-                }
-                State::ReadingWord(letter, letter_span) => {
-                    self.step_read_word(
-                        token,
-                        span,
-                        letter,
-                        letter_span,
-                        &mut block,
-                    );
-                }
-                State::Done => {}
-            }
-
-            if self.state == State::Done {
-                break;
-            }
-        }
+        self.parse_preamble(&mut block);
+        self.parse_commands(&mut block);
 
         if block.is_empty() {
             None
         } else {
-            if let Some(s) = block.span().text_from_source(self.lexer.src()) {
-                block.with_src(s);
-            }
+            let src = block
+                .span()
+                .text_from_source(self.src)
+                .expect("The span should always be valid");
+            block.with_src(src);
 
             Some(block)
         }
     }
 
-    fn step_start(
-        &mut self,
-        token: Token<'input>,
-        span: Span,
-        block: &mut Block<'input>,
-    ) {
-        match token {
-            Token::Comment(body) => {
-                block.push_comment(Comment { body, span });
-            }
-            Token::Newline => {
-                if block.is_empty() {
-                    // ignore it
-                } else {
-                    self.state = State::Done;
-                }
-            }
-            Token::ForwardSlash => {
-                if block.is_empty() {
+    fn parse_preamble(&mut self, block: &mut Block<'input>) {
+        while let Some((token, span)) = self.lexer.next() {
+            match token {
+                Token::ForwardSlash => {
                     block.delete(true);
-                } else {
-                    self.callbacks.unexpected_token(
-                        token.kind(),
-                        span,
-                        &[Token::COMMENT, Token::NEWLINE, Token::LETTER],
-                    );
                 }
+                Token::Comment(body) => {
+                    block.push_comment(Comment { body, span });
+                }
+                Token::Letter(n) if n == 'n' || n == 'N' => {
+                    if let Some(arg) = self.parse_word(n, span) {
+                        block.with_line_number(arg.value as usize, span);
+                    } else {
+                        self.callbacks.unexpected_token(
+                            token.kind(),
+                            span,
+                            &[Token::NUMBER],
+                        );
+                    }
+                }
+                _ => unimplemented!(),
             }
-            Token::Letter('N') | Token::Letter('n') => {
-                self.state = State::ReadingLineNumber(span);
-            }
-            Token::Letter(other) => {
-                self.state = State::ReadingWord(other, span);
-            }
-            _ => unimplemented!(),
         }
     }
 
-    fn step_read_word(
+    fn parse_word(
         &mut self,
-        token: Token<'input>,
-        token_span: Span,
         letter: char,
         letter_span: Span,
-        block: &mut Block<'input>,
-    ) {
-        let number = match token {
-            Token::Number(n) => n,
-            other => {
-                self.callbacks.unexpected_token(
-                    other.kind(),
-                    token_span,
-                    &[Token::NUMBER],
-                );
-                unimplemented!();
-            }
-        };
-
-        unimplemented!();
-    }
-
-    fn step_read_line_number(
-        &mut self,
-        token: Token<'input>,
-        token_span: Span,
-        n_span: Span,
-        block: &mut Block<'input>,
-    ) {
-        match token {
-            Token::Number(line_number) => {
-                block.with_line_number(
-                    line_number.abs().trunc() as usize,
-                    token_span.merge(n_span),
-                );
-            }
-            _ => {
-                self.callbacks.unexpected_token(
-                    token.kind(),
-                    token_span,
-                    &[Token::NUMBER],
-                );
-            }
+    ) -> Option<Argument> {
+        let next_is_number = self
+            .lexer
+            .peek()
+            .map(|(tok, _)| tok.is_number())
+            .unwrap_or(false);
+        if !next_is_number {
+            return None;
         }
 
-        self.state = State::Preamble;
-    }
-}
+        let (tok, span) = self.lexer.next().expect("Already checked");
+        let value = match tok {
+            Token::Number(n) => n,
+            other => unreachable!(
+                "We've already checked and {:?} should be a number",
+                other
+            ),
+        };
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-enum State {
-    /// We're reading the stuff at the beginning of a line.
-    Preamble,
-    /// Started reading a line number.
-    ReadingLineNumber(Span),
-    /// We're reading a word (i.e. `G90`).
-    ReadingWord(char, Span),
-    /// Finished reading a line.
-    Done,
+        Some(Argument {
+            letter,
+            value,
+            span: span.merge(letter_span),
+        })
+    }
+
+    fn parse_commands(&mut self, block: &mut Block) {
+        while let Some((token, span)) = self.lexer.next() {
+            unimplemented!();
+        }
+    }
 }
 
 impl<'input, C: Callbacks> Iterator for Parser<'input, C> {
@@ -244,6 +191,20 @@ mod tests {
         let g90 = &block.commands()[0];
 
         assert_eq!(g90.mnemonic(), Mnemonic::General);
+        assert_eq!(g90.major_number(), 90);
         assert!(g90.args().is_empty());
+    }
+
+    #[test]
+    fn read_a_deleted_g90() {
+        let mut parser = Parser::new("/N20 G90");
+
+        let block = parser.next().unwrap();
+
+        assert_eq!(block.line_number(), Some(20));
+        assert!(block.comments().is_empty());
+        assert!(block.deleted());
+
+        assert_eq!(block.commands().len(), 1);
     }
 }

@@ -1,20 +1,18 @@
-#![allow(dead_code)]
+cfg_if! {
+    if #[cfg(feature = "std")] {
+        use std::cmp;
 
-use arrayvec::ArrayVec;
-#[cfg(not(feature = "std"))]
-use core::cmp;
-#[cfg(not(feature = "std"))]
-#[allow(unused_imports)]
-use libm::F32Ext;
-#[cfg(feature = "std")]
-use std::cmp;
+    } else {
+        use core::cmp;
+        #[allow(unused_imports)]
+        use libm::F32Ext;
+        use arrayvec::ArrayVec;
 
-const COMMENT_COUNT: usize = 3;
-const ARGUMENT_COUNT: usize = 10;
-const COMMAND_COUNT: usize = 10;
-type Comments<'input> = ArrayVec<[Comment<'input>; COMMENT_COUNT]>;
-type Arguments = ArrayVec<[Argument; ARGUMENT_COUNT]>;
-type Commands = ArrayVec<[Gcode; COMMAND_COUNT]>;
+        type Comments<'input> = ArrayVec<[Comment<'input>; 3]>;
+        type Arguments = ArrayVec<[Argument; 10]>;
+        type Commands = ArrayVec<[Gcode; 10]>;
+    }
+}
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]

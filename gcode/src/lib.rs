@@ -1,6 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate arrayvec;
+#[macro_use]
+extern crate cfg_if;
 extern crate libm;
 
 #[cfg(all(not(feature = "std"), test))]

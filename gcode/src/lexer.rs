@@ -233,8 +233,15 @@ impl<'input> Token<'input> {
     pub const GARBAGE: &'static str = "garbage";
 
     pub fn is_err(&self) -> bool {
-        match self {
+        match *self {
             Token::GarbageNumber(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_number(&self) -> bool {
+        match *self {
+            Token::Number(_) => true,
             _ => false,
         }
     }
