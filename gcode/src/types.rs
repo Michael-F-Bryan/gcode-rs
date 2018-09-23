@@ -147,6 +147,11 @@ impl<'input> Block<'input> {
         self.comments.push(comment);
     }
 
+    pub fn push_command(&mut self, command: Gcode) {
+        self.merge_span(command.span);
+        self.commands.push(command);
+    }
+
     fn merge_span(&mut self, span: Span) {
         if self.span.is_placeholder() {
             self.span = span;

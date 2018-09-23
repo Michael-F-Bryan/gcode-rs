@@ -2,7 +2,7 @@ use core::iter::Peekable;
 use lexer::{Lexer, Token};
 #[cfg(not(feature = "std"))]
 use libm::F32Ext;
-use types::{Argument, Block, Comment, Mnemonic, Span};
+use types::{Argument, Block, Comment, Gcode, Mnemonic, Span};
 
 #[derive(Debug, Clone)]
 pub struct Parser<'input, C> {
@@ -54,25 +54,24 @@ impl<'input, C: Callbacks> Parser<'input, C> {
     }
 
     fn parse_preamble(&mut self, block: &mut Block<'input>) {
-        while let Some((token, span)) = self.lexer.next() {
+        while let Some(&(token, span)) = self.lexer.peek() {
             match token {
                 Token::ForwardSlash => {
+                    let _ = self.lexer.next();
                     block.delete(true);
                 }
                 Token::Comment(body) => {
+                    let _ = self.lexer.next();
                     block.push_comment(Comment { body, span });
                 }
                 Token::Letter(n) if n == 'n' || n == 'N' => {
-                    if let Some(arg) = self.parse_word(n, span) {
+                    let _ = self.lexer.next();
+
+                    if let Some(arg) = self.parse_word(n, span, block) {
                         block.with_line_number(arg.value as usize, span);
-                    } else {
-                        self.callbacks.unexpected_token(
-                            token.kind(),
-                            span,
-                            &[Token::NUMBER],
-                        );
                     }
                 }
+                Token::Letter(_) => return,
                 _ => unimplemented!(),
             }
         }
@@ -82,17 +81,10 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         &mut self,
         letter: char,
         letter_span: Span,
+        block: &mut Block<'input>,
     ) -> Option<Argument> {
-        let next_is_number = self
-            .lexer
-            .peek()
-            .map(|(tok, _)| tok.is_number())
-            .unwrap_or(false);
-        if !next_is_number {
-            return None;
-        }
+        let (tok, span) = self.chomp(Token::NUMBER, block)?;
 
-        let (tok, span) = self.lexer.next().expect("Already checked");
         let value = match tok {
             Token::Number(n) => n,
             other => unreachable!(
@@ -108,10 +100,84 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         })
     }
 
-    fn parse_commands(&mut self, block: &mut Block) {
-        while let Some((token, span)) = self.lexer.next() {
-            unimplemented!();
+    fn parse_commands(&mut self, block: &mut Block<'input>) {
+        while let Some(&(token, span)) = self.lexer.peek() {
+            match token {
+                Token::Newline => return,
+                Token::Comment(body) => {
+                    let _ = self.lexer.next();
+                    block.push_comment(Comment { body, span });
+                }
+                Token::Letter(letter) => {
+                    self.parse_command(block);
+                }
+                other => {
+                    self.callbacks.unexpected_token(
+                        other.kind(),
+                        span,
+                        &[Token::LETTER, Token::COMMENT, Token::NEWLINE],
+                    );
+                    let _ = self.lexer.next();
+                }
+            }
         }
+    }
+
+    fn parse_command(&mut self, block: &mut Block<'input>) {
+        let (tok, mut span) = self.lexer.next().expect("Already checked");
+
+        let letter = match tok {
+            Token::Letter(l) => l,
+            other => unreachable!("{:?} should only ever be a letter"),
+        };
+
+        let (number, number_span) = match self.chomp(Token::NUMBER, block) {
+            Some((Token::Number(n), span)) => (n, span),
+            Some(other) => {
+                unreachable!("Chomp ensures {:?} is a number", other)
+            }
+            None => return,
+        };
+        span = span.merge(number_span);
+
+        let mnemonic = match letter {
+            'g' | 'G' => Mnemonic::General,
+            'm' | 'M' => Mnemonic::Miscellaneous,
+            other => unimplemented!(
+                "Found {}. What happens when command names are elided?",
+                other,
+            ),
+        };
+
+        let mut cmd = Gcode::new(mnemonic, number);
+        cmd.with_span(span);
+        block.push_command(cmd);
+    }
+
+    /// Look ahead at the next token, advancing and returning the token if it
+    /// is the correct type (`kind`). Any comments will automatically be added
+    /// to the block.
+    fn chomp(
+        &mut self,
+        kind: &'static str,
+        block: &mut Block<'input>,
+    ) -> Option<(Token<'input>, Span)> {
+        while let Some(&(token, span)) = self.lexer.peek() {
+            if let Token::Comment(body) = token {
+                block.push_comment(Comment { body, span });
+                let _ = self.lexer.next();
+                continue;
+            }
+
+            if token.kind() != kind {
+                self.callbacks.unexpected_token(token.kind(), span, &[kind]);
+                return None;
+            } else {
+                return self.lexer.next();
+            }
+        }
+
+        None
     }
 }
 
@@ -126,9 +192,9 @@ impl<'input, C: Callbacks> Iterator for Parser<'input, C> {
 pub trait Callbacks {
     fn unexpected_token(
         &mut self,
-        _found: &'static str,
+        _found: &str,
         _span: Span,
-        _expected: &'static [&'static str],
+        _expected: &[&str],
     ) {
     }
     fn unexpected_eof(&mut self, _expected: &[&str]) {}
