@@ -139,11 +139,10 @@ impl<'input> Lexer<'input> {
         let _ = self.take_while(|c| c != end_of_comment);
         let mut end = self.current_index;
 
-        // step past the end-of-comment character
-        let _ = self.advance();
-
         // we want to include the closing paren, but ignore a trailing newline
         if end_of_comment == ')' {
+            // step past the end-of-comment character
+            let _ = self.advance();
             end = self.current_index;
         }
 
@@ -290,28 +289,28 @@ mod tests {
 
     macro_rules! lexer_test {
         ($name:ident, $src:expr => $should_be:expr) => {
-            lexer_test!($name, $src => $should_be;
-                        |span, src| assert_eq!(span,
-                                               Span {
-                                                   start: 0,
-                                                   end: src.len(),
-                                                   source_line: 0
-                                               }));
+            lexer_test!{
+                $name, $src => $should_be;
+                |lexy, span, src| {
+                    assert_eq!(span, Span { start: 0, end: src.len(), source_line: 0 });
+                    assert_eq!(lexy.current_index, src.len());
+                }
+            }
         };
         (ignore_span $name:ident, $src:expr => $should_be:expr) => {
-            lexer_test!($name, $src => $should_be; |_span, _src| {});
+            lexer_test!($name, $src => $should_be; |_lexy, _span, _src| {});
         };
-        ($name:ident, $src:expr => $should_be:expr; |$span_name:ident, $src_name:ident| $span_check:expr) => {
+        ($name:ident, $src:expr => $should_be:expr;
+         |$lexer_name:ident, $span_name:ident, $src_name:ident| $span_check:expr) => {
             #[test]
             fn $name() {
                 let $src_name = $src;
                 let should_be = Token::from($should_be);
-                let mut lexy = Lexer::new($src_name);
+                let mut $lexer_name = Lexer::new($src_name);
 
-                let (token, $span_name) = lexy.next().unwrap();
+                let (token, $span_name) = $lexer_name.next().unwrap();
 
                 assert_eq!(token, should_be);
-                assert_eq!(lexy.current_index, $src_name.len());
                 $span_check;
             }
         };

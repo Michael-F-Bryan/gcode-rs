@@ -1,12 +1,14 @@
 cfg_if! {
     if #[cfg(feature = "std")] {
         use std::cmp;
+        use std::fmt::{self, Display, Formatter};
 
     } else {
         use core::cmp;
         #[allow(unused_imports)]
         use libm::F32Ext;
         use arrayvec::ArrayVec;
+        use core::fmt::{self, Display, Formatter};
 
         type Comments<'input> = ArrayVec<[Comment<'input>; 3]>;
         type Arguments = ArrayVec<[Argument; 10]>;
@@ -250,6 +252,12 @@ pub struct Argument {
     pub letter: char,
     pub value: f32,
     pub span: Span,
+}
+
+impl Display for Argument {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}{}", self.letter, self.value)
+    }
 }
 
 /// A comment.

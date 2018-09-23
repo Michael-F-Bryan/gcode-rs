@@ -72,7 +72,14 @@ impl<'input, C: Callbacks> Parser<'input, C> {
                     }
                 }
                 Token::Letter(_) => return,
-                Token::Newline => return,
+                Token::Newline => {
+                    if block.is_empty() {
+                        let _ = self.lexer.next();
+                        continue;
+                    } else {
+                        return;
+                    }
+                }
                 _ => unimplemented!(),
             }
         }
@@ -248,7 +255,7 @@ mod tests {
             comment.span,
             Span {
                 start: 0,
-                end: src.len(),
+                end: src.len() - 1,
                 source_line: 0
             }
         );

@@ -10,7 +10,7 @@ extern crate libm;
 extern crate std;
 
 mod lexer;
-mod parser;
+pub mod parser;
 pub mod types;
 
 pub use parser::Parser;
