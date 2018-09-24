@@ -3,6 +3,8 @@
 extern crate arrayvec;
 #[macro_use]
 extern crate cfg_if;
+#[cfg(feature = "std")]
+extern crate core;
 extern crate libm;
 
 #[cfg(all(not(feature = "std"), test))]

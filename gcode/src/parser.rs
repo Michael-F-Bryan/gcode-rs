@@ -1,4 +1,3 @@
-use core::iter::Peekable;
 use lexer::{Lexer, Token, TokenKind};
 #[cfg(not(feature = "std"))]
 use libm::F32Ext;
