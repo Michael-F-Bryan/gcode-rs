@@ -1,13 +1,52 @@
 use core::iter::Peekable;
-use lexer::{Lexer, Token};
+use lexer::{Lexer, Token, TokenKind};
 #[cfg(not(feature = "std"))]
 use libm::F32Ext;
 use types::{Argument, Block, Comment, Gcode, Mnemonic, Span};
 
 #[derive(Debug, Clone)]
+/// An error-resistent streaming gcode parser.
+///
+/// # Grammar
+///
+/// The language grammar and parser for gcode isn't especially complicated. Different manufacturers
+/// use slightly different dialects though, so the grammar needs to be flexible
+/// and accept input which might otherwise be interpreted as erroneous.
+///
+/// Any possible errors are signalled to the caller via the [`Callbacks`]
+/// object.
+///
+/// The gcode language looks something like the following pseudo-ebnf:
+///
+/// ```ebnf
+/// program       := block*
+/// block         := block-delete? line-number? (command | comment)+ NEWLINE
+///                | percent-line
+/// percent-line  := "%" comment?
+/// line-number   := "n" NUMBER
+/// block-delete  := "/"
+/// comment       := "(" TEXT ")"
+///                | ";" TEXT "\n"
+/// command       := mnemonic NUMBER word*
+///                | word
+/// word          := argument NUMBER
+///
+/// mnemonic      := "g" | "m" | "o" | "t"
+/// argument      := /* all letters except those in mnemonic */
+/// ```
+///
+/// > **Note:**
+/// > - A comment may occur anywhere in the input and should be attached to the
+/// >   nearest block
+/// > - All letters are case-insensitive
+///
+/// See also [Constructing human-grade parsers].
+///
+/// [`Callbacks`]: trait.Callbacks.html
+/// [Constructing human-grade parsers]: http://duriansoftware.com/joe/Constructing-human-grade-parsers.html
 pub struct Parser<'input, C> {
     src: &'input str,
-    lexer: Peekable<Lexer<'input>>,
+    lexer: Lexer<'input>,
     callbacks: C,
 }
 
@@ -23,7 +62,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         callbacks: C,
     ) -> Parser<'input, C> {
         Parser {
-            lexer: Lexer::new(src).peekable(),
+            lexer: Lexer::new(src),
             src,
             callbacks,
         }
@@ -54,29 +93,31 @@ impl<'input, C: Callbacks> Parser<'input, C> {
     }
 
     fn parse_preamble(&mut self, block: &mut Block<'input>) {
-        while let Some(&(token, span)) = self.lexer.peek() {
-            match token {
-                Token::ForwardSlash => {
-                    let _ = self.lexer.next();
+        while let Some(kind) = self.next_kind() {
+            match kind {
+                TokenKind::ForwardSlash => {
+                    let _ = self
+                        .chomp(kind, |c| block.push_comment(c))
+                        .expect("Already checked");
                     block.delete(true);
                 }
-                Token::Comment(body) => {
-                    let _ = self.lexer.next();
-                    block.push_comment(Comment { body, span });
-                }
-                Token::Letter(n) if n == 'n' || n == 'N' => {
-                    let _ = self.lexer.next();
-
-                    if let Some(arg) = self.parse_word(n, span, block) {
-                        block.with_line_number(arg.value as usize, span);
-                    }
-                }
-                Token::Letter(_) => return,
-                Token::Newline => {
+                TokenKind::Newline => {
                     if block.is_empty() {
-                        let _ = self.lexer.next();
+                        let _ = self.chomp(TokenKind::Newline, |c| {
+                            block.push_comment(c)
+                        });
                         continue;
                     } else {
+                        return;
+                    }
+                }
+                TokenKind::Letter => {
+                    if self.parse_line_number(block) {
+                        // we parsed a line number
+                        continue;
+                    } else {
+                        // It's something else. Break out of the loop so we
+                        // can start parsing commands
                         return;
                     }
                 }
@@ -85,21 +126,44 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         }
     }
 
+    fn parse_line_number(&mut self, block: &mut Block<'input>) -> bool {
+        let next_is_n = self.lookahead(|lexy| {
+            for (tok, _) in lexy {
+                match tok {
+                    Token::Letter('n') | Token::Letter('N') => return true,
+                    Token::Comment(_) => continue,
+                    _ => return false,
+                }
+            }
+
+            false
+        });
+
+        if next_is_n {
+            let (tok, span) = self
+                .chomp(TokenKind::Letter, |c| block.push_comment(c))
+                .expect("Already checked");
+
+            let l = tok.unwrap_letter();
+            match self.parse_word(l, span, |c| block.push_comment(c)) {
+                Some(word) => {
+                    block.with_line_number(word.value as usize, word.span);
+                }
+                None => unimplemented!(),
+            }
+        }
+
+        next_is_n
+    }
+
     fn parse_word(
         &mut self,
         letter: char,
         letter_span: Span,
-        block: &mut Block<'input>,
+        comments: impl FnMut(Comment<'input>),
     ) -> Option<Argument> {
-        let (tok, span) = self.chomp(Token::NUMBER, block)?;
-
-        let value = match tok {
-            Token::Number(n) => n,
-            other => unreachable!(
-                "We've already checked and {:?} should be a number",
-                other
-            ),
-        };
+        let (tok, span) = self.chomp(TokenKind::Number, comments)?;
+        let value = tok.unwrap_number();
 
         Some(Argument {
             letter,
@@ -109,43 +173,44 @@ impl<'input, C: Callbacks> Parser<'input, C> {
     }
 
     fn parse_commands(&mut self, block: &mut Block<'input>) {
-        while let Some(&(token, span)) = self.lexer.peek() {
-            match token {
-                Token::Newline => return,
-                Token::Comment(body) => {
-                    let _ = self.lexer.next();
-                    block.push_comment(Comment { body, span });
-                }
-                Token::Letter(letter) => {
-                    self.parse_command(block);
-                }
-                other => {
-                    self.callbacks.unexpected_token(
-                        other.kind(),
-                        span,
-                        &[Token::LETTER, Token::COMMENT, Token::NEWLINE],
-                    );
-                    let _ = self.lexer.next();
+        while let Some(next) = self.next_kind() {
+            if next == TokenKind::Newline {
+                return;
+            }
+
+            match self.parse_command(|c| block.push_comment(c)) {
+                Some(cmd) => block.push_command(cmd),
+                None => {
+                    self.fast_forward_to_safe_point(|c| block.push_comment(c))
                 }
             }
         }
     }
 
-    fn parse_command(&mut self, block: &mut Block<'input>) {
-        let (tok, mut span) = self.lexer.next().expect("Already checked");
+    fn fast_forward_to_safe_point(
+        &mut self,
+        comments: impl FnMut(Comment<'input>),
+    ) {
+        unimplemented!()
+    }
+
+    fn parse_command(
+        &mut self,
+        mut comments: impl FnMut(Comment<'input>),
+    ) -> Option<Gcode> {
+        let (tok, mut span) = self.chomp(TokenKind::Letter, &mut comments)?;
 
         let letter = match tok {
             Token::Letter(l) => l,
-            other => unreachable!("{:?} should only ever be a letter"),
+            other => unreachable!("{:?} should only ever be a letter", other),
         };
 
-        let (number, number_span) = match self.chomp(Token::NUMBER, block) {
-            Some((Token::Number(n), span)) => (n, span),
-            Some(other) => {
-                unreachable!("Chomp ensures {:?} is a number", other)
-            }
-            None => return,
+        let (number, number_span) = self.chomp(TokenKind::Number, comments)?;
+        let number = match number {
+            Token::Number(n) => n,
+            _ => unreachable!(),
         };
+
         span = span.merge(number_span);
 
         let mnemonic = match letter {
@@ -161,7 +226,27 @@ impl<'input, C: Callbacks> Parser<'input, C> {
 
         let mut cmd = Gcode::new(mnemonic, number);
         cmd.with_span(span);
-        block.push_command(cmd);
+        Some(cmd)
+    }
+
+    fn next_is(&self, kind: TokenKind) -> bool {
+        self.next_kind() == Some(kind)
+    }
+
+    /// Scan forward and see the `TokenKind` for the next non-comment `Token`.
+    fn next_kind(&self) -> Option<TokenKind> {
+        self.lookahead(|lexy| {
+            lexy.map(|(tok, _)| tok.kind())
+                .filter(|&kind| kind != TokenKind::Comment)
+                .next()
+        })
+    }
+
+    fn lookahead<F, T>(&self, peek: F) -> T
+    where
+        F: FnOnce(Lexer) -> T,
+    {
+        peek(self.lexer.clone())
     }
 
     /// Look ahead at the next token, advancing and returning the token if it
@@ -169,25 +254,32 @@ impl<'input, C: Callbacks> Parser<'input, C> {
     /// to the block.
     fn chomp(
         &mut self,
-        kind: &'static str,
-        block: &mut Block<'input>,
+        kind: TokenKind,
+        mut comments: impl FnMut(Comment<'input>),
     ) -> Option<(Token<'input>, Span)> {
-        while let Some(&(token, span)) = self.lexer.peek() {
-            if let Token::Comment(body) = token {
-                block.push_comment(Comment { body, span });
-                let _ = self.lexer.next();
-                continue;
+        // Look ahead and make sure the next non-comment token is the one we
+        // want
+        if self.next_kind() != Some(kind) {
+            return None;
+        }
+
+        while let Some((tok, span)) = self.lexer.next() {
+            // We found it!
+            if tok.kind() == kind {
+                return Some((tok, span));
             }
 
-            if token.kind() != kind {
-                self.callbacks.unexpected_token(token.kind(), span, &[kind]);
-                return None;
+            if let Token::Comment(body) = tok {
+                comments(Comment { body, span });
             } else {
-                return self.lexer.next();
+                unreachable!(
+                    "We should only ever see a {} or comments. Found {:?}",
+                    kind, tok
+                );
             }
         }
 
-        None
+        unreachable!()
     }
 }
 
@@ -202,12 +294,12 @@ impl<'input, C: Callbacks> Iterator for Parser<'input, C> {
 pub trait Callbacks {
     fn unexpected_token(
         &mut self,
-        _found: &str,
+        _found: TokenKind,
         _span: Span,
-        _expected: &[&str],
+        _expected: &[TokenKind],
     ) {
     }
-    fn unexpected_eof(&mut self, _expected: &[&str]) {}
+    fn unexpected_eof(&mut self, _expected: &[TokenKind]) {}
 }
 
 /// A no-op set of callbacks.
@@ -225,16 +317,16 @@ mod tests {
     impl Callbacks for Fail {
         fn unexpected_token(
             &mut self,
-            found: &str,
+            found: TokenKind,
             span: Span,
-            expected: &[&str],
+            expected: &[TokenKind],
         ) {
             panic!(
                 "Unexpected token, \"{}\" at {:?}. Expected {:?}",
                 found, span, expected
             );
         }
-        fn unexpected_eof(&mut self, expected: &[&str]) {
+        fn unexpected_eof(&mut self, expected: &[TokenKind]) {
             panic!("Unexpected EOF. Expected {:?}", expected);
         }
     }

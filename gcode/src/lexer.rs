@@ -1,4 +1,5 @@
 use arrayvec::ArrayString;
+use core::fmt::{self, Display, Formatter};
 use types::Span;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -206,6 +207,31 @@ impl<'input> Iterator for Lexer<'input> {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum TokenKind {
+    Letter,
+    Number,
+    Comment,
+    Newline,
+    ForwardSlash,
+    Percent,
+    Garbage,
+}
+
+impl Display for TokenKind {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            TokenKind::Letter => "letter".fmt(f),
+            TokenKind::Number => "number".fmt(f),
+            TokenKind::Comment => "comment".fmt(f),
+            TokenKind::Newline => "newline".fmt(f),
+            TokenKind::ForwardSlash => "forward-slash".fmt(f),
+            TokenKind::Percent => "percent".fmt(f),
+            TokenKind::Garbage => "garbage".fmt(f),
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum Token<'input> {
     Letter(char),
@@ -222,14 +248,19 @@ pub(crate) enum Token<'input> {
 }
 
 impl<'input> Token<'input> {
-    pub const LETTER: &'static str = "letter";
-    pub const NUMBER: &'static str = "number";
-    pub const COMMENT: &'static str = "comment";
-    pub const NEWLINE: &'static str = "newline";
-    pub const FORWARD_SLASH: &'static str = "forward-slash";
-    pub const PERCENT: &'static str = "percent";
-    pub const PERCENT_WITH_COMMENT: &'static str = "percent-with-comment";
-    pub const GARBAGE: &'static str = "garbage";
+    pub fn unwrap_letter(&self) -> char {
+        match *self {
+            Token::Letter(l) => l,
+            other => unreachable!("Expected {:?} to be a letter", self),
+        }
+    }
+
+    pub fn unwrap_number(&self) -> f32 {
+        match *self {
+            Token::Number(n) => n,
+            other => unreachable!("Expected {:?} to be a number", self),
+        }
+    }
 
     pub fn is_err(&self) -> bool {
         match *self {
@@ -245,16 +276,20 @@ impl<'input> Token<'input> {
         }
     }
 
-    pub fn kind(&self) -> &'static str {
+    pub fn is(&self, kind: TokenKind) -> bool {
+        self.kind() == kind
+    }
+
+    pub fn kind(&self) -> TokenKind {
         match *self {
-            Token::Letter(_) => Self::LETTER,
-            Token::Number(_) => Self::NUMBER,
-            Token::Comment(_) => Self::COMMENT,
-            Token::Newline => Self::NEWLINE,
-            Token::ForwardSlash => Self::FORWARD_SLASH,
-            Token::Percent(None) => Self::PERCENT,
-            Token::Percent(Some(_)) => Self::PERCENT_WITH_COMMENT,
-            Token::GarbageNumber(_) => Self::GARBAGE,
+            Token::Letter(_) => TokenKind::Letter,
+            Token::Number(_) => TokenKind::Number,
+            Token::Comment(_) => TokenKind::Comment,
+            Token::Newline => TokenKind::Newline,
+            Token::ForwardSlash => TokenKind::ForwardSlash,
+            Token::Percent(None) => TokenKind::Percent,
+            Token::Percent(Some(_)) => TokenKind::Percent,
+            Token::GarbageNumber(_) => TokenKind::Garbage,
         }
     }
 }
