@@ -228,7 +228,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
                 }
                 None => {
                     // TODO: Signal an error to the callbacks
-                    unimplemented!();
+                    unimplemented!("Error parsing {:?} at {:?}", cmd, span);
                 }
             }
         }

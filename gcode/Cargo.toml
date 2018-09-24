@@ -8,6 +8,10 @@ arrayvec = { version = "0.4", default-features = false }
 libm = "0.1"
 cfg-if = "0.1"
 
+[dev-dependencies]
+pretty_assertions = "*"
+
 [features]
 default = []
 std = []
+

@@ -35,7 +35,7 @@ impl<'input> Lexer<'input> {
             other if other.is_ascii_alphabetic() => {
                 Some(self.tokenize_letter())
             }
-            _ => unimplemented!(),
+            other => unimplemented!("{:?}", other),
         }
     }
 
@@ -168,6 +168,10 @@ impl<'input> Lexer<'input> {
         Token::Newline
     }
 
+    fn skip_whitespace(&mut self) {
+        let _ = self.take_while(|c| c != '\n' && c.is_whitespace());
+    }
+
     fn advance(&mut self) -> Option<char> {
         let next = self.peek();
 
@@ -202,6 +206,7 @@ impl<'input> Iterator for Lexer<'input> {
     type Item = (Token<'input>, Span);
 
     fn next(&mut self) -> Option<Self::Item> {
+        self.skip_whitespace();
         let mut span = self.here();
 
         let tok = self.step()?;

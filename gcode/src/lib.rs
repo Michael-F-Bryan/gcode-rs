@@ -10,6 +10,9 @@ extern crate libm;
 #[cfg(all(not(feature = "std"), test))]
 #[macro_use]
 extern crate std;
+#[cfg(test)]
+#[macro_use]
+extern crate pretty_assertions;
 
 mod lexer;
 pub mod parser;
