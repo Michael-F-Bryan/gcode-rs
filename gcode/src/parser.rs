@@ -132,12 +132,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
     /// Try to read a line number (`N42`) and set the block's line number if
     /// successful.
     fn parse_line_number(&mut self, block: &mut Block<'input>) {
-        let (tok, span) = self
-            .chomp(TokenKind::Letter, |c| block.push_comment(c))
-            .expect("Already checked");
-
-        let l = tok.unwrap_letter();
-        match self.parse_word(l, span, |c| block.push_comment(c)) {
+        match self.parse_word(|c| block.push_comment(c)) {
             Some(word) => {
                 block.with_line_number(word.value as usize, word.span);
             }
@@ -162,10 +157,12 @@ impl<'input, C: Callbacks> Parser<'input, C> {
 
     fn parse_word(
         &mut self,
-        letter: char,
-        letter_span: Span,
-        comments: impl FnMut(Comment<'input>),
+        mut comments: impl FnMut(Comment<'input>),
     ) -> Option<Argument> {
+        let (tok, letter_span) =
+            self.chomp(TokenKind::Letter, &mut comments)?;
+        let letter = tok.unwrap_letter();
+
         let (tok, span) = self.chomp(TokenKind::Number, comments)?;
         let value = tok.unwrap_number();
 
@@ -204,14 +201,11 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         &mut self,
         mut comments: impl FnMut(Comment<'input>),
     ) -> Option<Gcode> {
-        let (tok, mut span) = self.chomp(TokenKind::Letter, &mut comments)?;
-        let letter = tok.unwrap_letter();
-
-        let (number, number_span) =
-            self.chomp(TokenKind::Number, &mut comments)?;
-        let number = number.unwrap_number();
-
-        span = span.merge(number_span);
+        let Argument {
+            letter,
+            span,
+            value,
+        } = self.parse_word(&mut comments)?;
 
         let mnemonic = match letter {
             'g' | 'G' => Mnemonic::General,
@@ -224,16 +218,11 @@ impl<'input, C: Callbacks> Parser<'input, C> {
             ),
         };
 
-        let mut cmd = Gcode::new(mnemonic, number);
+        let mut cmd = Gcode::new(mnemonic, value);
         cmd.with_span(span);
 
         while self.next_is_argument() {
-            let (tok, span) = self
-                .chomp(TokenKind::Letter, &mut comments)
-                .expect("Already checked");
-            let letter = tok.unwrap_letter();
-
-            match self.parse_word(letter, span, &mut comments) {
+            match self.parse_word(&mut comments) {
                 Some(arg) => {
                     cmd.with_argument(arg);
                 }
