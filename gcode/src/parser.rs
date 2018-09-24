@@ -77,6 +77,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
 
         self.parse_preamble(&mut block);
         self.parse_commands(&mut block);
+        let _ = self.chomp(TokenKind::Newline, |c| block.push_comment(c));
 
         if block.is_empty() {
             None
@@ -204,18 +205,11 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         mut comments: impl FnMut(Comment<'input>),
     ) -> Option<Gcode> {
         let (tok, mut span) = self.chomp(TokenKind::Letter, &mut comments)?;
-
-        let letter = match tok {
-            Token::Letter(l) => l,
-            other => unreachable!("{:?} should only ever be a letter", other),
-        };
+        let letter = tok.unwrap_letter();
 
         let (number, number_span) =
             self.chomp(TokenKind::Number, &mut comments)?;
-        let number = match number {
-            Token::Number(n) => n,
-            _ => unreachable!(),
-        };
+        let number = number.unwrap_number();
 
         span = span.merge(number_span);
 
@@ -233,7 +227,6 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         let mut cmd = Gcode::new(mnemonic, number);
         cmd.with_span(span);
 
-        // TODO: read the arguments and notify the callbacks if there was an error
         while self.next_is_argument() {
             let (tok, span) = self
                 .chomp(TokenKind::Letter, &mut comments)
@@ -245,6 +238,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
                     cmd.with_argument(arg);
                 }
                 None => {
+                    // TODO: Signal an error to the callbacks
                     unimplemented!();
                 }
             }
@@ -265,13 +259,15 @@ impl<'input, C: Callbacks> Parser<'input, C> {
     }
 
     fn next_letter(&self) -> Option<char> {
-        self.lookahead(|lexy| {
-            lexy.map(|(tok, _)| tok)
-                .filter_map(|tok| match tok {
-                    Token::Letter(l) => Some(l),
-                    _ => None,
-                }).next()
-        })
+        for (tok, _) in self.lexer.clone() {
+            match tok {
+                Token::Letter(l) => return Some(l),
+                Token::Comment(_) => continue,
+                _ => return None,
+            }
+        }
+
+        None
     }
 
     /// Scan forward and see the `TokenKind` for the next non-comment `Token`.
@@ -352,6 +348,7 @@ impl Callbacks for Nop {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::prelude::v1::*;
 
     struct Fail;
 
@@ -450,5 +447,32 @@ mod tests {
         assert_eq!(got.value_for('X').unwrap(), 50.0);
         assert_eq!(got.value_for('x').unwrap(), 50.0);
         assert_eq!(got.value_for('Y').unwrap(), -20.5);
+    }
+
+    #[test]
+    fn parse_multiple_commands() {
+        let src = "N42 G00 Z-0.5 G02 X5 I100.0 ; Some comment\n";
+
+        let got: Vec<_> = Parser::new_with_callbacks(src, Fail).collect();
+        assert_eq!(got.len(), 1);
+        let block = &got[0];
+
+        assert_eq!(block.line_number(), Some(42));
+        let commands = block.commands();
+
+        let g00 = &commands[0];
+        assert_eq!(g00.major_number(), 0);
+        assert_eq!(g00.args().len(), 1);
+        assert_eq!(g00.value_for('z'), Some(-0.5));
+
+        let g02 = &commands[1];
+        assert_eq!(g02.major_number(), 2);
+        assert_eq!(g02.args().len(), 2);
+        assert_eq!(g02.value_for('X'), Some(5.0));
+        assert_eq!(g02.value_for('I'), Some(100.0));
+
+        assert_eq!(block.comments().len(), 1);
+        let comment = &block.comments()[0];
+        assert_eq!(comment.body, "; Some comment");
     }
 }
