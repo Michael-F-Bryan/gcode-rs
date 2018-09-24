@@ -95,6 +95,9 @@ impl<'input, C: Callbacks> Parser<'input, C> {
     fn parse_preamble(&mut self, block: &mut Block<'input>) {
         while let Some(kind) = self.next_kind() {
             match kind {
+                TokenKind::Comment => {
+                    unreachable!("next_kind() never yields a comment")
+                }
                 TokenKind::ForwardSlash => {
                     let _ = self
                         .chomp(kind, |c| block.push_comment(c))
@@ -112,8 +115,8 @@ impl<'input, C: Callbacks> Parser<'input, C> {
                     }
                 }
                 TokenKind::Letter => {
-                    if self.parse_line_number(block) {
-                        // we parsed a line number
+                    if self.next_is_letter_n() {
+                        self.parse_line_number(block);
                         continue;
                     } else {
                         // It's something else. Break out of the loop so we
@@ -126,8 +129,25 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         }
     }
 
-    fn parse_line_number(&mut self, block: &mut Block<'input>) -> bool {
-        let next_is_n = self.lookahead(|lexy| {
+    /// Try to read a line number (`N42`) and set the block's line number if
+    /// successful.
+    fn parse_line_number(&mut self, block: &mut Block<'input>) {
+        let (tok, span) = self
+            .chomp(TokenKind::Letter, |c| block.push_comment(c))
+            .expect("Already checked");
+
+        let l = tok.unwrap_letter();
+        match self.parse_word(l, span, |c| block.push_comment(c)) {
+            Some(word) => {
+                block.with_line_number(word.value as usize, word.span);
+            }
+            // we found a "N", but it wasn't followed by a number
+            None => unimplemented!(),
+        }
+    }
+
+    fn next_is_letter_n(&self) -> bool {
+        self.lookahead(|lexy| {
             for (tok, _) in lexy {
                 match tok {
                     Token::Letter('n') | Token::Letter('N') => return true,
@@ -137,23 +157,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
             }
 
             false
-        });
-
-        if next_is_n {
-            let (tok, span) = self
-                .chomp(TokenKind::Letter, |c| block.push_comment(c))
-                .expect("Already checked");
-
-            let l = tok.unwrap_letter();
-            match self.parse_word(l, span, |c| block.push_comment(c)) {
-                Some(word) => {
-                    block.with_line_number(word.value as usize, word.span);
-                }
-                None => unimplemented!(),
-            }
-        }
-
-        next_is_n
+        })
     }
 
     fn parse_word(
@@ -187,6 +191,8 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         }
     }
 
+    /// Something went wrong while trying to read a gcode command. Fast forward
+    /// until we see the start of a new command or the end of the block.
     fn fast_forward_to_safe_point(
         &mut self,
         comments: impl FnMut(Comment<'input>),
@@ -226,11 +232,10 @@ impl<'input, C: Callbacks> Parser<'input, C> {
 
         let mut cmd = Gcode::new(mnemonic, number);
         cmd.with_span(span);
-        Some(cmd)
-    }
 
-    fn next_is(&self, kind: TokenKind) -> bool {
-        self.next_kind() == Some(kind)
+        // TODO: read the arguments and notify the callbacks if there was an error
+
+        Some(cmd)
     }
 
     /// Scan forward and see the `TokenKind` for the next non-comment `Token`.
