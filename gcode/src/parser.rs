@@ -210,7 +210,8 @@ impl<'input, C: Callbacks> Parser<'input, C> {
             other => unreachable!("{:?} should only ever be a letter", other),
         };
 
-        let (number, number_span) = self.chomp(TokenKind::Number, comments)?;
+        let (number, number_span) =
+            self.chomp(TokenKind::Number, &mut comments)?;
         let number = match number {
             Token::Number(n) => n,
             _ => unreachable!(),
@@ -233,8 +234,44 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         cmd.with_span(span);
 
         // TODO: read the arguments and notify the callbacks if there was an error
+        while self.next_is_argument() {
+            let (tok, span) = self
+                .chomp(TokenKind::Letter, &mut comments)
+                .expect("Already checked");
+            let letter = tok.unwrap_letter();
+
+            match self.parse_word(letter, span, &mut comments) {
+                Some(arg) => {
+                    cmd.with_argument(arg);
+                }
+                None => {
+                    unimplemented!();
+                }
+            }
+        }
 
         Some(cmd)
+    }
+
+    fn next_is_argument(&self) -> bool {
+        if let Some(letter) = self.next_letter() {
+            match letter {
+                'G' | 'g' | 'M' | 'm' | 'T' | 't' | 'O' | 'o' => false,
+                _ => true,
+            }
+        } else {
+            false
+        }
+    }
+
+    fn next_letter(&self) -> Option<char> {
+        self.lookahead(|lexy| {
+            lexy.map(|(tok, _)| tok)
+                .filter_map(|tok| match tok {
+                    Token::Letter(l) => Some(l),
+                    _ => None,
+                }).next()
+        })
     }
 
     /// Scan forward and see the `TokenKind` for the next non-comment `Token`.
@@ -397,5 +434,21 @@ mod tests {
         assert!(block.deleted());
 
         assert_eq!(block.commands().len(), 1);
+    }
+
+    #[test]
+    fn parse_a_command_with_arguments() {
+        let mut parser = Parser::new_with_callbacks("G00 X50.0 Y-20.5", Fail);
+
+        let block = parser.next().unwrap();
+
+        assert!(block.comments().is_empty());
+        assert_eq!(block.commands().len(), 1);
+        let got = &block.commands()[0];
+
+        assert_eq!(got.major_number(), 0);
+        assert_eq!(got.value_for('X').unwrap(), 50.0);
+        assert_eq!(got.value_for('x').unwrap(), 50.0);
+        assert_eq!(got.value_for('Y').unwrap(), -20.5);
     }
 }

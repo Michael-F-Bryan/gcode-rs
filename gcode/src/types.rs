@@ -179,7 +179,7 @@ pub struct Gcode {
 
 impl Gcode {
     pub fn new(mnemonic: Mnemonic, number: f32) -> Gcode {
-        debug_assert!(number > 0.0, "The number should always be positive");
+        debug_assert!(number >= 0.0, "The number should always be positive");
         Gcode {
             mnemonic,
             number: number as f32,
@@ -242,6 +242,15 @@ impl Gcode {
     pub fn with_span(&mut self, span: Span) -> &mut Self {
         self.span = span;
         self
+    }
+
+    pub fn value_for(&self, letter: char) -> Option<f32> {
+        let letter = letter.to_ascii_lowercase();
+
+        self.args()
+            .into_iter()
+            .find(|word| word.letter.to_ascii_lowercase() == letter)
+            .map(|word| word.value)
     }
 }
 

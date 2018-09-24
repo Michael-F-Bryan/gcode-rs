@@ -30,7 +30,7 @@ impl<'input> Lexer<'input> {
             '(' | ';' => Some(self.tokenize_comment()),
             '%' => Some(self.tokenize_percent()),
             '/' => Some(self.tokenize_forward_slash()),
-            '.' => Some(self.tokenize_number()),
+            '.' | '-' => Some(self.tokenize_number()),
             other if other.is_numeric() => Some(self.tokenize_number()),
             other if other.is_ascii_alphabetic() => {
                 Some(self.tokenize_letter())
@@ -78,7 +78,11 @@ impl<'input> Lexer<'input> {
                 }
             }
 
-            if next != '.' && !next.is_numeric() && !next.is_whitespace() {
+            if next != '.'
+                && next != '-'
+                && !next.is_numeric()
+                && !next.is_whitespace()
+            {
                 break;
             }
 
@@ -361,6 +365,7 @@ mod tests {
     lexer_test!(lex_a_forward_slash, "/" => Token::ForwardSlash);
     lexer_test!(integer, "42" => 42);
     lexer_test!(decimal, "1.23" => 1.23);
+    lexer_test!(negative_number, "-1.23" => -1.23);
     lexer_test!(integer_with_space, "1 23" => 123);
     lexer_test!(funky_spaces, "1 23. 4 5" => 123.45);
     lexer_test!(ignore_long_numbers_as_malformed, "1234567890 1234567890 1234567890 1234567890" =>
