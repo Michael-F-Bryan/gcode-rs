@@ -101,7 +101,7 @@ impl<'input> Lexer<'input> {
         }
 
         if input_is_malformed {
-            Token::GarbageNumber(&self.src[start..self.current_index])
+            Token::Garbage(&self.src[start..self.current_index])
         } else {
             Token::Number(buffer.parse().expect("Parse should never fail"))
         }
@@ -253,7 +253,7 @@ pub(crate) enum Token<'input> {
     /// A stupidly long decimal number was encountered. It'd normally overflow
     /// and break stuff if we tried to parse it, so pass it through to the
     /// parser as an erroneous variant.
-    GarbageNumber(&'input str),
+    Garbage(&'input str),
 }
 
 impl<'input> Token<'input> {
@@ -273,7 +273,7 @@ impl<'input> Token<'input> {
 
     pub fn is_err(&self) -> bool {
         match *self {
-            Token::GarbageNumber(_) => true,
+            Token::Garbage(_) => true,
             _ => false,
         }
     }
@@ -298,7 +298,7 @@ impl<'input> Token<'input> {
             Token::ForwardSlash => TokenKind::ForwardSlash,
             Token::Percent(None) => TokenKind::Percent,
             Token::Percent(Some(_)) => TokenKind::Percent,
-            Token::GarbageNumber(_) => TokenKind::Garbage,
+            Token::Garbage(_) => TokenKind::Garbage,
         }
     }
 }
@@ -330,6 +330,7 @@ impl<'input> From<&'input str> for Token<'input> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::prelude::v1::*;
 
     macro_rules! lexer_test {
         ($name:ident, $src:expr => $should_be:expr) => {
@@ -374,7 +375,7 @@ mod tests {
     lexer_test!(integer_with_space, "1 23" => 123);
     lexer_test!(funky_spaces, "1 23. 4 5" => 123.45);
     lexer_test!(ignore_long_numbers_as_malformed, "1234567890 1234567890 1234567890 1234567890" =>
-                Token::GarbageNumber("1234567890 1234567890 1234567890 1234567890"));
+                Token::Garbage("1234567890 1234567890 1234567890 1234567890"));
     lexer_test!(no_leading_zero, ".5" => 0.5);
 
     #[test]
@@ -395,5 +396,40 @@ mod tests {
             }
         );
         assert_eq!(lexy.current_line, 1);
+    }
+
+    #[test]
+    fn tokenize_a_full_sentence() {
+        let src =
+            "% percent comment\nG90.0X 5 .5Y- 8(comment)\nNxx/; comment to end of line\n%";
+
+        let got: Vec<_> = Lexer::new(src).collect();
+
+        let should_be = vec![
+            (
+                Token::Percent(Some(" percent comment")),
+                Span::new(0, 18, 0),
+            ),
+            (Token::Letter('G'), Span::new(18, 19, 1)),
+            (Token::Number(90.0), Span::new(19, 23, 1)),
+            (Token::Letter('X'), Span::new(23, 24, 1)),
+            (Token::Number(5.5), Span::new(25, 29, 1)),
+            (Token::Letter('Y'), Span::new(29, 30, 1)),
+            (Token::Number(-8.0), Span::new(30, 33, 1)),
+            (Token::Comment("(comment)"), Span::new(33, 42, 1)),
+            (Token::Newline, Span::new(42, 43, 1)),
+            (Token::Letter('N'), Span::new(43, 44, 2)),
+            (Token::Letter('x'), Span::new(44, 45, 2)),
+            (Token::Letter('x'), Span::new(45, 46, 2)),
+            (Token::ForwardSlash, Span::new(46, 47, 2)),
+            (
+                Token::Comment("; comment to end of line"),
+                Span::new(47, 71, 2),
+            ),
+            (Token::Newline, Span::new(71, 72, 2)),
+            (Token::Percent(None), Span::new(72, 73, 3)),
+        ];
+
+        assert_eq!(got, should_be);
     }
 }

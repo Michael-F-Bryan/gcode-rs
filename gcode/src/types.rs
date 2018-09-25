@@ -25,6 +25,14 @@ pub struct Span {
 }
 
 impl Span {
+    pub fn new(start: usize, end: usize, source_line: usize) -> Span {
+        Span {
+            start,
+            end,
+            source_line,
+        }
+    }
+
     pub fn placeholder() -> Span {
         Span {
             start: usize::max_value(),
