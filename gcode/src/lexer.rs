@@ -18,10 +18,6 @@ impl<'input> Lexer<'input> {
         }
     }
 
-    pub fn src(&self) -> &'input str {
-        self.src
-    }
-
     fn step(&mut self) -> Option<Token<'input>> {
         let next = self.peek()?;
 
@@ -35,7 +31,7 @@ impl<'input> Lexer<'input> {
             other if other.is_ascii_alphabetic() => {
                 Some(self.tokenize_letter())
             }
-            other => unimplemented!("{:?}", other),
+            _ => Some(self.consume_garbage()),
         }
     }
 
@@ -54,6 +50,17 @@ impl<'input> Lexer<'input> {
         }
 
         &self.src[start..self.current_index]
+    }
+
+    fn consume_garbage(&mut self) -> Token<'input> {
+        let garbage = self.take_while(|c| match c {
+            '\n' | '(' | ';' | '%' | '/' | '.' | '-' => false,
+            other if other.is_whitespace() => true,
+            other => !other.is_numeric() && !other.is_ascii_alphabetic(),
+        });
+
+        debug_assert!(garbage.len() > 0);
+        Token::Garbage(garbage)
     }
 
     fn tokenize_number(&mut self) -> Token<'input> {
@@ -377,6 +384,7 @@ mod tests {
     lexer_test!(ignore_long_numbers_as_malformed, "1234567890 1234567890 1234567890 1234567890" =>
                 Token::Garbage("1234567890 1234567890 1234567890 1234567890"));
     lexer_test!(no_leading_zero, ".5" => 0.5);
+    lexer_test!(anything_else_is_garbage, "💩$&&&**#'\"  \t=" => Token::Garbage("💩$&&&**#'\"  \t=" ));
 
     #[test]
     fn recognise_a_newline() {
