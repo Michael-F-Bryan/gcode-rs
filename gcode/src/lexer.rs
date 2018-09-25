@@ -107,6 +107,9 @@ impl<'input> Lexer<'input> {
             let _ = self.advance();
         }
 
+        // a solitary dot (plus whitespace) is also malformed
+        input_is_malformed = input_is_malformed || buffer.trim() == ".";
+
         if input_is_malformed {
             Token::Garbage(&self.src[start..self.current_index])
         } else {
@@ -384,7 +387,8 @@ mod tests {
     lexer_test!(ignore_long_numbers_as_malformed, "1234567890 1234567890 1234567890 1234567890" =>
                 Token::Garbage("1234567890 1234567890 1234567890 1234567890"));
     lexer_test!(no_leading_zero, ".5" => 0.5);
-    lexer_test!(anything_else_is_garbage, "💩$&&&**#'\"  \t=" => Token::Garbage("💩$&&&**#'\"  \t=" ));
+    lexer_test!(anything_else_is_garbage, "💩$&&&**#'\"  \t=" => Token::Garbage("💩$&&&**#'\"  \t="));
+    lexer_test!(solitary_dot_is_garbage, "." => Token::Garbage("."));
 
     #[test]
     fn recognise_a_newline() {
