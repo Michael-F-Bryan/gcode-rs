@@ -1,7 +1,18 @@
 [package]
 name = "gcode"
-version = "0.1.0"
+version = "0.3.2-alpha.0"
 authors = ["Michael Bryan <michaelfbryan@gmail.com>"]
+description = "A gcode parser for no-std applications."
+repository = "https://github.com/Michael-F-Bryan/gcode-rs"
+readme = "../README.md"
+license = "MIT"
+keywords = ["gcode", "parser"]
+categories = ["no-std", "parser-implementations", "embedded"]
+
+[badges]
+appveyor = { repository = "Michael-F-Bryan/gcode-rs" }
+travis-ci = { repository = "Michael-F-Bryan/gcode-rs" }
+maintenance = { status = "actively-developed" }
 
 [dependencies]
 arrayvec = { version = "0.4", default-features = false }
