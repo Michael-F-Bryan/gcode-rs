@@ -17,11 +17,10 @@ main() {
 
     # Make sure our README example stays up-to-date. For some reason, we can't
     # use `cross rustdoc ...` so we need to recompile
-    # TODO: Re-enable this once the library is stable again
-    # if [ "$TRAVIS_RUST_VERSION" = nightly ]; then
-    #     cargo build --all-features
-    #     rustdoc --test -L target/debug/deps --extern gcode=target/debug/deps/libgcode.rlib README.md 
-    # fi
+    if [ "$TRAVIS_RUST_VERSION" = nightly ]; then
+        cargo build --all-features
+        rustdoc --test -L target/debug/deps --extern gcode=target/debug/deps/libgcode.rlib README.md
+    fi
 }
 
 # we don't run the "test phase" when doing deploys

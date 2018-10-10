@@ -25,11 +25,17 @@ fn main() {
         N42 G01 Z-20 F100";
 
     for instruction in gcode::parse(src) {
-        println!("{:?} {}", instruction.mnemonic(), instruction.number());
+        print!("{:?} {}", instruction.mnemonic(), instruction.major_number());
+
+        if let Some(minor) = instruction.minor_number() {
+            print!(".{}", minor);
+        }
 
         for arg in instruction.args() {
-            println!("\t{}{}", arg.letter, arg.value);
+            print!(" {}{}", arg.letter, arg.value);
         }
+
+        println!("\t(line {})", instruction.span().source_line);
     }
 }
 ```

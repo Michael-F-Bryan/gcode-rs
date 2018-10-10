@@ -252,6 +252,10 @@ impl Gcode {
         self
     }
 
+    pub fn span(&self) -> Span {
+        self.span
+    }
+
     pub fn value_for(&self, letter: char) -> Option<f32> {
         let letter = letter.to_ascii_lowercase();
 
