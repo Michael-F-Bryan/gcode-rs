@@ -44,8 +44,8 @@ main() {
            --target $target
 
     # We need the cbindgen tool for generating our header file
-    if [ -f $HOME/.cargo/env ]; then source $HOME/.cargo/env; fi
-    command -v cbindgen >/dev/null 2>&1 || cargo install --debug cbindgen
+    #if [ -f $HOME/.cargo/env ]; then source $HOME/.cargo/env; fi
+    #command -v cbindgen >/dev/null 2>&1 || cargo install --debug cbindgen
 }
 
 main

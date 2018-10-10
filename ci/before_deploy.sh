@@ -19,7 +19,7 @@ generate_bundle() {
     fi
 
     source $HOME/.cargo/env
-    cbindgen --output $stage/gcode.h
+    #cbindgen --output $stage/gcode.h
 
     cd $stage
     tar czf $src/$CRATE_NAME-$TRAVIS_TAG-$TARGET.tar.gz *
