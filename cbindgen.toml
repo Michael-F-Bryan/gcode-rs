@@ -1,5 +1,0 @@
-language = "C"
-include_guard = "GCODE_H"
-
-[enum]
-rename_variants = "ScreamingSnakeCase"
