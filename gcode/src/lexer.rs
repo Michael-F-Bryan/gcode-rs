@@ -1,6 +1,5 @@
 use arrayvec::ArrayString;
-use core::fmt::{self, Display, Formatter};
-use types::Span;
+use types::{Span, TokenKind};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) struct Lexer<'input> {
@@ -226,31 +225,6 @@ impl<'input> Iterator for Lexer<'input> {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum TokenKind {
-    Letter,
-    Number,
-    Comment,
-    Newline,
-    ForwardSlash,
-    Percent,
-    Garbage,
-}
-
-impl Display for TokenKind {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match *self {
-            TokenKind::Letter => "letter".fmt(f),
-            TokenKind::Number => "number".fmt(f),
-            TokenKind::Comment => "comment".fmt(f),
-            TokenKind::Newline => "newline".fmt(f),
-            TokenKind::ForwardSlash => "forward-slash".fmt(f),
-            TokenKind::Percent => "percent".fmt(f),
-            TokenKind::Garbage => "garbage".fmt(f),
-        }
-    }
-}
-
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) enum Token<'input> {
     Letter(char),
@@ -270,33 +244,15 @@ impl<'input> Token<'input> {
     pub fn unwrap_letter(&self) -> char {
         match *self {
             Token::Letter(l) => l,
-            other => unreachable!("Expected {:?} to be a letter", self),
+            _ => unreachable!("Expected {:?} to be a letter", self),
         }
     }
 
     pub fn unwrap_number(&self) -> f32 {
         match *self {
             Token::Number(n) => n,
-            other => unreachable!("Expected {:?} to be a number", self),
+            _ => unreachable!("Expected {:?} to be a number", self),
         }
-    }
-
-    pub fn is_err(&self) -> bool {
-        match *self {
-            Token::Garbage(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is_number(&self) -> bool {
-        match *self {
-            Token::Number(_) => true,
-            _ => false,
-        }
-    }
-
-    pub fn is(&self, kind: TokenKind) -> bool {
-        self.kind() == kind
     }
 
     pub fn kind(&self) -> TokenKind {

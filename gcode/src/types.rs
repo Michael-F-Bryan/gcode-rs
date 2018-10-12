@@ -53,10 +53,16 @@ impl Span {
     }
 
     pub fn merge(&self, other: Span) -> Span {
-        Span {
-            start: cmp::min(self.start, other.start),
-            end: cmp::max(self.end, other.end),
-            source_line: cmp::min(self.source_line, other.source_line),
+        if self.is_placeholder() {
+            other
+        } else if other.is_placeholder() {
+            *self
+        } else {
+            Span {
+                start: cmp::min(self.start, other.start),
+                end: cmp::max(self.end, other.end),
+                source_line: cmp::min(self.source_line, other.source_line),
+            }
         }
     }
 }
@@ -64,6 +70,31 @@ impl Span {
 impl Default for Span {
     fn default() -> Span {
         Span::placeholder()
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum TokenKind {
+    Letter,
+    Number,
+    Comment,
+    Newline,
+    ForwardSlash,
+    Percent,
+    Garbage,
+}
+
+impl Display for TokenKind {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            TokenKind::Letter => "letter".fmt(f),
+            TokenKind::Number => "number".fmt(f),
+            TokenKind::Comment => "comment".fmt(f),
+            TokenKind::Newline => "newline".fmt(f),
+            TokenKind::ForwardSlash => "forward-slash".fmt(f),
+            TokenKind::Percent => "percent".fmt(f),
+            TokenKind::Garbage => "garbage".fmt(f),
+        }
     }
 }
 

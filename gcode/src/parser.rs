@@ -1,7 +1,7 @@
-use lexer::{Lexer, Token, TokenKind};
+use lexer::{Lexer, Token};
 #[cfg(not(feature = "std"))]
 use libm::F32Ext;
-use types::{Argument, Block, Comment, Gcode, Mnemonic, Span};
+use types::{Argument, Block, Comment, Gcode, Mnemonic, Span, TokenKind};
 
 #[derive(Debug, Clone)]
 /// An error-resistent streaming gcode parser.
@@ -192,9 +192,32 @@ impl<'input, C: Callbacks> Parser<'input, C> {
     /// until we see the start of a new command or the end of the block.
     fn fast_forward_to_safe_point(
         &mut self,
-        comments: impl FnMut(Comment<'input>),
+        mut comments: impl FnMut(Comment<'input>),
     ) {
-        unimplemented!()
+        let mut overall_span = Span::placeholder();
+
+        while let Some(kind) = self.next_kind() {
+            if kind == TokenKind::Newline {
+                break;
+            }
+
+            let (tok, span) = self.lexer.next().expect("We aren't at the EOF");
+            overall_span = overall_span.merge(span);
+
+            if let Token::Comment(body) = tok {
+                comments(Comment { body, span });
+            }
+        }
+
+        #[cfg(test)]
+        println!("Overall span: {:?}", overall_span);
+
+        self.callbacks.mangled_input(
+            overall_span
+                .text_from_source(self.src)
+                .expect("Always within bounds"),
+            overall_span,
+        );
     }
 
     fn parse_command(
@@ -241,6 +264,17 @@ impl<'input, C: Callbacks> Parser<'input, C> {
             match letter {
                 'G' | 'g' | 'M' | 'm' | 'T' | 't' | 'O' | 'o' => false,
                 _ => true,
+            }
+        } else {
+            false
+        }
+    }
+
+    fn next_starts_a_command(&self) -> bool {
+        if let Some(letter) = self.next_letter() {
+            match letter.to_ascii_lowercase() {
+                'g' | 'm' | 't' | 'o' => true,
+                _ => false,
             }
         } else {
             false
@@ -326,6 +360,24 @@ pub trait Callbacks {
     ) {
     }
     fn unexpected_eof(&mut self, _expected: &[TokenKind]) {}
+    fn mangled_input(&mut self, input: &str, span: Span) {}
+}
+
+impl<'a, C: Callbacks> Callbacks for &'a mut C {
+    fn unexpected_token(
+        &mut self,
+        found: TokenKind,
+        span: Span,
+        expected: &[TokenKind],
+    ) {
+        (**self).unexpected_token(found, span, expected);
+    }
+    fn unexpected_eof(&mut self, expected: &[TokenKind]) {
+        (**self).unexpected_eof(expected);
+    }
+    fn mangled_input(&mut self, input: &str, span: Span) {
+        (**self).mangled_input(input, span);
+    }
 }
 
 /// A no-op set of callbacks.
@@ -355,6 +407,9 @@ mod tests {
         }
         fn unexpected_eof(&mut self, expected: &[TokenKind]) {
             panic!("Unexpected EOF. Expected {:?}", expected);
+        }
+        fn mangled_input(&mut self, input: &str, span: Span) {
+            panic!("Mangled input at {:?}, {:?}", span, input);
         }
     }
 
@@ -463,5 +518,41 @@ mod tests {
         assert_eq!(block.comments().len(), 1);
         let comment = &block.comments()[0];
         assert_eq!(comment.body, "; Some comment");
+    }
+
+    #[derive(Debug, Default)]
+    struct GarbageCollector {
+        garbage: Vec<(String, Span)>,
+    }
+
+    impl Callbacks for GarbageCollector {
+        fn mangled_input(&mut self, input: &str, span: Span) {
+            self.garbage.push((input.to_string(), span));
+        }
+    }
+
+    #[test]
+    fn skip_erroneous_sections() {
+        let src = "N42 G42 $Oops... G90 (retain comments) P5";
+
+        let mut gc = GarbageCollector::default();
+        let got: Vec<_> = Parser::new_with_callbacks(src, &mut gc).collect();
+
+        assert_eq!(got.len(), 1);
+
+        let first_block = &got[0];
+        let commands = first_block.commands();
+        assert_eq!(commands.len(), 1);
+        assert_eq!(first_block.comments().len(), 1);
+
+        let g42 = &commands[0];
+        assert_eq!(g42.major_number(), 42);
+        assert_eq!(g42.span(), Span::new(4, 8, 0));
+        assert!(g42.args().is_empty());
+
+        assert_eq!(gc.garbage.len(), 1);
+        let (garbage, span) = gc.garbage[0].clone();
+        assert_eq!(garbage, &src[8..]);
+        assert_eq!(span, Span::new(8, src.len(), 0));
     }
 }
