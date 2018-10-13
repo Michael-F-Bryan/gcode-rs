@@ -16,6 +16,7 @@ cfg_if! {
     }
 }
 
+/// The location of something within a string.
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
 pub struct Span {
@@ -73,6 +74,7 @@ impl Default for Span {
     }
 }
 
+/// The various token types that make up a gcode program.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum TokenKind {
     Letter,

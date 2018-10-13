@@ -15,12 +15,14 @@ extern crate std;
 extern crate pretty_assertions;
 
 mod lexer;
-pub mod parser;
-pub mod types;
+mod parser;
+mod types;
 
-pub use parser::Parser;
-pub use types::Gcode;
+pub use parser::*;
+pub use types::*;
 
+/// Convenience function for parsing a string of text into `Gcode`s, ignoring
+/// any errors which may occur.
 pub fn parse<'input>(src: &'input str) -> impl Iterator<Item = Gcode> + 'input {
     Parser::new(src).flat_map(|block| block.into_commands())
 }

@@ -351,6 +351,8 @@ impl<'input, C: Callbacks> Iterator for Parser<'input, C> {
     }
 }
 
+/// Callback functions the `Parser` can use to notify the user of errors
+/// encountered while parsing.
 pub trait Callbacks {
     fn unexpected_token(
         &mut self,
