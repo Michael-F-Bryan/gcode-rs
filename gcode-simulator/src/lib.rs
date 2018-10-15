@@ -1,9 +1,14 @@
+#![feature(try_from)]
+#![no_std]
+
 extern crate gcode;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct State {}
+#[cfg(test)]
+#[macro_use]
+pub extern crate std;
 
-pub trait Operation {
-    fn state_after(&self, seconds: f32, initial_state: State) -> State;
-    fn duration(&self) -> f32;
-}
+pub mod operations;
+pub mod state;
+
+pub use operations::Operation;
+pub use state::State;
