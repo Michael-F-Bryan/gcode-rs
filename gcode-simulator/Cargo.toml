@@ -6,3 +6,7 @@ authors = ["Michael Bryan <michaelfbryan@gmail.com>"]
 [dependencies]
 gcode = { path = "../gcode" }
 libm = "0.1"
+
+[dev-dependencies]
+pretty_assertions = "0.5"
+approx = "0.3"

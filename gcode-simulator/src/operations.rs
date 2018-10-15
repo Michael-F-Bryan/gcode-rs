@@ -170,12 +170,13 @@ impl Operation for LinearInterpolate {
 
     fn duration(&self, initial_state: &State) -> f32 {
         let feed_rate = self.feed_rate.unwrap_or(initial_state.feed_rate);
+        let feed_rate_mps = feed_rate / 60.0;
         let (end_x, end_y) = self.end_position(initial_state);
 
         let dx = end_x - initial_state.x;
         let dy = end_y - initial_state.y;
         let distance = f32::hypot(dx, dy);
-        distance / feed_rate
+        distance / feed_rate_mps
     }
 }
 
@@ -414,10 +415,10 @@ mod tests {
         let dy = 10.0 - 100.0;
         let distance = f32::hypot(dx, dy);
 
-        let should_be = distance / 10.0;
+        let should_be = distance * 60.0 / 10.0;
         let got = input.duration(&initial_state);
 
-        assert_eq!(got, should_be);
+        assert_relative_eq!(got, should_be);
     }
 
     #[test]
@@ -445,5 +446,18 @@ mod tests {
         let got = input.state_after(t, initial_state);
 
         assert_eq!(got, should_be);
+    }
+
+    #[test]
+    fn feed_rate_is_units_per_min() {
+        let initial_state = State::default();
+        let input = LinearInterpolate {
+            x: Some(100.0),
+            y: None,
+            feed_rate: Some(100.0),
+        };
+
+        let duration = input.duration(&initial_state);
+        assert_eq!(duration, 60.0);
     }
 }

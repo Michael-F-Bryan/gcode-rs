@@ -20,7 +20,7 @@ libm = "0.1"
 cfg-if = "0.1"
 
 [dev-dependencies]
-pretty_assertions = "*"
+pretty_assertions = "0.5"
 
 [features]
 default = []

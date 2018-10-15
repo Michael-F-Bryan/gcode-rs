@@ -3,6 +3,7 @@
 pub struct State {
     pub x: f32,
     pub y: f32,
+    /// The feed rate in units per minute.
     pub feed_rate: f32,
     pub coordinate_mode: CoordinateMode,
 }
