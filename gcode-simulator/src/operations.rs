@@ -1,4 +1,4 @@
-use core::convert::TryFrom;
+use super::TryFrom;
 use core::fmt::{self, Display, Formatter};
 use gcode::Gcode;
 use libm::F32Ext;
@@ -220,6 +220,7 @@ impl TryFrom<Gcode> for LinearInterpolate {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gcode;
 
     #[test]
     fn parse_a_dwell() {
