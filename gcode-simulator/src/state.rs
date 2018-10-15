@@ -7,6 +7,17 @@ pub struct State {
     pub coordinate_mode: CoordinateMode,
 }
 
+impl Default for State {
+    fn default() -> State {
+        State {
+            x: 0.0,
+            y: 0.0,
+            feed_rate: 100.0,
+            coordinate_mode: CoordinateMode::Absolute,
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CoordinateMode {
     Absolute,

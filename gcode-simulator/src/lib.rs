@@ -2,6 +2,7 @@
 #![no_std]
 
 extern crate gcode;
+extern crate libm;
 
 #[cfg(test)]
 #[macro_use]

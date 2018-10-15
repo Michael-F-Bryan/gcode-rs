@@ -5,3 +5,4 @@ authors = ["Michael Bryan <michaelfbryan@gmail.com>"]
 
 [dependencies]
 gcode = { path = "../gcode" }
+libm = "0.1"

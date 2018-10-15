@@ -1,7 +1,8 @@
 use core::convert::TryFrom;
 use core::fmt::{self, Display, Formatter};
 use gcode::Gcode;
-use state::State;
+use libm::F32Ext;
+use state::{CoordinateMode, State};
 
 pub trait Operation {
     fn state_after(&self, seconds: f32, initial_state: State) -> State;
@@ -131,6 +132,51 @@ pub struct LinearInterpolate {
     pub x: Option<f32>,
     pub y: Option<f32>,
     pub feed_rate: Option<f32>,
+}
+
+impl LinearInterpolate {
+    fn end_position(&self, start: &State) -> (f32, f32) {
+        match start.coordinate_mode {
+            CoordinateMode::Absolute => {
+                (self.x.unwrap_or(start.x), self.y.unwrap_or(start.y))
+            }
+            CoordinateMode::Relative => (
+                start.x + self.x.unwrap_or(0.0),
+                start.y + self.y.unwrap_or(0.0),
+            ),
+        }
+    }
+}
+
+impl Operation for LinearInterpolate {
+    fn state_after(&self, duration: f32, initial_state: State) -> State {
+        let feed_rate = self.feed_rate.unwrap_or(initial_state.feed_rate);
+        let (end_x, end_y) = self.end_position(&initial_state);
+
+        let dx = end_x - initial_state.x;
+        let dy = end_y - initial_state.y;
+        let total_duration = self.duration(&initial_state);
+        let ratio = duration / total_duration;
+        let x = initial_state.x + dx * ratio;
+        let y = initial_state.y + dy * ratio;
+
+        State {
+            x,
+            y,
+            feed_rate,
+            ..initial_state
+        }
+    }
+
+    fn duration(&self, initial_state: &State) -> f32 {
+        let feed_rate = self.feed_rate.unwrap_or(initial_state.feed_rate);
+        let (end_x, end_y) = self.end_position(initial_state);
+
+        let dx = end_x - initial_state.x;
+        let dy = end_y - initial_state.y;
+        let distance = f32::hypot(dx, dy);
+        distance / feed_rate
+    }
 }
 
 impl TryFrom<Gcode> for LinearInterpolate {
@@ -266,5 +312,138 @@ mod tests {
 
             assert_eq!(got, should_be);
         }
+    }
+
+    #[test]
+    fn linear_interpolate_end_position_absolute() {
+        let initial_state = State {
+            x: 50.0,
+            y: 100.0,
+            coordinate_mode: CoordinateMode::Absolute,
+            ..Default::default()
+        };
+        let inputs = vec![
+            (
+                LinearInterpolate {
+                    x: Some(10.0),
+                    y: Some(10.0),
+                    ..Default::default()
+                },
+                (10.0, 10.0),
+            ),
+            (
+                LinearInterpolate {
+                    x: Some(10.0),
+                    y: None,
+                    ..Default::default()
+                },
+                (10.0, 100.0),
+            ),
+            (
+                LinearInterpolate {
+                    x: None,
+                    y: Some(123.0),
+                    ..Default::default()
+                },
+                (50.0, 123.0),
+            ),
+        ];
+
+        for (src, should_be) in inputs {
+            let got = src.end_position(&initial_state);
+            assert_eq!(got, should_be);
+        }
+    }
+
+    #[test]
+    fn linear_interpolate_end_position_relative() {
+        let initial_state = State {
+            x: 50.0,
+            y: 100.0,
+            coordinate_mode: CoordinateMode::Relative,
+            ..Default::default()
+        };
+        let inputs = vec![
+            (
+                LinearInterpolate {
+                    x: Some(10.0),
+                    y: Some(10.0),
+                    ..Default::default()
+                },
+                (60.0, 110.0),
+            ),
+            (
+                LinearInterpolate {
+                    x: Some(10.0),
+                    y: None,
+                    ..Default::default()
+                },
+                (60.0, 100.0),
+            ),
+            (
+                LinearInterpolate {
+                    x: None,
+                    y: Some(123.0),
+                    ..Default::default()
+                },
+                (50.0, 223.0),
+            ),
+        ];
+
+        for (src, should_be) in inputs {
+            let got = src.end_position(&initial_state);
+            assert_eq!(got, should_be);
+        }
+    }
+
+    #[test]
+    fn linear_interpolate_duration() {
+        let initial_state = State {
+            x: 50.0,
+            y: 100.0,
+            coordinate_mode: CoordinateMode::Absolute,
+            ..Default::default()
+        };
+        let input = LinearInterpolate {
+            x: Some(10.0),
+            y: Some(10.0),
+            feed_rate: Some(10.0),
+        };
+
+        let dx = 10.0 - 50.0;
+        let dy = 10.0 - 100.0;
+        let distance = f32::hypot(dx, dy);
+
+        let should_be = distance / 10.0;
+        let got = input.duration(&initial_state);
+
+        assert_eq!(got, should_be);
+    }
+
+    #[test]
+    fn linear_interpolate_state_after() {
+        let initial_state = State {
+            x: 50.0,
+            y: 100.0,
+            coordinate_mode: CoordinateMode::Absolute,
+            ..Default::default()
+        };
+        let input = LinearInterpolate {
+            x: Some(10.0),
+            y: None,
+            feed_rate: Some(10.0),
+        };
+
+        let t = input.duration(&initial_state) / 2.0;
+        let should_be = State {
+            x: (50.0 + 10.0) / 2.0,
+            y: 100.0,
+            feed_rate: 10.0,
+            ..initial_state
+        };
+
+        let got = input.state_after(t, initial_state);
+
+        assert_eq!(got, should_be);
     }
 }
