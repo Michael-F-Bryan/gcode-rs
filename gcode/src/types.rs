@@ -2,7 +2,6 @@ cfg_if! {
     if #[cfg(feature = "std")] {
         use std::cmp;
         use std::fmt::{self, Display, Formatter};
-
     } else {
         use core::cmp;
         #[allow(unused_imports)]
@@ -103,7 +102,6 @@ impl Display for TokenKind {
 /// A block containing `Gcode` commands and/or comments.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Block<'input> {
-    src: Option<&'input str>,
     line_number: Option<usize>,
     deleted: bool,
     span: Span,
@@ -122,7 +120,6 @@ pub struct Block<'input> {
 impl<'input> Block<'input> {
     pub(crate) fn empty() -> Block<'input> {
         Block {
-            src: None,
             commands: Default::default(),
             comments: Default::default(),
             deleted: false,
@@ -151,16 +148,6 @@ impl<'input> Block<'input> {
 
     pub fn comments(&self) -> &[Comment<'input>] {
         &self.comments
-    }
-
-    /// The original source text of the `Block`, if available.
-    pub fn src(&self) -> Option<&'input str> {
-        self.src
-    }
-
-    pub fn with_src(&mut self, src: &'input str) -> &mut Self {
-        self.src = Some(src);
-        self
     }
 
     pub fn span(&self) -> Span {
@@ -319,6 +306,12 @@ impl Display for Argument {
 pub struct Comment<'input> {
     pub body: &'input str,
     pub span: Span,
+}
+
+impl<'input> Comment<'input> {
+    pub fn new(body: &'input str, span: Span) -> Comment {
+        Comment { body, span }
+    }
 }
 
 /// The general category a `Gcode` belongs to.

@@ -82,12 +82,6 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         if block.is_empty() {
             None
         } else {
-            let src = block
-                .span()
-                .text_from_source(self.src)
-                .expect("The span should always be valid");
-            block.with_src(src);
-
             Some(block)
         }
     }
