@@ -199,7 +199,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
             overall_span = overall_span.merge(span);
 
             if let Token::Comment(body) = tok {
-                comments(Comment { body, span });
+                comments(Comment::new(body, span));
             }
         }
 
@@ -324,7 +324,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
             }
 
             if let Token::Comment(body) = tok {
-                comments(Comment { body, span });
+                comments(Comment::new(body, span));
             } else {
                 unreachable!(
                     "We should only ever see a {} or comments. Found {:?}",
@@ -420,7 +420,7 @@ mod tests {
         assert_eq!(block.comments().len(), 1);
 
         let comment = &block.comments()[0];
-        assert_eq!(comment.body, "; This is a comment");
+        assert_eq!(comment.body(), "; This is a comment");
         assert_eq!(
             comment.span,
             Span {
@@ -513,7 +513,7 @@ mod tests {
 
         assert_eq!(block.comments().len(), 1);
         let comment = &block.comments()[0];
-        assert_eq!(comment.body, "; Some comment");
+        assert_eq!(comment.body(), "; Some comment");
     }
 
     #[derive(Debug, Default)]

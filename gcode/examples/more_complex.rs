@@ -32,7 +32,7 @@ fn main() -> Result<(), Error> {
             println!();
             println!("\t{} comments:", block.comments().len());
             for comment in block.comments() {
-                println!("\t\t\"{}\"", comment.body);
+                println!("\t\t\"{}\"", comment.body());
             }
         }
     }

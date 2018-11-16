@@ -2,6 +2,7 @@ cfg_if! {
     if #[cfg(feature = "std")] {
         use std::cmp;
         use std::fmt::{self, Display, Formatter};
+        use std::borrow::Cow;
     } else {
         use core::cmp;
         #[allow(unused_imports)]
@@ -302,15 +303,46 @@ impl Display for Argument {
 }
 
 /// A comment.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Comment<'input> {
-    pub body: &'input str,
+    #[cfg(feature = "std")]
+    body: Cow<'input, str>,
+    #[cfg(not(feature = "std"))]
+    body: &'input str,
     pub span: Span,
 }
 
-impl<'input> Comment<'input> {
-    pub fn new(body: &'input str, span: Span) -> Comment {
-        Comment { body, span }
+cfg_if! {
+    if #[cfg(feature = "std")] {
+        impl<'input> Comment<'input> {
+            pub fn new(body: &'input str, span: Span) -> Comment<'input> {
+                Comment::new_cow(body, span)
+            }
+
+            pub fn body(&self) -> &str {
+                &*self.body
+            }
+
+            pub fn new_cow<S: Into<Cow<'input, str>>>(
+                body: S,
+                span: Span,
+            ) -> Comment<'input> {
+                Comment {
+                    body: body.into(),
+                    span,
+                }
+            }
+        }
+    } else {
+        impl<'input> Comment<'input> {
+            pub fn new(body: &'input str, span: Span) -> Comment<'input> {
+                Comment { body, span }
+            }
+
+            pub fn body(&self) -> &str {
+                self.body
+            }
+        }
     }
 }
 
@@ -347,5 +379,19 @@ mod tests {
             assert_eq!(g.major_number(), major);
             assert_eq!(g.minor_number(), minor);
         }
+    }
+
+    #[cfg(feature = "std")]
+    #[test]
+    fn create_a_cow_comment() {
+        let span = Span::new(0, 1, 0);
+        let comment = Comment::new("blah", span);
+
+        assert_eq!(comment.body(), "blah");
+        assert_eq!(comment.span, span);
+
+        let cow_comment = Comment::new_cow(String::from("blah"), span);
+
+        assert_eq!(comment, cow_comment);
     }
 }
