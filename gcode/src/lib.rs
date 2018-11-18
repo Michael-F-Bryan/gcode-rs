@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(rust_2018_idioms)]
+#![deny(missing_copy_implementations, missing_debug_implementations)]
 
 extern crate arrayvec;
 #[macro_use]

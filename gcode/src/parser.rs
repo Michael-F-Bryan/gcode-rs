@@ -176,7 +176,12 @@ impl<'input, C: Callbacks> Parser<'input, C> {
             }
 
             match self.parse_command(|c| block.push_comment(c)) {
-                Some(cmd) => block.push_command(cmd),
+                Some(mut cmd) => {
+                    if let Some(line) = block.line_number() {
+                        cmd = cmd.with_line_number(line);
+                    }
+                    block.push_command(cmd);
+                }
                 None => {
                     self.fast_forward_to_safe_point(|c| block.push_comment(c))
                 }
@@ -493,12 +498,15 @@ mod tests {
         assert_eq!(g00.major_number(), 0);
         assert_eq!(g00.args().len(), 1);
         assert_eq!(g00.value_for('z'), Some(-0.5));
+        assert_eq!(g00.span(), Span::new(4, 14, 0));
+        assert_eq!(g00.line_number(), Some(42));
 
         let g02 = &commands[1];
         assert_eq!(g02.major_number(), 2);
         assert_eq!(g02.args().len(), 2);
         assert_eq!(g02.value_for('X'), Some(5.0));
         assert_eq!(g02.value_for('I'), Some(100.0));
+        assert_eq!(g00.line_number(), Some(42));
 
         assert_eq!(block.comments().len(), 1);
         let comment = &block.comments()[0];

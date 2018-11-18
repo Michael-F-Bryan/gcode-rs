@@ -278,6 +278,9 @@ impl Gcode {
     }
 
     pub fn push_argument(&mut self, arg: Argument) {
+        if !arg.span.is_placeholder() {
+            self.span = self.span.merge(arg.span);
+        }
         self.arguments.push(arg);
     }
 
@@ -297,6 +300,10 @@ impl Gcode {
         self.span
     }
 
+    pub fn line_number(&self) -> Option<usize> {
+        self.line_number
+    }
+
     pub fn value_for(&self, letter: char) -> Option<f32> {
         let letter = letter.to_ascii_lowercase();
 
@@ -314,6 +321,16 @@ pub struct Argument {
     pub letter: char,
     pub value: f32,
     pub span: Span,
+}
+
+impl Argument {
+    pub fn new(letter: char, value: f32, span: Span) -> Argument {
+        Argument {
+            letter,
+            value,
+            span,
+        }
+    }
 }
 
 impl Display for Argument {

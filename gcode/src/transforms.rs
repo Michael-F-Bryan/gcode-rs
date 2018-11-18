@@ -44,6 +44,7 @@ pub trait GcodeTransforms: Iterator<Item = Gcode> {
 
 impl<I> GcodeTransforms for I where I: Iterator<Item = Gcode> {}
 
+#[derive(Debug)]
 pub struct Map<I, S, F> {
     iter: I,
     selector: S,
