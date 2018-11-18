@@ -19,7 +19,7 @@ main() {
     # use `cross rustdoc ...` so we need to recompile
     if [ "$TRAVIS_RUST_VERSION" = nightly ]; then
         cargo build --all-features
-        rustdoc --test -L target/debug/deps --extern gcode=target/debug/deps/libgcode.rlib README.md
+        rustdoc --test -L target/debug/deps --extern gcode=target/debug/libgcode.rlib README.md
     fi
 }
 

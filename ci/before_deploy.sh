@@ -19,7 +19,6 @@ generate_bundle() {
     fi
 
     source $HOME/.cargo/env
-    #cbindgen --output $stage/gcode.h
 
     cd $stage
     tar czf $src/$CRATE_NAME-$TRAVIS_TAG-$TARGET.tar.gz *
@@ -42,7 +41,8 @@ main() {
     esac
 
     generate_docs
-    generate_bundle
+    # FIXME: Do we need to generate a release bundle for a library project?
+    # generate_bundle
 }
 
 main
