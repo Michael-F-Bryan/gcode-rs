@@ -265,19 +265,8 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         }
     }
 
-    fn next_starts_a_command(&self) -> bool {
-        if let Some(letter) = self.next_letter() {
-            match letter.to_ascii_lowercase() {
-                'g' | 'm' | 't' | 'o' => true,
-                _ => false,
-            }
-        } else {
-            false
-        }
-    }
-
     fn next_letter(&self) -> Option<char> {
-        for (tok, _) in self.lexer.clone() {
+        for (tok, _) in Clone::clone(&self.lexer) {
             match tok {
                 Token::Letter(l) => return Some(l),
                 Token::Comment(_) => continue,
@@ -292,16 +281,15 @@ impl<'input, C: Callbacks> Parser<'input, C> {
     fn next_kind(&self) -> Option<TokenKind> {
         self.lookahead(|lexy| {
             lexy.map(|(tok, _)| tok.kind())
-                .filter(|&kind| kind != TokenKind::Comment)
-                .next()
+                .find(|&kind| kind != TokenKind::Comment)
         })
     }
 
     fn lookahead<F, T>(&self, peek: F) -> T
     where
-        F: FnOnce(Lexer) -> T,
+        F: FnOnce(Lexer<'_>) -> T,
     {
-        peek(self.lexer.clone())
+        peek(self.lexer)
     }
 
     /// Look ahead at the next token, advancing and returning the token if it
@@ -357,7 +345,7 @@ pub trait Callbacks {
     ) {
     }
     fn unexpected_eof(&mut self, _expected: &[TokenKind]) {}
-    fn mangled_input(&mut self, input: &str, span: Span) {}
+    fn mangled_input(&mut self, _input: &str, _span: Span) {}
 }
 
 impl<'a, C: Callbacks> Callbacks for &'a mut C {

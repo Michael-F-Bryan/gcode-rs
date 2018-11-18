@@ -32,7 +32,7 @@ impl Display for ConversionError {
             ConversionError::MissingArguments { expected } => {
                 write!(f, "expected one of the following arguments: ")?;
                 write!(f, "{}", expected[0])?;
-                for arg in expected.into_iter().skip(1) {
+                for arg in expected.iter().skip(1) {
                     write!(f, ", {}", arg)?;
                 }
 
@@ -53,7 +53,7 @@ impl Display for ConversionError {
                     write!(f, "one of ")?;
                 }
                 write!(f, "{}", expected[0])?;
-                for arg in expected.into_iter().skip(1) {
+                for arg in expected.iter().skip(1) {
                     write!(f, ", {}", arg)?;
                 }
 

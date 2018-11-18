@@ -42,7 +42,7 @@ fn read_each_line_of_a_file() {
             .with_argument(Word::new('F', 100.0, Span::new(190, 194, 7)))
             .with_line_number(42, Span::new(186, 194, 7)),
     ];
-
+    
     assert_eq!(got, should_be);
     */
 }

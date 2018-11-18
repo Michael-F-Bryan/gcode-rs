@@ -87,7 +87,7 @@ pub enum TokenKind {
 }
 
 impl Display for TokenKind {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match *self {
             TokenKind::Letter => "letter".fmt(f),
             TokenKind::Number => "number".fmt(f),
@@ -301,7 +301,7 @@ impl Gcode {
         let letter = letter.to_ascii_lowercase();
 
         self.args()
-            .into_iter()
+            .iter()
             .find(|word| word.letter.to_ascii_lowercase() == letter)
             .map(|word| word.value)
     }
@@ -317,7 +317,7 @@ pub struct Argument {
 }
 
 impl Display for Argument {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}{}", self.letter, self.value)
     }
 }

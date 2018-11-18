@@ -86,7 +86,7 @@ where
 impl Predicate<Gcode> for char {
     /// Select any [`Gcode`]s which have this argument.
     fn evaluate(&mut self, item: &Gcode) -> bool {
-        item.args().into_iter().any(|arg| arg.letter == *self)
+        item.args().iter().any(|arg| arg.letter == *self)
     }
 }
 
@@ -109,7 +109,7 @@ where
     P: Predicate<T>,
 {
     fn evaluate(&mut self, item: &T) -> bool {
-        self.into_iter().any(|pred| pred.evaluate(item))
+        self.iter_mut().any(|pred| pred.evaluate(item))
     }
 }
 

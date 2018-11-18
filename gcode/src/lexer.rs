@@ -58,7 +58,7 @@ impl<'input> Lexer<'input> {
             other => !other.is_numeric() && !other.is_ascii_alphabetic(),
         });
 
-        debug_assert!(garbage.len() > 0);
+        debug_assert!(!garbage.is_empty());
         Token::Garbage(garbage)
     }
 
@@ -151,14 +151,15 @@ impl<'input> Lexer<'input> {
 
         // skip the comment body
         let _ = self.take_while(|c| c != end_of_comment);
-        let mut end = self.current_index;
 
         // we want to include the closing paren, but ignore a trailing newline
-        if end_of_comment == ')' {
+        let end = if end_of_comment == ')' {
             // step past the end-of-comment character
             let _ = self.advance();
-            end = self.current_index;
-        }
+            self.current_index
+        } else {
+            self.current_index
+        };
 
         Token::Comment(&self.src[start..end])
     }

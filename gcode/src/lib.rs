@@ -1,4 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
+#![warn(rust_2018_idioms)]
 
 extern crate arrayvec;
 #[macro_use]
@@ -19,9 +20,9 @@ mod parser;
 pub mod transforms;
 mod types;
 
-pub use parser::*;
-pub use transforms::GcodeTransforms;
-pub use types::*;
+pub use crate::parser::*;
+pub use crate::transforms::GcodeTransforms;
+pub use crate::types::*;
 
 /// Convenience function for parsing a string of text into `Gcode`s, ignoring
 /// any errors which may occur.
