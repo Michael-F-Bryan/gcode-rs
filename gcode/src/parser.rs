@@ -1,7 +1,9 @@
-use lexer::{Lexer, Token};
+use crate::lexer::{Lexer, Token};
+use crate::types::{
+    Argument, Block, Comment, Gcode, Mnemonic, Span, TokenKind,
+};
 #[cfg(not(feature = "std"))]
 use libm::F32Ext;
-use types::{Argument, Block, Comment, Gcode, Mnemonic, Span, TokenKind};
 
 #[derive(Debug, Clone)]
 /// An error-resistent streaming gcode parser.
@@ -235,13 +237,12 @@ impl<'input, C: Callbacks> Parser<'input, C> {
             ),
         };
 
-        let mut cmd = Gcode::new(mnemonic, value);
-        cmd.with_span(span);
+        let mut cmd = Gcode::new(mnemonic, value).with_span(span);
 
         while self.next_is_argument() {
             match self.parse_word(&mut comments) {
                 Some(arg) => {
-                    cmd.with_argument(arg);
+                    cmd.push_argument(arg);
                 }
                 None => {
                     // TODO: Signal an error to the callbacks

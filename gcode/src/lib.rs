@@ -16,9 +16,11 @@ extern crate pretty_assertions;
 
 mod lexer;
 mod parser;
+pub mod transforms;
 mod types;
 
 pub use parser::*;
+pub use transforms::GcodeTransforms;
 pub use types::*;
 
 /// Convenience function for parsing a string of text into `Gcode`s, ignoring

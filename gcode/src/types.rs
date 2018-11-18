@@ -252,25 +252,45 @@ impl Gcode {
         &mut self.arguments
     }
 
-    pub fn with_line_number(&mut self, number: usize) -> &mut Self {
+    pub fn with_line_number(mut self, number: usize) -> Self {
         self.line_number = Some(number);
         self
     }
 
-    pub fn with_minor_nujmber(&mut self, number: usize) -> &mut Self {
+    pub fn with_minor_number(mut self, number: usize) -> Self {
         debug_assert!(number < 10);
         self.number = self.number.trunc() + number as f32 / 10.0;
         self
     }
 
-    pub fn with_argument(&mut self, arg: Argument) -> &mut Self {
-        self.arguments.push(arg);
+    /// Add an argument to the [`Gcode`], removing any previous arguments with
+    /// the same letter.
+    pub fn with_argument(mut self, arg: Argument) -> Self {
+        while let Some(_) = self.remove_argument(arg.letter) {}
+
+        self.push_argument(arg);
         self
     }
 
-    pub fn with_span(&mut self, span: Span) -> &mut Self {
+    pub fn with_span(mut self, span: Span) -> Self {
         self.span = span;
         self
+    }
+
+    pub fn push_argument(&mut self, arg: Argument) {
+        self.arguments.push(arg);
+    }
+
+    /// Remove the first argument with the specified `letter`.
+    pub fn remove_argument(&mut self, letter: char) -> Option<Argument> {
+        if let Some(ix) =
+            self.arguments.iter().position(|arg| arg.letter == letter)
+        {
+            let removed = self.arguments.remove(ix);
+            Some(removed)
+        } else {
+            None
+        }
     }
 
     pub fn span(&self) -> Span {
