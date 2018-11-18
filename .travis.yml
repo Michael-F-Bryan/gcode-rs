@@ -29,7 +29,7 @@ matrix:
 
     # Make sure we support a minimum rustc version
     - env: TARGET=x86_64-unknown-linux-gnu
-      rust: 1.27.0
+      rust: 1.30.0 # needed for `use crate::foo` syntax
 
     # Use nightly for ensuring our README example compiles
     - env: TARGET=x86_64-unknown-linux-gnu
