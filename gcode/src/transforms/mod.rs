@@ -112,6 +112,7 @@ where
 {
     type Item = Gcode;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let next = self.iter.next()?;
 
@@ -140,6 +141,7 @@ where
 {
     type Item = Gcode;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let mut next = self.iter.next()?;
 

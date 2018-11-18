@@ -60,6 +60,7 @@ where
     R: Predicate<T>,
     T: ?Sized,
 {
+    #[inline]
     fn evaluate(&mut self, item: &T) -> bool {
         self.left.evaluate(item) || self.right.evaluate(item)
     }
@@ -69,6 +70,7 @@ impl<F, T> Predicate<T> for F
 where
     F: FnMut(&T) -> bool,
 {
+    #[inline]
     fn evaluate(&mut self, item: &T) -> bool {
         (self)(item)
     }
@@ -76,12 +78,14 @@ where
 
 impl Predicate<Gcode> for char {
     /// Select any [`Gcode`]s which have this argument.
+    #[inline]
     fn evaluate(&mut self, item: &Gcode) -> bool {
         item.args().iter().any(|arg| arg.letter == *self)
     }
 }
 
 impl Predicate<Argument> for char {
+    #[inline]
     fn evaluate(&mut self, item: &Argument) -> bool {
         item.letter == *self
     }
@@ -89,6 +93,7 @@ impl Predicate<Argument> for char {
 
 impl Predicate<Gcode> for usize {
     /// Select any [`Gcode`]s with this major number.
+    #[inline]
     fn evaluate(&mut self, item: &Gcode) -> bool {
         item.major_number() == *self
     }
@@ -96,6 +101,7 @@ impl Predicate<Gcode> for usize {
 
 impl Predicate<Gcode> for Mnemonic {
     /// Select any [`Gcode`]s which have this [`Mnemonic`].
+    #[inline]
     fn evaluate(&mut self, item: &Gcode) -> bool {
         item.mnemonic() == *self
     }
@@ -105,6 +111,7 @@ impl<'a, T, P> Predicate<T> for &'a mut [P]
 where
     P: Predicate<T>,
 {
+    #[inline]
     fn evaluate(&mut self, item: &T) -> bool {
         self.iter_mut().any(|pred| pred.evaluate(item))
     }
@@ -117,6 +124,7 @@ macro_rules! array_predicate {
             where
                 P: Predicate<T>,
             {
+                #[inline]
                 fn evaluate(&mut self, item: &T) -> bool {
                     let mut slice: &mut [P] = &mut *self;
                     slice.evaluate(item)
