@@ -3,6 +3,7 @@ use crate::types::{
     Argument, Block, Comment, Gcode, Mnemonic, Span, TokenKind,
 };
 #[cfg(not(feature = "std"))]
+#[allow(unused_imports)]
 use libm::F32Ext;
 
 #[derive(Debug, Clone)]
