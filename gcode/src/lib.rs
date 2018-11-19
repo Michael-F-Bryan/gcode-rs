@@ -1,4 +1,14 @@
-//! G-Code parsing and manipulation.
+//! A gcode parsing library designed for `no_std` environments.
+//!
+//! # Feature Flags
+//!
+//! To help reduce compilation times and overall code size, this crate puts
+//! extra functionality behind several `cargo` features.
+//!
+//! - `std`: Enables various features/optimisations which require allocation
+//!   or implementing traits from `std` (e.g. `std::error::Error`).
+//! - `transforms`: Exposes the transformations API for manipulating `Gcode`s
+//!   before executing or writing to a file.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(
@@ -29,10 +39,12 @@ extern crate pretty_assertions;
 
 mod lexer;
 mod parser;
+#[cfg(feature = "transforms")]
 pub mod transforms;
 mod types;
 
 pub use crate::parser::*;
+#[cfg(feature = "transforms")]
 pub use crate::transforms::GcodeTransforms;
 pub use crate::types::*;
 
