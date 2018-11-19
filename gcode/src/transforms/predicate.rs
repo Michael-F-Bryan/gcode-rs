@@ -48,6 +48,7 @@ use crate::types::{Argument, Gcode, Mnemonic};
 /// assert!(x.evaluate(&g00));
 /// ```
 pub trait Predicate<T: ?Sized> {
+    /// Evaluate the predicate based on the provided input.
     fn evaluate(&mut self, item: &T) -> bool;
 
     /// Create a new [`Predicate<T>`] which is effectively
@@ -77,6 +78,9 @@ pub trait Predicate<T: ?Sized> {
     }
 }
 
+/// See [`Predicate::and()`] for more.
+///
+/// [`Predicate::and()`]: ./trait.Predicate.html#method.and
 #[derive(Debug, Copy, Clone)]
 pub struct And<L, R> {
     left: L,
@@ -94,6 +98,9 @@ where
     }
 }
 
+/// See [`Predicate::or()`] for more.
+///
+/// [`Predicate::or()`]: ./trait.Predicate.html#method.or
 #[derive(Debug, Copy, Clone)]
 pub struct Or<L, R> {
     left: L,

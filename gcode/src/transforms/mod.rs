@@ -1,6 +1,8 @@
-pub mod predicate;
+//! Functionality for transforming gcodes.
 
-pub use self::predicate::Predicate;
+mod predicate;
+
+pub use self::predicate::{And, Or, Predicate};
 
 use crate::types::{Argument, Gcode};
 
@@ -97,6 +99,9 @@ pub trait GcodeTransforms: Iterator<Item = Gcode> {
 
 impl<I> GcodeTransforms for I where I: Iterator<Item = Gcode> {}
 
+/// The return type from [`GcodeTransforms::map_gcode()`].
+///
+/// [`GcodeTransforms::map_gcode()`]: trait.GcodeTransforms.html#method.map_gcode
 #[derive(Debug)]
 pub struct Map<I, S, F> {
     iter: I,
@@ -124,6 +129,9 @@ where
     }
 }
 
+/// The return type from [`GcodeTransforms::map_argument()`].
+///
+/// [`GcodeTransforms::map_argument()`]: trait.GcodeTransforms.html#method.map_argument
 #[derive(Debug)]
 pub struct MapArg<I, S, A, F> {
     iter: I,

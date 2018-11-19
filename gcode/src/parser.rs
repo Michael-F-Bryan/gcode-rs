@@ -53,12 +53,14 @@ pub struct Parser<'input, C> {
 }
 
 impl<'input> Parser<'input, Nop> {
+    /// Create a new `Parser` with the default `Callback`.
     pub fn new(src: &'input str) -> Parser<'input, Nop> {
         Parser::new_with_callbacks(src, Nop)
     }
 }
 
 impl<'input, C: Callbacks> Parser<'input, C> {
+    /// Create a new `Parser` with a custom `Callback`.
     pub fn new_with_callbacks(
         src: &'input str,
         callbacks: C,
@@ -343,6 +345,7 @@ impl<'input, C: Callbacks> Iterator for Parser<'input, C> {
 /// Callback functions the `Parser` can use to notify the user of errors
 /// encountered while parsing.
 pub trait Callbacks {
+    /// We were looking for one or more tokens, but got a different
     fn unexpected_token(
         &mut self,
         _found: TokenKind,
@@ -350,7 +353,9 @@ pub trait Callbacks {
         _expected: &[TokenKind],
     ) {
     }
+    /// The end-of-input was encountered when more input was expected.
     fn unexpected_eof(&mut self, _expected: &[TokenKind]) {}
+    /// Invalid tokens
     fn mangled_input(&mut self, _input: &str, _span: Span) {}
 }
 
