@@ -1,6 +1,52 @@
 use crate::types::{Argument, Gcode, Mnemonic};
 
 /// A generic predicate.
+///
+/// The intention behind this helper trait is to make applying transformations
+/// to a subset of inputs more ergonomic.
+///
+/// ```rust
+/// use gcode::{Argument, Gcode, Mnemonic, Span};
+/// use gcode::transforms::Predicate;
+///
+/// let g90 = Gcode::new(Mnemonic::General, 90.0);
+/// let g00 = Gcode::new(Mnemonic::General, 0.0)
+///     .with_argument(Argument::new('X', 500.0, Span::placeholder()));
+/// let m6 = Gcode::new(Mnemonic::Miscellaneous, 6.0);
+/// let m0 = Gcode::new(Mnemonic::Miscellaneous, 0.0);
+///
+/// // mnemonics can be used to match any gcode with that mnemonic
+/// let mut matches_g = Mnemonic::General;
+/// assert!(matches_g.evaluate(&g90));
+/// assert!(!matches_g.evaluate(&m6));
+///
+/// // You can also match on a major number
+/// let mut matches_0 = 0;
+/// assert!(matches_0.evaluate(&g00));
+/// assert!(matches_0.evaluate(&m0));
+/// assert!(!matches_0.evaluate(&g90));
+///
+/// // predicates can also be combined to make more specific predicates
+/// let mut matches_g90 = Mnemonic::General.and(90);
+/// assert!(matches_g90.evaluate(&g90));
+/// assert!(!matches_g90.evaluate(&m0));
+/// assert!(!matches_g90.evaluate(&g00));
+///
+/// // you can also combine mutation and closures in interesting ways
+/// let mut count = 0;
+/// let mut matches_every_other_call = |_: &Gcode| {
+///     count += 1;
+///     count % 2 == 0
+/// };
+/// assert!(!matches_every_other_call.evaluate(&g00));
+/// assert!(matches_every_other_call.evaluate(&g90));
+/// assert!(!matches_every_other_call.evaluate(&g90));
+/// assert!(matches_every_other_call.evaluate(&g00));
+///
+/// // What about only matching on a G-code with an `X` parameter?
+/// let mut x = 'X';
+/// assert!(x.evaluate(&g00));
+/// ```
 pub trait Predicate<T: ?Sized> {
     fn evaluate(&mut self, item: &T) -> bool;
 
@@ -120,6 +166,7 @@ where
 macro_rules! array_predicate {
     ($($count:expr),*) => {
         $(
+            #[doc(hidden)]
             impl<T, P> Predicate<T> for [P; $count]
             where
                 P: Predicate<T>,
@@ -134,7 +181,8 @@ macro_rules! array_predicate {
     };
 }
 
+// Feel free to make a PR if you need to support larger arrays
 array_predicate!(
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
-    21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
+    0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+    22, 23, 24, 25, 26, 27, 28, 29, 30, 31
 );
