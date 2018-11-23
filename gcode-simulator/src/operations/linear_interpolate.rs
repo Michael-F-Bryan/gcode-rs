@@ -17,45 +17,43 @@ pub struct LinearInterpolate {
 }
 
 impl LinearInterpolate {
-    fn end_position(&self, start: &State) -> (Length, Length) {
+    fn end_position(&self, start: &State) -> AxisPositions {
         match start.coordinate_mode {
             CoordinateMode::Absolute => {
-                let x = self.x.map(|x| start.to_length(x));
-                let y = self.y.map(|y| start.to_length(y));
-                (
-                    x.unwrap_or(start.current_position.x),
-                    y.unwrap_or(start.current_position.y),
-                )
+                let mut pos = start.current_position;
+                let LinearInterpolate {
+                    x,
+                    y,
+                    feed_rate: _feed_rate,
+                } = *self;
+                if let Some(x) = x {
+                    pos.x = start.to_length(x);
+                }
+                if let Some(y) = y {
+                    pos.y = start.to_length(y);
+                }
+                pos
             }
-            CoordinateMode::Relative => (
-                start.current_position.x
-                    + start.to_length(self.x.unwrap_or(0.0)),
-                start.current_position.y
-                    + start.to_length(self.y.unwrap_or(0.0)),
-            ),
+            CoordinateMode::Relative => {
+                start.current_position
+                    + AxisPositions {
+                        x: start.to_length(self.x.unwrap_or(0.0)),
+                        y: start.to_length(self.y.unwrap_or(0.0)),
+                    }
+            }
         }
-    }
-
-    pub fn lerp(start: Length, end: Length, proportion: f32) -> Length {
-        debug_assert!(0.0 <= proportion && proportion <= 1.0);
-        let diff = end - start;
-        start + diff * proportion
     }
 }
 
 impl Operation for LinearInterpolate {
     fn state_after(&self, duration: Time, initial_state: State) -> State {
-        let (end_x, end_y) = self.end_position(&initial_state);
-        let AxisPositions {
-            x: start_x,
-            y: start_y,
-        } = initial_state.current_position;
+        let end = self.end_position(&initial_state);
+        let start = initial_state.current_position;
 
         let ratio = duration.value / self.duration(&initial_state).value;
-        let new_pos = AxisPositions {
-            x: LinearInterpolate::lerp(start_x, end_x, ratio),
-            y: LinearInterpolate::lerp(start_y, end_y, ratio),
-        };
+        let new_pos = start + (end - start) * ratio;
+        #[cfg(test)]
+        println!("{:?} => {:?} = {:?}", start, end, new_pos);
 
         let feed_rate = self
             .feed_rate
@@ -74,27 +72,11 @@ impl Operation for LinearInterpolate {
             .feed_rate
             .map(|f| initial_state.to_speed(f))
             .unwrap_or(initial_state.feed_rate);
-        let feed_rate_mps = feed_rate / 60.0;
-        let (end_x, end_y) = self.end_position(initial_state);
 
-        let AxisPositions { x, y } = initial_state.current_position;
-        let dx = end_x - x;
-        let dy = end_y - y;
-        let distance = hypot(dx, dy);
-        distance / feed_rate_mps
+        let end = self.end_position(initial_state);
+        let start = initial_state.current_position;
+        (end - start).length() / feed_rate
     }
-}
-
-fn hypot<D, U>(
-    left: Quantity<D, U, f32>,
-    right: Quantity<D, U, f32>,
-) -> Quantity<D, U, f32>
-where
-    D: uom::si::Dimension + ?Sized,
-    U: uom::si::Units<f32> + ?Sized,
-{
-    let value = f32::hypot(left.value, right.value);
-    Quantity { value, ..left }
 }
 
 impl TryFrom<Gcode> for LinearInterpolate {
@@ -138,6 +120,7 @@ impl FromGcode for LinearInterpolate {
 mod tests {
     use super::*;
     use gcode;
+    use uom::si::length::millimeter;
 
     #[test]
     fn parse_a_linear_interpolate() {
@@ -232,14 +215,12 @@ mod tests {
 
         for (src, should_be) in inputs {
             let got = src.end_position(&initial_state);
-            assert_relative_eq!(
-                got.0.value,
-                initial_state.to_length(should_be.0).value
-            );
-            assert_relative_eq!(
-                got.1.value,
-                initial_state.to_length(should_be.1).value
-            );
+
+            let should_be = AxisPositions {
+                x: Length::new::<millimeter>(should_be.0),
+                y: Length::new::<millimeter>(should_be.1),
+            };
+            assert_relative_eq!(got, should_be);
         }
     }
 
@@ -278,14 +259,12 @@ mod tests {
 
         for (src, should_be) in inputs {
             let got = src.end_position(&initial_state);
-            assert_relative_eq!(
-                got.0.value,
-                initial_state.to_length(should_be.0).value
-            );
-            assert_relative_eq!(
-                got.1.value,
-                initial_state.to_length(should_be.1).value
-            );
+
+            let should_be = AxisPositions {
+                x: Length::new::<millimeter>(should_be.0),
+                y: Length::new::<millimeter>(should_be.1),
+            };
+            assert_relative_eq!(got, should_be,);
         }
     }
 
@@ -295,20 +274,22 @@ mod tests {
             .with_x(50.0)
             .with_y(100.0)
             .with_coordinate_mode(CoordinateMode::Absolute);
+        let feed_rate = 10.0;
         let input = LinearInterpolate {
             x: Some(10.0),
             y: Some(10.0),
-            feed_rate: Some(10.0),
+            feed_rate: Some(feed_rate),
         };
 
         let dx = 10.0 - 50.0;
         let dy = 10.0 - 100.0;
         let distance = f32::hypot(dx, dy);
 
-        let should_be = distance * 60.0 / 10.0;
+        let should_be = Length::new::<millimeter>(distance)
+            / initial_state.to_speed(feed_rate);
         let got = input.duration(&initial_state);
 
-        assert_relative_eq!(got.value, should_be);
+        assert_relative_eq!(got.value, should_be.value);
     }
 
     #[test]

@@ -1,3 +1,5 @@
+//! Translations from low level `Gcode`s to a more machine-friendly form.
+
 #[macro_use]
 mod helpers;
 mod coordinate_modes;
