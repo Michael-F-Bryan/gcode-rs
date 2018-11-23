@@ -9,10 +9,11 @@ use core::fmt::{self, Display, Formatter};
 use gcode::Gcode;
 use state::State;
 use sum_type;
+use uom::si::f32::Time;
 
 pub trait Operation {
-    fn state_after(&self, seconds: f32, initial_state: State) -> State;
-    fn duration(&self, initial_state: &State) -> f32;
+    fn state_after(&self, seconds: Time, initial_state: State) -> State;
+    fn duration(&self, initial_state: &State) -> Time;
 }
 
 /// A helper trait for anything which a `Gcode` *might* be able to transform
@@ -123,7 +124,7 @@ mod tests {
     use sum_type::SumType;
 
     fn variant_count() -> usize {
-        Op::Dwell(Dwell::new(0.0)).variants().len()
+        Op::Dwell(Dwell::from_seconds(0.0)).variants().len()
     }
 
     #[test]

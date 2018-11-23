@@ -2,26 +2,36 @@ use super::{ConversionError, FromGcode, Operation};
 use crate::TryFrom;
 use gcode::Gcode;
 use state::State;
+use uom::si::f32::Time;
+use uom::si::time::{millisecond, second};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Dwell {
     /// The number of seconds to wait for.
-    pub duration: f32,
+    pub duration: Time,
 }
 
 impl Dwell {
-    pub fn new(duration: f32) -> Dwell {
+    pub fn new(duration: Time) -> Dwell {
         Dwell { duration }
+    }
+
+    pub fn from_seconds(duration: f32) -> Dwell {
+        Dwell::new(Time::new::<second>(duration))
+    }
+
+    pub fn from_milliseconds(duration: f32) -> Dwell {
+        Dwell::new(Time::new::<millisecond>(duration))
     }
 }
 
 impl Operation for Dwell {
-    fn state_after(&self, seconds: f32, initial_state: State) -> State {
+    fn state_after(&self, seconds: Time, initial_state: State) -> State {
         debug_assert!(seconds <= self.duration);
         initial_state
     }
 
-    fn duration(&self, _initial_state: &State) -> f32 {
+    fn duration(&self, _initial_state: &State) -> Time {
         self.duration
     }
 }
@@ -42,7 +52,7 @@ impl TryFrom<Gcode> for Dwell {
 
         if let Some(h) = other.value_for('H') {
             if h >= 0.0 {
-                Ok(Dwell::new(h / 1000.0))
+                Ok(Dwell::new(Time::new::<millisecond>(h)))
             } else {
                 Err(ConversionError::InvalidArgument {
                     letter: 'H',
@@ -52,7 +62,7 @@ impl TryFrom<Gcode> for Dwell {
             }
         } else if let Some(p) = other.value_for('P') {
             if p >= 0.0 {
-                Ok(Dwell::new(p))
+                Ok(Dwell::new(Time::new::<second>(p)))
             } else {
                 Err(ConversionError::InvalidArgument {
                     letter: 'P',
@@ -95,8 +105,8 @@ mod tests {
                     expected: &[4],
                 }),
             ),
-            ("G4 H5", Ok(Dwell::new(5e-3))),
-            ("G4 P5", Ok(Dwell::new(5.0))),
+            ("G4 H5", Ok(Dwell::from_milliseconds(5.0))),
+            ("G4 P5", Ok(Dwell::from_seconds(5.0))),
             (
                 "G4 P-50",
                 Err(ConversionError::InvalidArgument {
@@ -114,5 +124,4 @@ mod tests {
             assert_eq!(got, should_be);
         }
     }
-
 }
