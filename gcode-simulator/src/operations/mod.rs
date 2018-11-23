@@ -1,6 +1,8 @@
+mod coordinate_modes;
 mod dwell;
 mod linear_interpolate;
 
+pub use self::coordinate_modes::{AbsoluteCoordinates, RelativeCoordinates};
 pub use self::dwell::Dwell;
 pub use self::linear_interpolate::LinearInterpolate;
 
@@ -22,12 +24,30 @@ pub trait FromGcode: TryFrom<Gcode, Error = ConversionError> {
     fn valid_major_numbers() -> &'static [usize];
 }
 
+pub(crate) fn check_major_number<T: FromGcode>(
+    gcode: &Gcode,
+) -> Result<(), ConversionError> {
+    let valid_numbers = T::valid_major_numbers();
+    let major = gcode.major_number();
+
+    if valid_numbers.contains(&major) {
+        Ok(())
+    } else {
+        Err(ConversionError::IncorrectMajorNumber {
+            found: major,
+            expected: valid_numbers,
+        })
+    }
+}
+
 sum_type::sum_type! {
     /// A union of all known operations.
     #[derive(Copy, Debug, Clone, PartialEq)]
     pub enum Op {
         Dwell,
         LinearInterpolate,
+        AbsoluteCoordinates,
+        RelativeCoordinates,
     }
 }
 
@@ -47,7 +67,12 @@ impl TryFrom<Gcode> for Op {
             };
         }
 
-        maybe_convert!(Dwell, LinearInterpolate);
+        maybe_convert!(
+            Dwell,
+            LinearInterpolate,
+            AbsoluteCoordinates,
+            RelativeCoordinates
+        );
 
         Err(ConversionError::IncorrectMajorNumber {
             found: other.major_number(),
@@ -58,7 +83,7 @@ impl TryFrom<Gcode> for Op {
 
 impl FromGcode for Op {
     fn valid_major_numbers() -> &'static [usize] {
-        &[0, 1, 4]
+        &[0, 1, 4, 90, 91]
     }
 }
 
@@ -119,7 +144,6 @@ impl Display for ConversionError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashSet;
     use std::prelude::v1::*;
     use sum_type::SumType;
 
@@ -133,7 +157,10 @@ mod tests {
         let should_be = vec![
             Dwell::valid_major_numbers(),
             LinearInterpolate::valid_major_numbers(),
+            AbsoluteCoordinates::valid_major_numbers(),
+            RelativeCoordinates::valid_major_numbers(),
         ];
+
         // make sure our should_be vector is correct
         assert_eq!(
             should_be.len(),
@@ -141,15 +168,15 @@ mod tests {
             "There should be items from {} variants",
             count
         );
-        let major_number_count: usize =
-            should_be.iter().map(|slice| slice.len()).sum();
-        let should_be: HashSet<_> =
-            should_be.into_iter().flatten().cloned().collect();
 
         let got = Op::valid_major_numbers();
-        assert_eq!(got.len(), major_number_count);
 
-        let got: HashSet<_> = got.into_iter().cloned().collect();
+        let mut got: Vec<_> = got.into_iter().cloned().collect();
+        let mut should_be: Vec<_> =
+            should_be.into_iter().flatten().cloned().collect();
+
+        got.sort();
+        should_be.sort();
         assert_eq!(got, should_be);
     }
 }

@@ -41,38 +41,38 @@ impl TryFrom<Gcode> for Dwell {
 
     fn try_from(other: Gcode) -> Result<Self, Self::Error> {
         const VALIDATION_MSG: &str = "Dwell times must be positive";
-        let valid_numbers = Dwell::valid_major_numbers();
+        super::check_major_number::<Dwell>(&other)?;
 
-        if !valid_numbers.contains(&other.major_number()) {
-            return Err(ConversionError::IncorrectMajorNumber {
-                found: other.major_number(),
-                expected: valid_numbers,
-            });
+        fn try_convert<U>(
+            letter: char,
+            gcode: &Gcode,
+        ) -> Option<Result<Dwell, ConversionError>>
+        where
+            U: uom::si::time::Unit + uom::Conversion<f32, T = f32>,
+        {
+            let value = gcode.value_for(letter)?;
+
+            if value >= 0.0 {
+                let t = Time::new::<U>(value);
+                Some(Ok(Dwell::new(t)))
+            } else {
+                Some(Err(ConversionError::InvalidArgument {
+                    letter,
+                    value,
+                    message: VALIDATION_MSG,
+                }))
+            }
         }
 
-        if let Some(h) = other.value_for('H') {
-            if h >= 0.0 {
-                Ok(Dwell::new(Time::new::<millisecond>(h)))
-            } else {
-                Err(ConversionError::InvalidArgument {
-                    letter: 'H',
-                    value: h,
-                    message: VALIDATION_MSG,
-                })
-            }
-        } else if let Some(p) = other.value_for('P') {
-            if p >= 0.0 {
-                Ok(Dwell::new(Time::new::<second>(p)))
-            } else {
-                Err(ConversionError::InvalidArgument {
-                    letter: 'P',
-                    value: p,
-                    message: VALIDATION_MSG,
-                })
-            }
+        if let Some(h) = try_convert::<millisecond>('H', &other) {
+            return h;
+        } else if let Some(p) = try_convert::<millisecond>('P', &other) {
+            return p;
+        } else if let Some(s) = try_convert::<second>('S', &other) {
+            return s;
         } else {
             Err(ConversionError::MissingArguments {
-                expected: &['H', 'P'],
+                expected: &['H', 'P', 'S'],
             })
         }
     }
@@ -95,7 +95,7 @@ mod tests {
             (
                 "G4",
                 Err(ConversionError::MissingArguments {
-                    expected: &['H', 'P'],
+                    expected: &['H', 'P', 'S'],
                 }),
             ),
             (
@@ -106,7 +106,8 @@ mod tests {
                 }),
             ),
             ("G4 H5", Ok(Dwell::from_milliseconds(5.0))),
-            ("G4 P5", Ok(Dwell::from_seconds(5.0))),
+            ("G4 P5", Ok(Dwell::from_milliseconds(5.0))),
+            ("G4 S5", Ok(Dwell::from_seconds(5.0))),
             (
                 "G4 P-50",
                 Err(ConversionError::InvalidArgument {

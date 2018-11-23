@@ -84,15 +84,7 @@ impl TryFrom<Gcode> for LinearInterpolate {
     type Error = ConversionError;
 
     fn try_from(other: Gcode) -> Result<Self, Self::Error> {
-        let maj = other.major_number();
-        let valid_numbers = LinearInterpolate::valid_major_numbers();
-
-        if !valid_numbers.contains(&maj) {
-            return Err(ConversionError::IncorrectMajorNumber {
-                found: maj,
-                expected: valid_numbers,
-            });
-        }
+        super::check_major_number::<LinearInterpolate>(&other)?;
 
         let x = other.value_for('X');
         let y = other.value_for('Y');
