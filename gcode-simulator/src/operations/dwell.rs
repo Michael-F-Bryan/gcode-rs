@@ -1,4 +1,4 @@
-use super::{ConversionError, Operation};
+use super::{ConversionError, FromGcode, Operation};
 use crate::TryFrom;
 use gcode::Gcode;
 use state::State;
@@ -31,11 +31,12 @@ impl TryFrom<Gcode> for Dwell {
 
     fn try_from(other: Gcode) -> Result<Self, Self::Error> {
         const VALIDATION_MSG: &str = "Dwell times must be positive";
+        let valid_numbers = Dwell::valid_major_numbers();
 
-        if other.major_number() != 4 {
+        if !valid_numbers.contains(&other.major_number()) {
             return Err(ConversionError::IncorrectMajorNumber {
                 found: other.major_number(),
-                expected: &[4],
+                expected: valid_numbers,
             });
         }
 
@@ -64,6 +65,12 @@ impl TryFrom<Gcode> for Dwell {
                 expected: &['H', 'P'],
             })
         }
+    }
+}
+
+impl FromGcode for Dwell {
+    fn valid_major_numbers() -> &'static [usize] {
+        &[4]
     }
 }
 

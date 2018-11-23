@@ -4,12 +4,61 @@ mod linear_interpolate;
 pub use self::dwell::Dwell;
 pub use self::linear_interpolate::LinearInterpolate;
 
+use crate::TryFrom;
 use core::fmt::{self, Display, Formatter};
+use gcode::Gcode;
 use state::State;
+use sum_type;
 
 pub trait Operation {
     fn state_after(&self, seconds: f32, initial_state: State) -> State;
     fn duration(&self, initial_state: &State) -> f32;
+}
+
+/// A helper trait for anything which a `Gcode` *might* be able to transform
+/// into.
+pub trait FromGcode: TryFrom<Gcode, Error = ConversionError> {
+    fn valid_major_numbers() -> &'static [usize];
+}
+
+sum_type::sum_type! {
+    /// A union of all known operations.
+    #[derive(Copy, Debug, Clone, PartialEq)]
+    pub enum Op {
+        Dwell,
+        LinearInterpolate,
+    }
+}
+
+impl TryFrom<Gcode> for Op {
+    type Error = ConversionError;
+
+    fn try_from(other: Gcode) -> Result<Self, Self::Error> {
+        let major = other.major_number();
+
+        macro_rules! maybe_convert {
+            ($($variant:ident),*) => {
+                $(
+                    if $variant::valid_major_numbers().contains(&major) {
+                        return $variant::try_from(other).map(Into::into);
+                    }
+                )*
+            };
+        }
+
+        maybe_convert!(Dwell, LinearInterpolate);
+
+        Err(ConversionError::IncorrectMajorNumber {
+            found: other.major_number(),
+            expected: Op::valid_major_numbers(),
+        })
+    }
+}
+
+impl FromGcode for Op {
+    fn valid_major_numbers() -> &'static [usize] {
+        &[0, 1, 4]
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -17,7 +66,7 @@ pub enum ConversionError {
     /// The `Gcode` had the wrong major number.
     IncorrectMajorNumber {
         found: usize,
-        expected: &'static [u32],
+        expected: &'static [usize],
     },
     /// An argument contained an invalid value.
     InvalidArgument {
@@ -63,5 +112,43 @@ impl Display for ConversionError {
                 Ok(())
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+    use std::prelude::v1::*;
+    use sum_type::SumType;
+
+    fn variant_count() -> usize {
+        Op::Dwell(Dwell::new(0.0)).variants().len()
+    }
+
+    #[test]
+    fn op_valid_major_number_is_in_sync() {
+        let count = variant_count();
+        let should_be = vec![
+            Dwell::valid_major_numbers(),
+            LinearInterpolate::valid_major_numbers(),
+        ];
+        // make sure our should_be vector is correct
+        assert_eq!(
+            should_be.len(),
+            count,
+            "There should be items from {} variants",
+            count
+        );
+        let major_number_count: usize =
+            should_be.iter().map(|slice| slice.len()).sum();
+        let should_be: HashSet<_> =
+            should_be.into_iter().flatten().cloned().collect();
+
+        let got = Op::valid_major_numbers();
+        assert_eq!(got.len(), major_number_count);
+
+        let got: HashSet<_> = got.into_iter().cloned().collect();
+        assert_eq!(got, should_be);
     }
 }

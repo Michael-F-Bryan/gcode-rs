@@ -2,6 +2,7 @@
 
 extern crate gcode;
 extern crate libm;
+extern crate sum_type;
 
 #[cfg(test)]
 #[macro_use]

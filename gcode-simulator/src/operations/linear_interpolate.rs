@@ -1,4 +1,4 @@
-use super::{ConversionError, Operation};
+use super::{ConversionError, FromGcode, Operation};
 use crate::TryFrom;
 use gcode::Gcode;
 #[allow(unused_imports)]
@@ -63,10 +63,12 @@ impl TryFrom<Gcode> for LinearInterpolate {
 
     fn try_from(other: Gcode) -> Result<Self, Self::Error> {
         let maj = other.major_number();
-        if maj != 1 && maj != 0 {
+        let valid_numbers = LinearInterpolate::valid_major_numbers();
+
+        if !valid_numbers.contains(&maj) {
             return Err(ConversionError::IncorrectMajorNumber {
                 found: maj,
-                expected: &[0, 1],
+                expected: valid_numbers,
             });
         }
 
@@ -92,6 +94,12 @@ impl TryFrom<Gcode> for LinearInterpolate {
         }
 
         Ok(LinearInterpolate { x, y, feed_rate })
+    }
+}
+
+impl FromGcode for LinearInterpolate {
+    fn valid_major_numbers() -> &'static [usize] {
+        &[0, 1]
     }
 }
 
