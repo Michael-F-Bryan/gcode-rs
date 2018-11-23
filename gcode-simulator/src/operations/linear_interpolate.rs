@@ -4,7 +4,7 @@ use crate::TryFrom;
 use gcode::Gcode;
 #[allow(unused_imports)]
 use libm::F32Ext;
-use state::{CoordinateMode, State};
+use state::{AxisPositions, CoordinateMode, State};
 use uom::si::f32::*;
 use uom::si::Quantity;
 
@@ -22,34 +22,48 @@ impl LinearInterpolate {
             CoordinateMode::Absolute => {
                 let x = self.x.map(|x| start.to_length(x));
                 let y = self.y.map(|y| start.to_length(y));
-                (x.unwrap_or(start.x), y.unwrap_or(start.y))
+                (
+                    x.unwrap_or(start.current_position.x),
+                    y.unwrap_or(start.current_position.y),
+                )
             }
             CoordinateMode::Relative => (
-                start.x + start.to_length(self.x.unwrap_or(0.0)),
-                start.y + start.to_length(self.y.unwrap_or(0.0)),
+                start.current_position.x
+                    + start.to_length(self.x.unwrap_or(0.0)),
+                start.current_position.y
+                    + start.to_length(self.y.unwrap_or(0.0)),
             ),
         }
+    }
+
+    pub fn lerp(start: Length, end: Length, proportion: f32) -> Length {
+        debug_assert!(0.0 <= proportion && proportion <= 1.0);
+        let diff = end - start;
+        start + diff * proportion
     }
 }
 
 impl Operation for LinearInterpolate {
     fn state_after(&self, duration: Time, initial_state: State) -> State {
+        let (end_x, end_y) = self.end_position(&initial_state);
+        let AxisPositions {
+            x: start_x,
+            y: start_y,
+        } = initial_state.current_position;
+
+        let ratio = duration.value / self.duration(&initial_state).value;
+        let new_pos = AxisPositions {
+            x: LinearInterpolate::lerp(start_x, end_x, ratio),
+            y: LinearInterpolate::lerp(start_y, end_y, ratio),
+        };
+
         let feed_rate = self
             .feed_rate
             .map(|f| initial_state.to_speed(f))
             .unwrap_or(initial_state.feed_rate);
-        let (end_x, end_y) = self.end_position(&initial_state);
-
-        let dx = end_x - initial_state.x;
-        let dy = end_y - initial_state.y;
-        let total_duration = self.duration(&initial_state);
-        let ratio = duration / total_duration;
-        let x = initial_state.x + dx * ratio;
-        let y = initial_state.y + dy * ratio;
 
         State {
-            x,
-            y,
+            current_position: new_pos,
             feed_rate,
             ..initial_state
         }
@@ -63,8 +77,9 @@ impl Operation for LinearInterpolate {
         let feed_rate_mps = feed_rate / 60.0;
         let (end_x, end_y) = self.end_position(initial_state);
 
-        let dx = end_x - initial_state.x;
-        let dy = end_y - initial_state.y;
+        let AxisPositions { x, y } = initial_state.current_position;
+        let dx = end_x - x;
+        let dy = end_y - y;
         let distance = hypot(dx, dy);
         distance / feed_rate_mps
     }

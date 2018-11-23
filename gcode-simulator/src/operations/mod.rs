@@ -17,8 +17,11 @@ use state::State;
 use sum_type;
 use uom::si::f32::Time;
 
+/// A gcode operation.
 pub trait Operation {
-    fn state_after(&self, seconds: Time, initial_state: State) -> State;
+    /// Evaluate the machine state `delta` time after the operation started.
+    fn state_after(&self, delta: Time, initial_state: State) -> State;
+    /// How long will this `Operation` take to complete?
     fn duration(&self, initial_state: &State) -> Time;
 }
 
@@ -103,6 +106,7 @@ impl FromGcode for Op {
     }
 }
 
+/// The reason a `TryFrom` conversion failed.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum ConversionError {
     /// The `Gcode` had the wrong major number.

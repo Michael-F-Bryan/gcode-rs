@@ -1,3 +1,5 @@
+//! Machine state.
+
 use uom::si::f32::*;
 use uom::si::length::{inch, millimeter};
 use uom::si::time::second;
@@ -6,8 +8,7 @@ use uom::si::velocity::millimeter_per_second;
 /// The internal state of a simple 2-dimensional gantry system.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct State {
-    pub x: Length,
-    pub y: Length,
+    pub current_position: AxisPositions,
     pub feed_rate: Velocity,
     pub coordinate_mode: CoordinateMode,
     pub units: Units,
@@ -34,13 +35,24 @@ impl State {
         }
     }
 
+    pub fn with_current_position(mut self, value: AxisPositions) -> Self {
+        self.current_position = value;
+        self
+    }
+
     pub fn with_x(mut self, value: f32) -> Self {
-        self.x = self.to_length(value);
+        self.current_position = AxisPositions {
+            x: self.to_length(value),
+            ..self.current_position
+        };
         self
     }
 
     pub fn with_y(mut self, value: f32) -> Self {
-        self.y = self.to_length(value);
+        self.current_position = AxisPositions {
+            y: self.to_length(value),
+            ..self.current_position
+        };
         self
     }
 
@@ -63,8 +75,7 @@ impl State {
 impl Default for State {
     fn default() -> State {
         State {
-            x: Length::new::<millimeter>(0.0),
-            y: Length::new::<millimeter>(0.0),
+            current_position: AxisPositions::default(),
             feed_rate: Velocity::new::<millimeter_per_second>(100.0),
             coordinate_mode: CoordinateMode::Absolute,
             units: Units::Metric,
@@ -82,4 +93,19 @@ pub enum CoordinateMode {
 pub enum Units {
     Metric,
     Imperial,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub struct AxisPositions {
+    pub x: Length,
+    pub y: Length,
+}
+
+impl Default for AxisPositions {
+    fn default() -> AxisPositions {
+        AxisPositions {
+            x: Length::new::<millimeter>(0.0),
+            y: Length::new::<millimeter>(0.0),
+        }
+    }
 }
