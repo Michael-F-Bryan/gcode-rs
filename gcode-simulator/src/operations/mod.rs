@@ -1,10 +1,14 @@
+#[macro_use]
+mod helpers;
 mod coordinate_modes;
 mod dwell;
 mod linear_interpolate;
+mod units;
 
 pub use self::coordinate_modes::{AbsoluteCoordinates, RelativeCoordinates};
 pub use self::dwell::Dwell;
 pub use self::linear_interpolate::LinearInterpolate;
+pub use self::units::{Imperial, Metric};
 
 use crate::TryFrom;
 use core::fmt::{self, Display, Formatter};
@@ -24,30 +28,40 @@ pub trait FromGcode: TryFrom<Gcode, Error = ConversionError> {
     fn valid_major_numbers() -> &'static [usize];
 }
 
-pub(crate) fn check_major_number<T: FromGcode>(
-    gcode: &Gcode,
-) -> Result<(), ConversionError> {
-    let valid_numbers = T::valid_major_numbers();
-    let major = gcode.major_number();
-
-    if valid_numbers.contains(&major) {
-        Ok(())
-    } else {
-        Err(ConversionError::IncorrectMajorNumber {
-            found: major,
-            expected: valid_numbers,
-        })
-    }
-}
-
 sum_type::sum_type! {
     /// A union of all known operations.
     #[derive(Copy, Debug, Clone, PartialEq)]
     pub enum Op {
-        Dwell,
         LinearInterpolate,
+        Dwell,
+        Imperial,
+        Metric,
         AbsoluteCoordinates,
         RelativeCoordinates,
+    }
+}
+
+impl Operation for Op {
+    fn state_after(&self, seconds: Time, initial_state: State) -> State {
+        sum_type::defer!(Op as *self;
+            LinearInterpolate |
+            Dwell |
+            Imperial |
+            Metric |
+            AbsoluteCoordinates |
+            RelativeCoordinates => |ref item| item.state_after(seconds, initial_state)
+        )
+    }
+
+    fn duration(&self, initial_state: &State) -> Time {
+        sum_type::defer!(Op as *self;
+            LinearInterpolate |
+            Dwell |
+            Imperial |
+            Metric |
+            AbsoluteCoordinates |
+            RelativeCoordinates => |ref item| item.duration(initial_state)
+        )
     }
 }
 
@@ -68,8 +82,10 @@ impl TryFrom<Gcode> for Op {
         }
 
         maybe_convert!(
-            Dwell,
             LinearInterpolate,
+            Dwell,
+            Imperial,
+            Metric,
             AbsoluteCoordinates,
             RelativeCoordinates
         );
@@ -83,7 +99,7 @@ impl TryFrom<Gcode> for Op {
 
 impl FromGcode for Op {
     fn valid_major_numbers() -> &'static [usize] {
-        &[0, 1, 4, 90, 91]
+        &[0, 1, 4, 20, 21, 90, 91]
     }
 }
 
@@ -157,6 +173,8 @@ mod tests {
         let should_be = vec![
             Dwell::valid_major_numbers(),
             LinearInterpolate::valid_major_numbers(),
+            Imperial::valid_major_numbers(),
+            Metric::valid_major_numbers(),
             AbsoluteCoordinates::valid_major_numbers(),
             RelativeCoordinates::valid_major_numbers(),
         ];

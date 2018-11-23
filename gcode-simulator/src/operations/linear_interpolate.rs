@@ -1,4 +1,5 @@
 use super::{ConversionError, FromGcode, Operation};
+use crate::operations::helpers;
 use crate::TryFrom;
 use gcode::Gcode;
 #[allow(unused_imports)]
@@ -7,6 +8,7 @@ use state::{CoordinateMode, State};
 use uom::si::f32::*;
 use uom::si::Quantity;
 
+/// Move directly from point A to B in a straight line.
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
 pub struct LinearInterpolate {
     pub x: Option<f32>,
@@ -84,7 +86,7 @@ impl TryFrom<Gcode> for LinearInterpolate {
     type Error = ConversionError;
 
     fn try_from(other: Gcode) -> Result<Self, Self::Error> {
-        super::check_major_number::<LinearInterpolate>(&other)?;
+        helpers::check_major_number::<LinearInterpolate>(&other)?;
 
         let x = other.value_for('X');
         let y = other.value_for('Y');

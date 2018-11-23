@@ -1,19 +1,18 @@
 use super::{ConversionError, FromGcode, Operation};
+use crate::operations::helpers;
 use crate::TryFrom;
 use gcode::Gcode;
 use state::State;
 use uom::si::f32::Time;
 use uom::si::time::{millisecond, second};
 
+/// Wait for a period of time.
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Dwell {
-    /// The number of seconds to wait for.
-    pub duration: Time,
-}
+pub struct Dwell(pub Time);
 
 impl Dwell {
     pub fn new(duration: Time) -> Dwell {
-        Dwell { duration }
+        Dwell(duration)
     }
 
     pub fn from_seconds(duration: f32) -> Dwell {
@@ -27,12 +26,12 @@ impl Dwell {
 
 impl Operation for Dwell {
     fn state_after(&self, seconds: Time, initial_state: State) -> State {
-        debug_assert!(seconds <= self.duration);
+        debug_assert!(seconds <= self.0);
         initial_state
     }
 
     fn duration(&self, _initial_state: &State) -> Time {
-        self.duration
+        self.0
     }
 }
 
@@ -41,7 +40,7 @@ impl TryFrom<Gcode> for Dwell {
 
     fn try_from(other: Gcode) -> Result<Self, Self::Error> {
         const VALIDATION_MSG: &str = "Dwell times must be positive";
-        super::check_major_number::<Dwell>(&other)?;
+        helpers::check_major_number::<Dwell>(&other)?;
 
         fn try_convert<U>(
             letter: char,

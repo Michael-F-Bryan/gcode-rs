@@ -53,6 +53,11 @@ impl State {
         self.coordinate_mode = value;
         self
     }
+
+    pub fn with_units(mut self, value: Units) -> Self {
+        self.units = value;
+        self
+    }
 }
 
 impl Default for State {
