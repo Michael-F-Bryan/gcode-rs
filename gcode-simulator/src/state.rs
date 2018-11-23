@@ -100,6 +100,7 @@ pub enum Units {
     Imperial,
 }
 
+/// A set of positions representing the current location of each axis.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct AxisPositions {
     pub x: Length,

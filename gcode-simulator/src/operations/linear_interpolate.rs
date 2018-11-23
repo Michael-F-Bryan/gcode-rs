@@ -6,7 +6,6 @@ use gcode::Gcode;
 use libm::F32Ext;
 use state::{AxisPositions, CoordinateMode, State};
 use uom::si::f32::*;
-use uom::si::Quantity;
 
 /// Move directly from point A to B in a straight line.
 #[derive(Debug, Default, Copy, Clone, PartialEq)]
@@ -289,7 +288,7 @@ mod tests {
             / initial_state.to_speed(feed_rate);
         let got = input.duration(&initial_state);
 
-        assert_relative_eq!(got.value, should_be.value);
+        assert_relative_eq!(got.value, should_be.value, epsilon = 0.01);
     }
 
     #[test]
