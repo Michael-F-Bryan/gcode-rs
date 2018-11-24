@@ -4,10 +4,11 @@ version = "0.1.0"
 authors = ["Michael Bryan <michaelfbryan@gmail.com>"]
 
 [dependencies]
-gcode = { path = "../gcode" }
+gcode = { path = "../gcode", features = ["std"] }
 libm = "0.1"
 sum_type = "0.1.1"
 uom = { version = "0.20.1", default-features = false, features = ["f32", "si"] }
+id-arena = "1.0.1"
 
 [dev-dependencies]
 pretty_assertions = "0.5"

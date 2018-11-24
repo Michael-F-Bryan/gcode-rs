@@ -1,13 +1,9 @@
-#![no_std]
-
 extern crate gcode;
+extern crate id_arena;
 extern crate libm;
 extern crate sum_type;
 extern crate uom;
 
-#[cfg(test)]
-#[macro_use]
-pub extern crate std;
 #[cfg(test)]
 #[macro_use]
 extern crate approx;
@@ -16,6 +12,7 @@ extern crate approx;
 extern crate pretty_assertions;
 
 pub mod operations;
+pub mod sim;
 pub mod state;
 
 pub use operations::Operation;
