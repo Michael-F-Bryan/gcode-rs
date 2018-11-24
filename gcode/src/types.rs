@@ -17,7 +17,7 @@ cfg_if! {
 }
 
 /// The location of something within a string.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(C)]
 pub struct Span {
     /// The byte index corresponding to the beginning of this `Span`.

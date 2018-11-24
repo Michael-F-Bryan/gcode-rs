@@ -39,6 +39,14 @@ impl TryFrom<Gcode> for Dwell {
     type Error = ConversionError;
 
     fn try_from(other: Gcode) -> Result<Self, Self::Error> {
+        Dwell::try_from(&other)
+    }
+}
+
+impl<'a> TryFrom<&'a Gcode> for Dwell {
+    type Error = ConversionError;
+
+    fn try_from(other: &'a Gcode) -> Result<Self, Self::Error> {
         const VALIDATION_MSG: &str = "Dwell times must be positive";
         helpers::check_major_number::<Dwell>(&other)?;
 
@@ -77,7 +85,7 @@ impl TryFrom<Gcode> for Dwell {
     }
 }
 
-impl FromGcode for Dwell {
+impl<'a> FromGcode<'a> for Dwell {
     fn valid_major_numbers() -> &'static [usize] {
         &[4]
     }

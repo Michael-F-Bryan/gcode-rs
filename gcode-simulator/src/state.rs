@@ -2,9 +2,9 @@
 
 #[cfg(test)]
 use approx::{AbsDiffEq, RelativeEq};
-use core::ops::{Add, Mul, Sub};
 #[allow(unused_imports)]
 use libm::F32Ext;
+use std::ops::{Add, Mul, Sub};
 use uom::si::f32::*;
 use uom::si::length::{inch, millimeter};
 use uom::si::time::second;

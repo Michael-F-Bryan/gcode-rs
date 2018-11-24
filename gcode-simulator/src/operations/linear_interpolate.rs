@@ -82,6 +82,14 @@ impl TryFrom<Gcode> for LinearInterpolate {
     type Error = ConversionError;
 
     fn try_from(other: Gcode) -> Result<Self, Self::Error> {
+        LinearInterpolate::try_from(&other)
+    }
+}
+
+impl<'a> TryFrom<&'a Gcode> for LinearInterpolate {
+    type Error = ConversionError;
+
+    fn try_from(other: &'a Gcode) -> Result<Self, Self::Error> {
         helpers::check_major_number::<LinearInterpolate>(&other)?;
 
         let x = other.value_for('X');
@@ -109,7 +117,7 @@ impl TryFrom<Gcode> for LinearInterpolate {
     }
 }
 
-impl FromGcode for LinearInterpolate {
+impl<'a> FromGcode<'a> for LinearInterpolate {
     fn valid_major_numbers() -> &'static [usize] {
         &[0, 1]
     }

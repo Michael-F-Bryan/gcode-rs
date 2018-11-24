@@ -13,9 +13,9 @@ pub use self::linear_interpolate::LinearInterpolate;
 pub use self::units::{Imperial, Metric};
 
 use crate::TryFrom;
-use core::fmt::{self, Display, Formatter};
 use gcode::Gcode;
 use state::State;
+use std::fmt::{self, Display, Formatter};
 use sum_type;
 use uom::si::f32::Time;
 
@@ -29,7 +29,7 @@ pub trait Operation {
 
 /// A helper trait for anything which a `Gcode` *might* be able to transform
 /// into.
-pub trait FromGcode: TryFrom<Gcode, Error = ConversionError> {
+pub trait FromGcode<'a>: TryFrom<&'a Gcode, Error = ConversionError> {
     fn valid_major_numbers() -> &'static [usize];
 }
 
@@ -46,63 +46,68 @@ sum_type::sum_type! {
     }
 }
 
-impl Operation for Op {
-    fn state_after(&self, seconds: Time, initial_state: State) -> State {
-        sum_type::defer!(Op as *self;
-            LinearInterpolate |
-            Dwell |
-            Imperial |
-            Metric |
-            AbsoluteCoordinates |
-            RelativeCoordinates => |ref item| item.state_after(seconds, initial_state)
-        )
-    }
+/// Convenience macro for deferring everything to each variant.
+///
 
-    fn duration(&self, initial_state: &State) -> Time {
-        sum_type::defer!(Op as *self;
-            LinearInterpolate |
-            Dwell |
-            Imperial |
-            Metric |
-            AbsoluteCoordinates |
-            RelativeCoordinates => |ref item| item.duration(initial_state)
-        )
-    }
-}
+macro_rules! impl_op {
+    ( $( $variant:ident),* ) => {
+        impl Operation for Op {
+            fn state_after(&self, seconds: Time, initial_state: State) -> State {
+                match *self {
+                    $(
+                        Op::$variant(ref item) => item.state_after(seconds, initial_state),
+                    )*
+                }
+            }
 
-impl TryFrom<Gcode> for Op {
-    type Error = ConversionError;
+            fn duration(&self, initial_state: &State) -> Time {
+                match *self {
+                    $(
+                        Op::$variant(ref item) => item.duration(initial_state),
+                    )*
+                }
+            }
+        }
 
-    fn try_from(other: Gcode) -> Result<Self, Self::Error> {
-        let major = other.major_number();
+        impl<'a> TryFrom<&'a Gcode> for Op {
+            type Error = ConversionError;
 
-        macro_rules! maybe_convert {
-            ($($variant:ident),*) => {
+            fn try_from(other: &'a Gcode) -> Result<Self, Self::Error> {
+                let major = other.major_number();
+
                 $(
                     if $variant::valid_major_numbers().contains(&major) {
                         return $variant::try_from(other).map(Into::into);
                     }
                 )*
-            };
+
+                Err(ConversionError::IncorrectMajorNumber {
+                    found: other.major_number(),
+                    expected: Op::valid_major_numbers(),
+                })
+            }
         }
 
-        maybe_convert!(
-            LinearInterpolate,
-            Dwell,
-            Imperial,
-            Metric,
-            AbsoluteCoordinates,
-            RelativeCoordinates
-        );
+        impl TryFrom<Gcode> for Op {
+            type Error = ConversionError;
 
-        Err(ConversionError::IncorrectMajorNumber {
-            found: other.major_number(),
-            expected: Op::valid_major_numbers(),
-        })
+            fn try_from(other: Gcode) -> Result<Self, Self::Error> {
+                Op::try_from(&other)
+            }
+        }
     }
 }
 
-impl FromGcode for Op {
+impl_op!(
+    LinearInterpolate,
+    Dwell,
+    Imperial,
+    Metric,
+    AbsoluteCoordinates,
+    RelativeCoordinates
+);
+
+impl<'a> FromGcode<'a> for Op {
     fn valid_major_numbers() -> &'static [usize] {
         &[0, 1, 4, 20, 21, 90, 91]
     }

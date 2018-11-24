@@ -23,9 +23,19 @@ macro_rules! singleton_cmd {
             }
         }
 
-        impl $crate::operations::FromGcode for $name {
+        impl<'a> $crate::operations::FromGcode<'a> for $name {
             fn valid_major_numbers() -> &'static [usize] {
                 &[$number]
+            }
+        }
+
+        impl<'a> $crate::operations::TryFrom<&'a gcode::Gcode> for $name {
+            type Error = $crate::operations::ConversionError;
+
+            fn try_from(other: &'a gcode::Gcode) -> Result<Self, Self::Error> {
+                $crate::operations::helpers::check_major_number::<$name>(&other)?;
+
+                Ok($name)
             }
         }
 
@@ -33,16 +43,14 @@ macro_rules! singleton_cmd {
             type Error = $crate::operations::ConversionError;
 
             fn try_from(other: gcode::Gcode) -> Result<Self, Self::Error> {
-                $crate::operations::helpers::check_major_number::<$name>(&other)?;
-
-                Ok($name)
+                $name::try_from(&other)
             }
         }
     };
 }
 
-pub(crate) fn check_major_number<T: FromGcode>(
-    gcode: &Gcode,
+pub(crate) fn check_major_number<'a, T: FromGcode<'a>>(
+    gcode: &'a Gcode,
 ) -> Result<(), ConversionError> {
     let valid_numbers = T::valid_major_numbers();
     let major = gcode.major_number();

@@ -9,4 +9,3 @@ singleton_cmd! {
     /// Use the metric units system.
     Metric, 21, |state| state.with_units(Units::Imperial)
 }
-
