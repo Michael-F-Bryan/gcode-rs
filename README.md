@@ -1,8 +1,10 @@
 # gcode-rs
 
+[![Crates.io version](https://img.shields.io/crates/v/gcode.svg)](https://crates.io/crates/gcode)
+[![Docs](https://docs.rs/gcode/badge.svg)](https://docs.rs/gcode/)
+[![License](http://img.shields.io/:license-MIT-blue.svg)](http://doge.mit-license.org)
 [![Build Status](https://travis-ci.org/Michael-F-Bryan/gcode-rs.svg?branch=master)](https://travis-ci.org/Michael-F-Bryan/gcode-rs)
 [![Build status](https://ci.appveyor.com/api/projects/status/1b9pank3tu0oaoy7?svg=true)](https://ci.appveyor.com/project/Michael-F-Bryan/gcode-rs)
-
 
 A gcode parser designed for use in `#[no_std]` environments.
 
