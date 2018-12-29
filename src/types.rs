@@ -50,7 +50,9 @@ impl Gcode {
     }
 
     /// The number associated with this `Gcode` (e.g. the `01` in `G01 X123`).
-    #[deprecated = "You probably want the `Gcode::major_number()` and `Gcode::minor_number()` methods instead"]
+    #[deprecated(
+        note = "You probably want the `Gcode::major_number()` and `Gcode::minor_number()` methods instead"
+    )]
     pub fn number(&self) -> f32 {
         self.number
     }
