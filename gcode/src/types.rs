@@ -125,8 +125,8 @@ pub struct Block<'input> {
 }
 
 impl<'input> Block<'input> {
-    /// The maximum number of commands which can be in a [`Block`] when compiled
-    /// *without* the `std` feature.
+    /// The maximum number of [`Gcode`] commands which can be in a [`Block`]
+    /// when compiled *without* the `std` feature.
     pub const MAX_COMMAND_COUNT: usize = 10;
     /// The maximum number of [`Comment`]s which can be in a [`Block`] when
     /// compiled *without* the `std` feature.
