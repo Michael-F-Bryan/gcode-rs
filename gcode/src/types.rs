@@ -140,11 +140,11 @@ impl<'input> Block<'input> {
     ///
     #[cfg_attr(
         feature = "large-buffers",
-        doc = "Each block can contain `16` [`Gcode`]s."
+        doc = "Each [`Block`] can contain `16` [`Gcode`]s."
     )]
     #[cfg_attr(
         not(feature = "large-buffers"),
-        doc = "Each block can contain `1` [`Gcode`]s."
+        doc = "Each [`Block`] can contain `1` [`Gcode`]."
     )]
     pub const MAX_COMMAND_COUNT: usize = MAX_COMMAND_COUNT;
     /// The maximum number of [`Comment`]s which can be in a [`Block`] when
