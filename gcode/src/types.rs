@@ -14,9 +14,9 @@ cfg_if! {
         use arrayvec::ArrayVec;
         use core::fmt::{self, Display, Formatter};
 
-        type Comments<'input> = ArrayVec<[Comment<'input>; 3]>;
-        type Arguments = ArrayVec<[Argument; 10]>;
-        type Commands = ArrayVec<[Gcode; 10]>;
+        type Comments<'input> = ArrayVec<[Comment<'input>; Block::MAX_COMMENT_COUNT]>;
+        type Arguments = ArrayVec<[Argument; Gcode::MAX_ARGUMENT_COUNT]>;
+        type Commands = ArrayVec<[Gcode; Block::MAX_COMMAND_COUNT]>;
     }
 }
 
@@ -125,6 +125,13 @@ pub struct Block<'input> {
 }
 
 impl<'input> Block<'input> {
+    /// The maximum number of commands which can be in a [`Block`] when compiled
+    /// *without* the `std` feature.
+    pub const MAX_COMMAND_COUNT: usize = 10;
+    /// The maximum number of [`Comment`]s which can be in a [`Block`] when
+    /// compiled *without* the `std` feature.
+    pub const MAX_COMMENT_COUNT: usize = 10;
+
     pub(crate) fn empty() -> Block<'input> {
         Block {
             commands: Default::default(),
@@ -221,6 +228,10 @@ pub struct Gcode {
 }
 
 impl Gcode {
+    /// The maximum number of arguments in a single [`Gcode`] command when
+    /// compiled *without* the `std` feature.
+    pub const MAX_ARGUMENT_COUNT: usize = 10;
+
     /// Create a new `Gcode`.
     ///
     /// # Panics
