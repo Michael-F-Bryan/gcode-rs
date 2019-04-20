@@ -124,13 +124,41 @@ pub struct Block<'input> {
     comments: Comments<'input>,
 }
 
+cfg_if! {
+    if #[cfg(feature = "large-buffers")] {
+        const MAX_COMMAND_COUNT: usize = 16;
+        const MAX_COMMENT_COUNT: usize = 4;
+    } else {
+        const MAX_COMMAND_COUNT: usize = 1;
+        const MAX_COMMENT_COUNT: usize = 1;
+    }
+}
+
 impl<'input> Block<'input> {
     /// The maximum number of [`Gcode`] commands which can be in a [`Block`]
     /// when compiled *without* the `std` feature.
-    pub const MAX_COMMAND_COUNT: usize = 10;
+    ///
+    #[cfg_attr(
+        feature = "large-buffers",
+        doc = "Each block can contain `16` [`Gcode`]s."
+    )]
+    #[cfg_attr(
+        not(feature = "large-buffers"),
+        doc = "Each block can contain `1` [`Gcode`]s."
+    )]
+    pub const MAX_COMMAND_COUNT: usize = MAX_COMMAND_COUNT;
     /// The maximum number of [`Comment`]s which can be in a [`Block`] when
     /// compiled *without* the `std` feature.
-    pub const MAX_COMMENT_COUNT: usize = 10;
+    ///
+    #[cfg_attr(
+        feature = "large-buffers",
+        doc = "Each [`Block`] can contain `16` [`Comment`]s."
+    )]
+    #[cfg_attr(
+        not(feature = "large-buffers"),
+        doc = "Each [`Block`] can contain `1` [`Comment`]."
+    )]
+    pub const MAX_COMMENT_COUNT: usize = MAX_COMMENT_COUNT;
 
     pub(crate) fn empty() -> Block<'input> {
         Block {
@@ -227,10 +255,27 @@ pub struct Gcode {
     arguments: Arguments,
 }
 
+cfg_if! {
+    if #[cfg(feature = "large-buffers")] {
+        const MAX_ARGUMENT_COUNT: usize = 16;
+    } else {
+        const MAX_ARGUMENT_COUNT: usize = 5;
+    }
+}
+
 impl Gcode {
     /// The maximum number of arguments in a single [`Gcode`] command when
     /// compiled *without* the `std` feature.
-    pub const MAX_ARGUMENT_COUNT: usize = 10;
+    ///
+    #[cfg_attr(
+        feature = "large-buffers",
+        doc = "Each [`Gcode`] can contain `16` [`Argument`]s."
+    )]
+    #[cfg_attr(
+        not(feature = "large-buffers"),
+        doc = "Each [`Gcode`] can contain `1` [`Argument`]."
+    )]
+    pub const MAX_ARGUMENT_COUNT: usize = MAX_ARGUMENT_COUNT;
 
     /// Create a new `Gcode`.
     ///

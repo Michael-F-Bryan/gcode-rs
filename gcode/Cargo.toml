@@ -23,7 +23,7 @@ cfg-if = "0.1"
 pretty_assertions = "0.5"
 
 [features]
-default = []
+default = ["large-buffers"]
 std = []
 transforms = []
-
+large-buffers = []
