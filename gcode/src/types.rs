@@ -3,6 +3,10 @@ cfg_if! {
         use std::cmp;
         use std::fmt::{self, Display, Formatter};
         use std::borrow::Cow;
+
+        type Comments<'input> = Vec<Comment<'input>>;
+        type Arguments = Vec<Argument>;
+        type Commands = Vec<Gcode>;
     } else {
         use core::cmp;
         #[allow(unused_imports)]
@@ -116,16 +120,8 @@ pub struct Block<'input> {
     line_number: Option<usize>,
     deleted: bool,
     span: Span,
-
-    #[cfg(not(feature = "std"))]
     commands: Commands,
-    #[cfg(feature = "std")]
-    commands: Vec<Gcode>,
-
-    #[cfg(not(feature = "std"))]
     comments: Comments<'input>,
-    #[cfg(feature = "std")]
-    comments: Vec<Comment<'input>>,
 }
 
 impl<'input> Block<'input> {
@@ -221,11 +217,7 @@ pub struct Gcode {
     mnemonic: Mnemonic,
     number: f32,
     span: Span,
-
-    #[cfg(not(feature = "std"))]
     arguments: Arguments,
-    #[cfg(feature = "std")]
-    arguments: Vec<Argument>,
 }
 
 impl Gcode {
