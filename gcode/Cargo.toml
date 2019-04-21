@@ -27,3 +27,6 @@ default = ["large-buffers"]
 std = []
 transforms = []
 large-buffers = []
+
+[package.metadata.docs.rs]
+all-features = true
