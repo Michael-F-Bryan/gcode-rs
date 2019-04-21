@@ -273,7 +273,7 @@ impl Gcode {
     )]
     #[cfg_attr(
         not(feature = "large-buffers"),
-        doc = "Each [`Gcode`] can contain `1` [`Argument`]."
+        doc = "Each [`Gcode`] can contain `5` [`Argument`]s."
     )]
     pub const MAX_ARGUMENT_COUNT: usize = MAX_ARGUMENT_COUNT;
 
