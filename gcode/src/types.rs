@@ -152,7 +152,7 @@ impl<'input> Block<'input> {
     ///
     #[cfg_attr(
         feature = "large-buffers",
-        doc = "Each [`Block`] can contain `16` [`Comment`]s."
+        doc = "Each [`Block`] can contain `4` [`Comment`]s."
     )]
     #[cfg_attr(
         not(feature = "large-buffers"),
