@@ -12,9 +12,9 @@ pub use self::dwell::Dwell;
 pub use self::linear_interpolate::LinearInterpolate;
 pub use self::units::{Imperial, Metric};
 
-use crate::TryFrom;
 use gcode::Gcode;
 use state::State;
+use std::convert::TryFrom;
 use std::fmt::{self, Display, Formatter};
 use sum_type;
 use uom::si::f32::Time;

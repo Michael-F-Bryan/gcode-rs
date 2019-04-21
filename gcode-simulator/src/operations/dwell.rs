@@ -1,8 +1,8 @@
 use super::{ConversionError, FromGcode, Operation};
 use crate::operations::helpers;
-use crate::TryFrom;
 use gcode::Gcode;
 use state::State;
+use std::convert::TryFrom;
 use uom::si::f32::Time;
 use uom::si::time::{millisecond, second};
 

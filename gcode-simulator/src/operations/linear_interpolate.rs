@@ -1,10 +1,10 @@
 use super::{ConversionError, FromGcode, Operation};
 use crate::operations::helpers;
-use crate::TryFrom;
 use gcode::Gcode;
 #[allow(unused_imports)]
 use libm::F32Ext;
 use state::{AxisPositions, CoordinateMode, State};
+use std::convert::TryFrom;
 use uom::si::f32::*;
 
 /// Move directly from point A to B in a straight line.

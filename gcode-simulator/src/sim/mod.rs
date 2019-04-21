@@ -1,9 +1,9 @@
 use crate::operations::{ConversionError, Op, Operation};
 use crate::State;
-use crate::TryFrom;
 use gcode::{Gcode, Span};
 use id_arena::{Arena, Id};
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use std::iter::FromIterator;
 use uom::num::Zero;
 use uom::si::f32::*;
