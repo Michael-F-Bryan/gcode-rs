@@ -3,6 +3,10 @@ cfg_if! {
         use std::cmp;
         use std::fmt::{self, Display, Formatter};
         use std::borrow::Cow;
+
+        type Comments<'input> = Vec<Comment<'input>>;
+        type Arguments = Vec<Argument>;
+        type Commands = Vec<Gcode>;
     } else {
         use core::cmp;
         #[allow(unused_imports)]
@@ -10,9 +14,9 @@ cfg_if! {
         use arrayvec::ArrayVec;
         use core::fmt::{self, Display, Formatter};
 
-        type Comments<'input> = ArrayVec<[Comment<'input>; 3]>;
-        type Arguments = ArrayVec<[Argument; 10]>;
-        type Commands = ArrayVec<[Gcode; 10]>;
+        type Comments<'input> = ArrayVec<[Comment<'input>; Block::MAX_COMMENT_COUNT]>;
+        type Arguments = ArrayVec<[Argument; Gcode::MAX_ARGUMENT_COUNT]>;
+        type Commands = ArrayVec<[Gcode; Block::MAX_COMMAND_COUNT]>;
     }
 }
 
@@ -116,19 +120,46 @@ pub struct Block<'input> {
     line_number: Option<usize>,
     deleted: bool,
     span: Span,
-
-    #[cfg(not(feature = "std"))]
     commands: Commands,
-    #[cfg(feature = "std")]
-    commands: Vec<Gcode>,
-
-    #[cfg(not(feature = "std"))]
     comments: Comments<'input>,
-    #[cfg(feature = "std")]
-    comments: Vec<Comment<'input>>,
+}
+
+cfg_if! {
+    if #[cfg(feature = "large-buffers")] {
+        const MAX_COMMAND_COUNT: usize = 16;
+        const MAX_COMMENT_COUNT: usize = 4;
+    } else {
+        const MAX_COMMAND_COUNT: usize = 1;
+        const MAX_COMMENT_COUNT: usize = 1;
+    }
 }
 
 impl<'input> Block<'input> {
+    /// The maximum number of [`Gcode`] commands which can be in a [`Block`]
+    /// when compiled *without* the `std` feature.
+    ///
+    #[cfg_attr(
+        feature = "large-buffers",
+        doc = "Each [`Block`] can contain `16` [`Gcode`]s."
+    )]
+    #[cfg_attr(
+        not(feature = "large-buffers"),
+        doc = "Each [`Block`] can contain `1` [`Gcode`]."
+    )]
+    pub const MAX_COMMAND_COUNT: usize = MAX_COMMAND_COUNT;
+    /// The maximum number of [`Comment`]s which can be in a [`Block`] when
+    /// compiled *without* the `std` feature.
+    ///
+    #[cfg_attr(
+        feature = "large-buffers",
+        doc = "Each [`Block`] can contain `4` [`Comment`]s."
+    )]
+    #[cfg_attr(
+        not(feature = "large-buffers"),
+        doc = "Each [`Block`] can contain `1` [`Comment`]."
+    )]
+    pub const MAX_COMMENT_COUNT: usize = MAX_COMMENT_COUNT;
+
     pub(crate) fn empty() -> Block<'input> {
         Block {
             commands: Default::default(),
@@ -221,14 +252,31 @@ pub struct Gcode {
     mnemonic: Mnemonic,
     number: f32,
     span: Span,
-
-    #[cfg(not(feature = "std"))]
     arguments: Arguments,
-    #[cfg(feature = "std")]
-    arguments: Vec<Argument>,
+}
+
+cfg_if! {
+    if #[cfg(feature = "large-buffers")] {
+        const MAX_ARGUMENT_COUNT: usize = 16;
+    } else {
+        const MAX_ARGUMENT_COUNT: usize = 5;
+    }
 }
 
 impl Gcode {
+    /// The maximum number of arguments in a single [`Gcode`] command when
+    /// compiled *without* the `std` feature.
+    ///
+    #[cfg_attr(
+        feature = "large-buffers",
+        doc = "Each [`Gcode`] can contain `16` [`Argument`]s."
+    )]
+    #[cfg_attr(
+        not(feature = "large-buffers"),
+        doc = "Each [`Gcode`] can contain `5` [`Argument`]s."
+    )]
+    pub const MAX_ARGUMENT_COUNT: usize = MAX_ARGUMENT_COUNT;
+
     /// Create a new `Gcode`.
     ///
     /// # Panics

@@ -9,6 +9,10 @@
 //!   or implementing traits from `std` (e.g. `std::error::Error`).
 //! - `transforms`: Exposes the transformations API for manipulating `Gcode`s
 //!   before executing or writing to a file.
+//! - `large-buffers` (on-by-default): Increases the number of commands,
+//!   comments and arguments which can be added to a block (see
+//!   [`Block::MAX_COMMENT_COUNT`], [`Block::MAX_COMMAND_COUNT`], and
+//!   [`Gcode::MAX_ARGUMENT_COUNT`] for more).
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(
