@@ -7,9 +7,9 @@ authors = ["Michael Bryan <michaelfbryan@gmail.com>"]
 gcode = { path = "../gcode", features = ["std"] }
 libm = "0.1"
 sum_type = "0.1.1"
-uom = { version = "0.20.1", default-features = false, features = ["f32", "si"] }
-id-arena = "1.0.1"
+uom = { version = "0.24.0", default-features = false, features = ["f32", "si"] }
+id-arena = "2.2"
 
 [dev-dependencies]
-pretty_assertions = "0.5"
+pretty_assertions = "0.6"
 approx = "0.3"
