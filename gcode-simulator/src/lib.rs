@@ -12,8 +12,8 @@ extern crate approx;
 extern crate pretty_assertions;
 
 pub mod operations;
-pub mod sim;
-pub mod state;
+pub mod simulator;
+mod state;
 
-pub use operations::Operation;
+pub use simulator::Simulator;
 pub use state::State;
