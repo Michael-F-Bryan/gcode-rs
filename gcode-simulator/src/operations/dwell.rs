@@ -1,8 +1,8 @@
 use super::{ConversionError, FromGcode, Operation};
 use crate::operations::helpers;
+use crate::state::State;
 use crate::TryFrom;
 use gcode::Gcode;
-use state::State;
 use uom::si::f32::Time;
 use uom::si::time::{millisecond, second};
 
@@ -50,10 +50,7 @@ impl<'a> TryFrom<&'a Gcode> for Dwell {
         const VALIDATION_MSG: &str = "Dwell times must be positive";
         helpers::check_major_number::<Dwell>(&other)?;
 
-        fn try_convert<U>(
-            letter: char,
-            gcode: &Gcode,
-        ) -> Option<Result<Dwell, ConversionError>>
+        fn try_convert<U>(letter: char, gcode: &Gcode) -> Option<Result<Dwell, ConversionError>>
         where
             U: uom::si::time::Unit + uom::Conversion<f32, T = f32>,
         {

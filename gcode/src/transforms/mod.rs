@@ -76,12 +76,7 @@ pub trait GcodeTransforms: Iterator<Item = Gcode> {
     ///
     /// assert_eq!(got, x_values_should_be);
     /// ```
-    fn map_argument<S, A, F>(
-        self,
-        which_gcode: S,
-        which_arg: A,
-        map: F,
-    ) -> MapArg<Self, S, A, F>
+    fn map_argument<S, A, F>(self, which_gcode: S, which_arg: A, map: F) -> MapArg<Self, S, A, F>
     where
         Self: Sized,
         S: Predicate<Gcode>,
@@ -199,11 +194,7 @@ mod tests {
                 }),
             Gcode::new(Mnemonic::General, 1.0)
                 .with_span(Span::new(14, 30, 0))
-                .with_argument(Argument::new(
-                    'X',
-                    -2.5 + delta,
-                    Span::new(18, 24, 0),
-                ))
+                .with_argument(Argument::new('X', -2.5 + delta, Span::new(18, 24, 0)))
                 .with_argument(Argument::new('Y', 3.14, Span::new(24, 30, 0))),
             // Add a gcode with an X argument we want to ignore
             Gcode::new(Mnemonic::General, 4.0)

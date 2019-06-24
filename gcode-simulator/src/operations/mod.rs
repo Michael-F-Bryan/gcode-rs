@@ -12,9 +12,9 @@ pub use self::dwell::Dwell;
 pub use self::linear_interpolate::LinearInterpolate;
 pub use self::units::{Imperial, Metric};
 
+use crate::state::State;
 use crate::TryFrom;
 use gcode::Gcode;
-use state::State;
 use std::fmt::{self, Display, Formatter};
 use sum_type;
 use uom::si::f32::Time;
@@ -201,8 +201,7 @@ mod tests {
         let got = Op::valid_major_numbers();
 
         let mut got: Vec<_> = got.into_iter().cloned().collect();
-        let mut should_be: Vec<_> =
-            should_be.into_iter().flatten().cloned().collect();
+        let mut should_be: Vec<_> = should_be.into_iter().flatten().cloned().collect();
 
         got.sort();
         should_be.sort();

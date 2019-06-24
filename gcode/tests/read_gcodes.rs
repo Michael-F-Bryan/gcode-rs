@@ -17,11 +17,9 @@ fn read_each_line_of_a_file() {
     let got: Vec<_> = gcode::parse(src).collect();
 
     let should_be = vec![
-        Gcode::new(Mnemonic::ProgramNumber, 1000.0)
-            .with_span(Span::new(0, 5, 0)),
+        Gcode::new(Mnemonic::ProgramNumber, 1000.0).with_span(Span::new(0, 5, 0)),
         Gcode::new(Mnemonic::ToolChange, 1.0).with_span(Span::new(14, 17, 1)),
-        Gcode::new(Mnemonic::Miscellaneous, 6.0)
-            .with_span(Span::new(17, 19, 1)),
+        Gcode::new(Mnemonic::Miscellaneous, 6.0).with_span(Span::new(17, 19, 1)),
         Gcode::new(Mnemonic::General, 0.0).with_span(Span::new(63, 66, 3)),
         Gcode::new(Mnemonic::General, 90.0).with_span(Span::new(66, 70, 3)),
         Gcode::new(Mnemonic::General, 40.0).with_span(Span::new(70, 74, 3)),
@@ -34,8 +32,7 @@ fn read_each_line_of_a_file() {
             .with_argument(Argument::new('X', -75.0, Span::new(102, 107, 4)))
             .with_argument(Argument::new('Y', -75.0, Span::new(107, 112, 4)))
             .with_argument(Argument::new('S', 500.0, Span::new(112, 117, 4))),
-        Gcode::new(Mnemonic::Miscellaneous, 3.0)
-            .with_span(Span::new(117, 121, 4)),
+        Gcode::new(Mnemonic::Miscellaneous, 3.0).with_span(Span::new(117, 121, 4)),
         Gcode::new(Mnemonic::General, 43.0)
             .with_span(Span::new(142, 146, 5))
             .with_argument(Argument::new('Z', 100.0, Span::new(146, 151, 5)))

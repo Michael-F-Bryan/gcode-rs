@@ -1,5 +1,5 @@
+use crate::types::{Span, TokenKind};
 use arrayvec::ArrayString;
-use types::{Span, TokenKind};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) struct Lexer<'input> {
@@ -27,9 +27,7 @@ impl<'input> Lexer<'input> {
             '/' => Some(self.tokenize_forward_slash()),
             '.' | '-' => Some(self.tokenize_number()),
             other if other.is_numeric() => Some(self.tokenize_number()),
-            other if other.is_ascii_alphabetic() => {
-                Some(self.tokenize_letter())
-            }
+            other if other.is_ascii_alphabetic() => Some(self.tokenize_letter()),
             _ => Some(self.consume_garbage()),
         }
     }
@@ -84,18 +82,11 @@ impl<'input> Lexer<'input> {
                 }
             }
 
-            if next != '.'
-                && next != '-'
-                && !next.is_numeric()
-                && !next.is_whitespace()
-            {
+            if next != '.' && next != '-' && !next.is_numeric() && !next.is_whitespace() {
                 break;
             }
 
-            if !next.is_whitespace()
-                && !input_is_malformed
-                && buffer.try_push(next).is_err()
-            {
+            if !next.is_whitespace() && !input_is_malformed && buffer.try_push(next).is_err() {
                 // Pushing any more characters would overflow our buffer.
                 // You can't really parse a 32-digit number without loss of
                 // precision anyway, so from here on we're going to pretend
@@ -369,8 +360,7 @@ mod tests {
 
     #[test]
     fn tokenize_a_full_sentence() {
-        let src =
-            "% percent comment\nG90.0X 5 .5Y- 8(comment)\nNxx/; comment to end of line\n%";
+        let src = "% percent comment\nG90.0X 5 .5Y- 8(comment)\nNxx/; comment to end of line\n%";
 
         let got: Vec<_> = Lexer::new(src).collect();
 

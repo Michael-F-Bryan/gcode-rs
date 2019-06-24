@@ -1,7 +1,5 @@
 use crate::lexer::{Lexer, Token};
-use crate::types::{
-    Argument, Block, Comment, Gcode, Mnemonic, Span, TokenKind,
-};
+use crate::types::{Argument, Block, Comment, Gcode, Mnemonic, Span, TokenKind};
 #[cfg(not(feature = "std"))]
 #[allow(unused_imports)]
 use libm::F32Ext;
@@ -61,10 +59,7 @@ impl<'input> Parser<'input, Nop> {
 
 impl<'input, C: Callbacks> Parser<'input, C> {
     /// Create a new `Parser` with a custom `Callback`.
-    pub fn new_with_callbacks(
-        src: &'input str,
-        callbacks: C,
-    ) -> Parser<'input, C> {
+    pub fn new_with_callbacks(src: &'input str, callbacks: C) -> Parser<'input, C> {
         Parser {
             lexer: Lexer::new(src),
             src,
@@ -94,9 +89,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
     fn parse_preamble(&mut self, block: &mut Block<'input>) {
         while let Some(kind) = self.next_kind() {
             match kind {
-                TokenKind::Comment => {
-                    unreachable!("next_kind() never yields a comment")
-                }
+                TokenKind::Comment => unreachable!("next_kind() never yields a comment"),
                 TokenKind::ForwardSlash => {
                     let _ = self
                         .chomp(kind, |c| block.push_comment(c))
@@ -105,9 +98,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
                 }
                 TokenKind::Newline => {
                     if block.is_empty() {
-                        let _ = self.chomp(TokenKind::Newline, |c| {
-                            block.push_comment(c)
-                        });
+                        let _ = self.chomp(TokenKind::Newline, |c| block.push_comment(c));
                         continue;
                     } else {
                         return;
@@ -154,12 +145,8 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         })
     }
 
-    fn parse_word(
-        &mut self,
-        mut comments: impl FnMut(Comment<'input>),
-    ) -> Option<Argument> {
-        let (tok, letter_span) =
-            self.chomp(TokenKind::Letter, &mut comments)?;
+    fn parse_word(&mut self, mut comments: impl FnMut(Comment<'input>)) -> Option<Argument> {
+        let (tok, letter_span) = self.chomp(TokenKind::Letter, &mut comments)?;
         let letter = tok.unwrap_letter();
 
         let (tok, span) = self.chomp(TokenKind::Number, comments)?;
@@ -185,19 +172,14 @@ impl<'input, C: Callbacks> Parser<'input, C> {
                     }
                     block.push_command(cmd);
                 }
-                None => {
-                    self.fast_forward_to_safe_point(|c| block.push_comment(c))
-                }
+                None => self.fast_forward_to_safe_point(|c| block.push_comment(c)),
             }
         }
     }
 
     /// Something went wrong while trying to read a gcode command. Fast forward
     /// until we see the start of a new command or the end of the block.
-    fn fast_forward_to_safe_point(
-        &mut self,
-        mut comments: impl FnMut(Comment<'input>),
-    ) {
+    fn fast_forward_to_safe_point(&mut self, mut comments: impl FnMut(Comment<'input>)) {
         let mut overall_span = Span::placeholder();
 
         while let Some(kind) = self.next_kind() {
@@ -224,10 +206,7 @@ impl<'input, C: Callbacks> Parser<'input, C> {
         );
     }
 
-    fn parse_command(
-        &mut self,
-        mut comments: impl FnMut(Comment<'input>),
-    ) -> Option<Gcode> {
+    fn parse_command(&mut self, mut comments: impl FnMut(Comment<'input>)) -> Option<Gcode> {
         let Argument {
             letter,
             span,
@@ -346,13 +325,7 @@ impl<'input, C: Callbacks> Iterator for Parser<'input, C> {
 /// encountered while parsing.
 pub trait Callbacks {
     /// We were looking for one or more tokens, but got a different
-    fn unexpected_token(
-        &mut self,
-        _found: TokenKind,
-        _span: Span,
-        _expected: &[TokenKind],
-    ) {
-    }
+    fn unexpected_token(&mut self, _found: TokenKind, _span: Span, _expected: &[TokenKind]) {}
     /// The end-of-input was encountered when more input was expected.
     fn unexpected_eof(&mut self, _expected: &[TokenKind]) {}
     /// Invalid tokens
@@ -360,12 +333,7 @@ pub trait Callbacks {
 }
 
 impl<'a, C: Callbacks> Callbacks for &'a mut C {
-    fn unexpected_token(
-        &mut self,
-        found: TokenKind,
-        span: Span,
-        expected: &[TokenKind],
-    ) {
+    fn unexpected_token(&mut self, found: TokenKind, span: Span, expected: &[TokenKind]) {
         (**self).unexpected_token(found, span, expected);
     }
     fn unexpected_eof(&mut self, expected: &[TokenKind]) {
@@ -390,12 +358,7 @@ mod tests {
     struct Fail;
 
     impl Callbacks for Fail {
-        fn unexpected_token(
-            &mut self,
-            found: TokenKind,
-            span: Span,
-            expected: &[TokenKind],
-        ) {
+        fn unexpected_token(&mut self, found: TokenKind, span: Span, expected: &[TokenKind]) {
             panic!(
                 "Unexpected token, \"{}\" at {:?}. Expected {:?}",
                 found, span, expected

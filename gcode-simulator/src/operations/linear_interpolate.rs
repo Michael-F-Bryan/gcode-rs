@@ -1,10 +1,10 @@
 use super::{ConversionError, FromGcode, Operation};
 use crate::operations::helpers;
+use crate::state::{AxisPositions, CoordinateMode, State};
 use crate::TryFrom;
 use gcode::Gcode;
 #[allow(unused_imports)]
 use libm::F32Ext;
-use state::{AxisPositions, CoordinateMode, State};
 use uom::si::f32::*;
 
 /// Move directly from point A to B in a straight line.
@@ -292,8 +292,7 @@ mod tests {
         let dy = 10.0 - 100.0;
         let distance = f32::hypot(dx, dy);
 
-        let should_be = Length::new::<millimeter>(distance)
-            / initial_state.to_speed(feed_rate);
+        let should_be = Length::new::<millimeter>(distance) / initial_state.to_speed(feed_rate);
         let got = input.duration(&initial_state);
 
         assert_relative_eq!(got.value, should_be.value, epsilon = 0.01);

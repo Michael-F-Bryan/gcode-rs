@@ -1,4 +1,4 @@
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
         use std::cmp;
         use std::fmt::{self, Display, Formatter};
@@ -58,10 +58,7 @@ impl Span {
     }
 
     /// Based on this `Span`, get the sub-string it corresponds to.
-    pub fn text_from_source<'input>(
-        &self,
-        src: &'input str,
-    ) -> Option<&'input str> {
+    pub fn text_from_source<'input>(&self, src: &'input str) -> Option<&'input str> {
         src.get(self.start..self.end)
     }
 
@@ -124,7 +121,7 @@ pub struct Block<'input> {
     comments: Comments<'input>,
 }
 
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(feature = "large-buffers")] {
         const MAX_COMMAND_COUNT: usize = 16;
         const MAX_COMMENT_COUNT: usize = 4;
@@ -172,9 +169,7 @@ impl<'input> Block<'input> {
 
     /// Is this block empty?
     pub fn is_empty(&self) -> bool {
-        self.commands.is_empty()
-            && self.comments.is_empty()
-            && self.line_number.is_none()
+        self.commands.is_empty() && self.comments.is_empty() && self.line_number.is_none()
     }
 
     /// Convert this `Block` into a stream of `Gcode` commands.
@@ -255,7 +250,7 @@ pub struct Gcode {
     arguments: Arguments,
 }
 
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(feature = "large-buffers")] {
         const MAX_ARGUMENT_COUNT: usize = 16;
     } else {
@@ -300,19 +295,13 @@ impl Gcode {
 
     /// Get the command's major number.
     pub fn major_number(&self) -> usize {
-        debug_assert!(
-            self.number >= 0.0,
-            "The number should always be positive"
-        );
+        debug_assert!(self.number >= 0.0, "The number should always be positive");
         self.number.trunc() as usize
     }
 
     /// Get the command's minor number, of there is one.
     pub fn minor_number(&self) -> Option<usize> {
-        debug_assert!(
-            self.number >= 0.0,
-            "The number should always be positive"
-        );
+        debug_assert!(self.number >= 0.0, "The number should always be positive");
         let digit = (self.number.fract() / 0.1).round();
 
         if digit == 0.0 {
@@ -370,9 +359,7 @@ impl Gcode {
 
     /// Remove the first argument with the specified `letter`.
     pub fn remove_argument(&mut self, letter: char) -> Option<Argument> {
-        if let Some(ix) =
-            self.arguments.iter().position(|arg| arg.letter == letter)
-        {
+        if let Some(ix) = self.arguments.iter().position(|arg| arg.letter == letter) {
             let removed = self.arguments.remove(ix);
             Some(removed)
         } else {
@@ -441,7 +428,7 @@ pub struct Comment<'input> {
     pub span: Span,
 }
 
-cfg_if! {
+cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
         impl<'input> Comment<'input> {
             /// Create a new `Comment`.

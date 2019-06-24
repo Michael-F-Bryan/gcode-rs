@@ -16,6 +16,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(
+    rust_2018_idioms,
     missing_docs,
     missing_debug_implementations,
     missing_copy_implementations,
@@ -26,20 +27,6 @@
     unused_import_braces,
     unused_qualifications
 )]
-
-extern crate arrayvec;
-#[macro_use]
-extern crate cfg_if;
-#[cfg(feature = "std")]
-extern crate core;
-extern crate libm;
-
-#[cfg(all(not(feature = "std"), test))]
-#[macro_use]
-extern crate std;
-#[cfg(test)]
-#[macro_use]
-extern crate pretty_assertions;
 
 mod lexer;
 mod parser;

@@ -8,6 +8,7 @@ readme = "../README.md"
 license = "MIT"
 keywords = ["gcode", "parser"]
 categories = ["no-std", "parser-implementations", "embedded"]
+edition = "2018"
 
 [badges]
 appveyor = { repository = "Michael-F-Bryan/gcode-rs" }

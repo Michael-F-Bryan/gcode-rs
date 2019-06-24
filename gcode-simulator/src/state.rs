@@ -34,9 +34,7 @@ impl State {
     pub fn to_speed(&self, value: f32) -> Velocity {
         match self.units {
             Units::Metric => Velocity::new::<millimeter_per_second>(value),
-            Units::Imperial => {
-                Length::new::<inch>(value) / Time::new::<second>(1.0)
-            }
+            Units::Imperial => Length::new::<inch>(value) / Time::new::<second>(1.0),
         }
     }
 
@@ -108,8 +106,8 @@ pub struct AxisPositions {
 }
 
 impl AxisPositions {
-    pub fn length(&self) -> Length {
-        let AxisPositions { x, y } = *self;
+    pub fn length(self) -> Length {
+        let AxisPositions { x, y } = self;
         let squares = x * x + y * y;
 
         Length {
@@ -169,15 +167,10 @@ impl AbsDiffEq for AxisPositions {
         <f32 as AbsDiffEq>::default_epsilon()
     }
 
-    fn abs_diff_eq(
-        &self,
-        other: &AxisPositions,
-        epsilon: Self::Epsilon,
-    ) -> bool {
+    fn abs_diff_eq(&self, other: &AxisPositions, epsilon: Self::Epsilon) -> bool {
         let AxisPositions { x, y } = *self;
 
-        x.value.abs_diff_eq(&other.x.value, epsilon)
-            && y.value.abs_diff_eq(&other.y.value, epsilon)
+        x.value.abs_diff_eq(&other.x.value, epsilon) && y.value.abs_diff_eq(&other.y.value, epsilon)
     }
 }
 

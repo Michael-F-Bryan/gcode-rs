@@ -13,8 +13,7 @@ pub fn simulate_motion(ops: &OperationMap) -> Simulation {
     let mut state = State::default();
 
     for &op_id in &ops.op_order {
-        sim.initial_states
-            .push((sim.total_time, op_id, state.clone()));
+        sim.initial_states.push((sim.total_time, op_id, state));
 
         let op = &ops.operations[op_id];
         let duration = op.duration(&state);
