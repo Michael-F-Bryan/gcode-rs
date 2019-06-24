@@ -482,6 +482,17 @@ pub enum Mnemonic {
     ToolChange,
 }
 
+impl Display for Mnemonic {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match *self {
+            Mnemonic::General => 'G'.fmt(f),
+            Mnemonic::Miscellaneous => 'M'.fmt(f),
+            Mnemonic::ProgramNumber => 'O'.fmt(f),
+            Mnemonic::ToolChange => 'T'.fmt(f),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
