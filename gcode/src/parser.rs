@@ -1,5 +1,7 @@
-use crate::lexer::{Lexer, Token};
-use crate::types::{Argument, Block, Comment, Gcode, Mnemonic, Span, TokenKind};
+use crate::{
+    lexer::{Lexer, Token},
+    types::{Argument, Block, Comment, Gcode, Mnemonic, Span, TokenKind},
+};
 #[cfg(not(feature = "std"))]
 #[allow(unused_imports)]
 use libm::F32Ext;

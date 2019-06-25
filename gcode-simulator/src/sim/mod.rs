@@ -1,12 +1,11 @@
-use crate::operations::{ConversionError, Op, Operation};
-use crate::State;
-use crate::TryFrom;
+use crate::{
+    operations::{ConversionError, Op, Operation},
+    State, TryFrom,
+};
 use gcode::{Gcode, Span};
 use id_arena::{Arena, Id};
-use std::collections::HashMap;
-use std::iter::FromIterator;
-use uom::num::Zero;
-use uom::si::f32::*;
+use std::{collections::HashMap, iter::FromIterator};
+use uom::{num::Zero, si::f32::*};
 
 pub fn simulate_motion(ops: &OperationMap) -> Simulation {
     let mut sim = Simulation::default();

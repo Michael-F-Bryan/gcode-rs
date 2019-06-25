@@ -29,21 +29,21 @@ fn read_each_line_of_a_file() {
         Gcode::new(Mnemonic::General, 80.0).with_span(Span::new(86, 89, 3)),
         Gcode::new(Mnemonic::General, 54.0)
             .with_span(Span::new(98, 102, 4))
-            .with_argument(Argument::new('X', -75.0, Span::new(102, 107, 4)))
-            .with_argument(Argument::new('Y', -75.0, Span::new(107, 112, 4)))
-            .with_argument(Argument::new('S', 500.0, Span::new(112, 117, 4))),
+            .with_argument(Argument::new('X', -75.0).with_span(Span::new(102, 107, 4)))
+            .with_argument(Argument::new('Y', -75.0).with_span(Span::new(107, 112, 4)))
+            .with_argument(Argument::new('S', 500.0).with_span(Span::new(112, 117, 4))),
         Gcode::new(Mnemonic::Miscellaneous, 3.0).with_span(Span::new(117, 121, 4)),
         Gcode::new(Mnemonic::General, 43.0)
             .with_span(Span::new(142, 146, 5))
-            .with_argument(Argument::new('Z', 100.0, Span::new(146, 151, 5)))
-            .with_argument(Argument::new('H', 1.0, Span::new(151, 153, 5))),
+            .with_argument(Argument::new('Z', 100.0).with_span(Span::new(146, 151, 5)))
+            .with_argument(Argument::new('H', 1.0).with_span(Span::new(151, 153, 5))),
         Gcode::new(Mnemonic::General, 1.0)
             .with_span(Span::new(162, 166, 6))
-            .with_argument(Argument::new('Z', 5.0, Span::new(166, 168, 6))),
+            .with_argument(Argument::new('Z', 5.0).with_span(Span::new(166, 168, 6))),
         Gcode::new(Mnemonic::General, 1.0)
             .with_span(Span::new(181, 185, 7))
-            .with_argument(Argument::new('Z', -20.0, Span::new(185, 190, 7)))
-            .with_argument(Argument::new('F', 100.0, Span::new(190, 194, 7)))
+            .with_argument(Argument::new('Z', -20.0).with_span(Span::new(185, 190, 7)))
+            .with_argument(Argument::new('F', 100.0).with_span(Span::new(190, 194, 7)))
             .with_line_number(42),
     ];
 

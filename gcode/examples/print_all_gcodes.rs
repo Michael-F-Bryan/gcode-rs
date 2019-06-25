@@ -1,8 +1,9 @@
 extern crate gcode;
 
-use std::env;
-use std::fs;
-use std::io::{self, Error, Read};
+use std::{
+    env, fs,
+    io::{self, Error, Read},
+};
 
 fn main() -> Result<(), Error> {
     let input = read_input()?;

@@ -5,10 +5,12 @@ use approx::{AbsDiffEq, RelativeEq};
 #[allow(unused_imports)]
 use libm::F32Ext;
 use std::ops::{Add, Mul, Sub};
-use uom::si::f32::*;
-use uom::si::length::{inch, millimeter};
-use uom::si::time::second;
-use uom::si::velocity::millimeter_per_second;
+use uom::si::{
+    f32::*,
+    length::{inch, millimeter},
+    time::second,
+    velocity::millimeter_per_second,
+};
 
 /// The internal state of a simple 2-dimensional gantry system.
 #[derive(Debug, Copy, Clone, PartialEq)]

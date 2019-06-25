@@ -1,7 +1,9 @@
 use super::{ConversionError, FromGcode, Operation};
-use crate::operations::helpers;
-use crate::state::{AxisPositions, CoordinateMode, State};
-use crate::TryFrom;
+use crate::{
+    operations::helpers,
+    state::{AxisPositions, CoordinateMode, State},
+    TryFrom,
+};
 use gcode::Gcode;
 #[allow(unused_imports)]
 use libm::F32Ext;

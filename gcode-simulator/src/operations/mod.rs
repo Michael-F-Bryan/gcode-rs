@@ -7,13 +7,14 @@ mod dwell;
 mod linear_interpolate;
 mod units;
 
-pub use self::coordinate_modes::{AbsoluteCoordinates, RelativeCoordinates};
-pub use self::dwell::Dwell;
-pub use self::linear_interpolate::LinearInterpolate;
-pub use self::units::{Imperial, Metric};
+pub use self::{
+    coordinate_modes::{AbsoluteCoordinates, RelativeCoordinates},
+    dwell::Dwell,
+    linear_interpolate::LinearInterpolate,
+    units::{Imperial, Metric},
+};
 
-use crate::state::State;
-use crate::TryFrom;
+use crate::{state::State, TryFrom};
 use gcode::Gcode;
 use std::fmt::{self, Display, Formatter};
 use sum_type;

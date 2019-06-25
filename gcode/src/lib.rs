@@ -36,10 +36,9 @@ mod parser;
 pub mod transforms;
 mod types;
 
-pub use crate::parser::*;
 #[cfg(feature = "transforms")]
 pub use crate::transforms::GcodeTransforms;
-pub use crate::types::*;
+pub use crate::{parser::*, types::*};
 
 /// Convenience function for parsing a string of text into `Gcode`s, ignoring
 /// any errors which may occur.

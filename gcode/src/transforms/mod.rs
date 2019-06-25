@@ -187,19 +187,15 @@ mod tests {
             Gcode::new(Mnemonic::General, 90.0).with_span(Span::new(0, 4, 0)),
             Gcode::new(Mnemonic::General, 0.0)
                 .with_span(Span::new(4, 14, 0))
-                .with_argument(Argument {
-                    letter: 'X',
-                    value: 50.0 + delta,
-                    span: Span::new(8, 14, 0),
-                }),
+                .with_argument(Argument::new('X', 50.0 + delta).with_span(Span::new(8, 14, 0))),
             Gcode::new(Mnemonic::General, 1.0)
                 .with_span(Span::new(14, 30, 0))
-                .with_argument(Argument::new('X', -2.5 + delta, Span::new(18, 24, 0)))
-                .with_argument(Argument::new('Y', 3.14, Span::new(24, 30, 0))),
+                .with_argument(Argument::new('X', -2.5 + delta).with_span(Span::new(18, 24, 0)))
+                .with_argument(Argument::new('Y', 3.14).with_span(Span::new(24, 30, 0))),
             // Add a gcode with an X argument we want to ignore
             Gcode::new(Mnemonic::General, 4.0)
                 .with_span(Span::new(30, 38, 0))
-                .with_argument(Argument::new('X', 1.0, Span::new(33, 38, 0))),
+                .with_argument(Argument::new('X', 1.0).with_span(Span::new(33, 38, 0))),
         ];
 
         let got: Vec<_> = crate::parse(src)

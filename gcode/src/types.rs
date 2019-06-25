@@ -344,9 +344,8 @@ impl Gcode {
     }
 
     /// Set the `Gcode`'s `Span`.
-    pub fn with_span(mut self, span: Span) -> Self {
-        self.span = span;
-        self
+    pub fn with_span(self, span: Span) -> Self {
+        Gcode { span, ..self }
     }
 
     /// Add an argument to the `Gcode`.
@@ -388,6 +387,27 @@ impl Gcode {
     }
 }
 
+impl Display for Gcode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if let Some(n) = self.line_number() {
+            write!(f, "N{} ", n)?;
+        }
+
+        write!(f, "{}{}", self.mnemonic(), self.major_number())?;
+
+        if let Some(minor) = self.minor_number() {
+            write!(f, ".{}", minor)?;
+        }
+
+        for arg in self.args() {
+            write!(f, " ")?;
+            arg.fmt(f)?;
+        }
+
+        Ok(())
+    }
+}
+
 /// A command argument, the `X50.0` in `G01 X50.0`.
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
@@ -402,18 +422,29 @@ pub struct Argument {
 
 impl Argument {
     /// Create a new `Argument`.
-    pub fn new(letter: char, value: f32, span: Span) -> Argument {
+    pub fn new(letter: char, value: f32) -> Argument {
         Argument {
             letter,
             value,
-            span,
+            span: Default::default(),
         }
+    }
+
+    /// Give the [`Argument`] a [`Span`].
+    pub fn with_span(self, span: Span) -> Argument {
+        Argument { span, ..self }
     }
 }
 
 impl Display for Argument {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}{}", self.letter, self.value)
+        write!(
+            f,
+            "{2}{1:.*}",
+            f.precision().unwrap_or(1),
+            self.value,
+            self.letter,
+        )
     }
 }
 
@@ -496,6 +527,10 @@ impl Display for Mnemonic {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::{
+        fmt::{Result, Write},
+        str,
+    };
 
     #[test]
     fn correctly_extract_major_and_minor_number() {
@@ -530,5 +565,50 @@ mod tests {
         let cow_comment = Comment::new_cow(String::from("blah"), span);
 
         assert_eq!(comment, cow_comment);
+    }
+
+    struct BufferedWriter<'a> {
+        buffer: &'a mut [u8],
+        end: usize,
+    }
+
+    impl<'a> BufferedWriter<'a> {
+        fn new(buffer: &'a mut [u8]) -> BufferedWriter<'a> {
+            BufferedWriter { buffer, end: 0 }
+        }
+
+        fn written(&self) -> &str {
+            str::from_utf8(&self.buffer[..self.end]).unwrap()
+        }
+    }
+
+    impl<'a> Write for BufferedWriter<'a> {
+        fn write_str(&mut self, s: &str) -> Result {
+            let ix = self.end + s.len();
+
+            if let Some(buf) = self.buffer.get_mut(self.end..ix) {
+                buf.copy_from_slice(s.as_bytes());
+                self.end = ix;
+                Ok(())
+            } else {
+                Err(fmt::Error)
+            }
+        }
+    }
+
+    #[test]
+    fn gcode_formatting() {
+        let mut buffer = [0; 256];
+        let gcode = Gcode::new(Mnemonic::General, 3.1)
+            .with_line_number(42)
+            .with_argument(Argument::new('X', 10.0))
+            .with_argument(Argument::new('y', -20.5));
+
+        {
+            let mut writer = BufferedWriter::new(&mut buffer);
+            write!(writer, "{}", gcode).unwrap();
+
+            assert_eq!(writer.written(), "N42 G3.1 X10.0 y-20.5");
+        }
     }
 }

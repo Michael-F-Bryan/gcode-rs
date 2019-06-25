@@ -1,10 +1,10 @@
 use super::{ConversionError, FromGcode, Operation};
-use crate::operations::helpers;
-use crate::state::State;
-use crate::TryFrom;
+use crate::{operations::helpers, state::State, TryFrom};
 use gcode::Gcode;
-use uom::si::f32::Time;
-use uom::si::time::{millisecond, second};
+use uom::si::{
+    f32::Time,
+    time::{millisecond, second},
+};
 
 /// Wait for a period of time.
 #[derive(Debug, Copy, Clone, PartialEq)]

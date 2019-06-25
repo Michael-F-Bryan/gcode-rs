@@ -11,7 +11,7 @@ use crate::types::{Argument, Gcode, Mnemonic};
 ///
 /// let g90 = Gcode::new(Mnemonic::General, 90.0);
 /// let g00 = Gcode::new(Mnemonic::General, 0.0)
-///     .with_argument(Argument::new('X', 500.0, Span::placeholder()));
+///     .with_argument(Argument::new('X', 500.0));
 /// let m6 = Gcode::new(Mnemonic::Miscellaneous, 6.0);
 /// let m0 = Gcode::new(Mnemonic::Miscellaneous, 0.0);
 ///

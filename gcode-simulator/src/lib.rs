@@ -15,8 +15,7 @@ pub mod operations;
 pub mod sim;
 pub mod state;
 
-pub use crate::operations::Operation;
-pub use crate::state::State;
+pub use crate::{operations::Operation, state::State};
 
 /// A stand-in for the currently unstable `std::convert::TryFrom` trait.
 pub trait TryFrom<T>: Sized {

@@ -1,6 +1,6 @@
 #![allow(missing_docs)]
 
-use crate::{Gcode, Comment};
+use crate::{Comment, Gcode};
 
 pub trait Sink {
     type Error;
@@ -21,7 +21,6 @@ impl<W: std::io::Write> PrettyWriterSink<W> {
         PrettyWriterSink { writer }
     }
 }
-
 
 #[cfg(feature = "std")]
 impl<W: std::io::Write> Sink for PrettyWriterSink<W> {
