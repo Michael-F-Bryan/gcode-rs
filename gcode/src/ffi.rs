@@ -54,6 +54,8 @@ pub unsafe extern "C" fn parse_gcode(gcode: *const c_char, length: c_int, callba
                     Either::Right(comment) => callbacks.on_comment(comment),
                 }
             }
+
+            callbacks.on_end_block(&block);
         }
     });
 
@@ -77,6 +79,8 @@ pub struct Callbacks {
     pub on_unexpected_token: Option<unsafe extern "C" fn(user_data: *mut c_void, found: TokenKind, span: Span, expected: *const TokenKind, expected_len: c_int)>,
     /// The parser started parsing a new block.
     pub on_start_block: Option<unsafe extern "C" fn(user_data: *mut c_void, line_number: c_int, deleted: c_int, span: Span)>,
+    /// The parser finished parsing a block.
+    pub on_end_block: Option<unsafe extern "C" fn(user_data: *mut c_void, line_number: c_int, deleted: c_int, span: Span)>,
     /// Parsed a g-code.
     pub on_gcode: Option<unsafe extern "C" fn(user_data: *mut c_void, line_number: c_int, mnemonic: Mnemonic, major_number: c_int, minor_number: c_int, span: Span, arguments: *const Argument, argument_len: c_int)>,
     /// Parsed a comment.
@@ -85,7 +89,17 @@ pub struct Callbacks {
 
 impl Callbacks {
     fn on_start_block(self, block: &Block<'_>) {
-        if let Some(cb) = self.on_start_block {
+        self.run_block_callback(block, |this| this.on_start_block);
+    }
+
+    fn on_end_block(self, block: &Block<'_>) {
+        self.run_block_callback(block, |this| this.on_end_block);
+    }
+
+    fn run_block_callback<F>(self, block: &Block<'_>, getter: F) 
+        where F: Fn(Self) -> Option<unsafe extern "C" fn(user_data: *mut c_void, line_number: c_int, deleted: c_int, span: Span)>
+    {
+        if let Some(cb) = getter(self) {
             unsafe {
                 let line_number = match block.line_number() {
                     Some(n) => n as c_int,
