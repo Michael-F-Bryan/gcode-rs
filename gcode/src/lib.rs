@@ -28,7 +28,6 @@
     unused_qualifications
 )]
 
-#[cfg(feature = "builder")]
 pub mod builder;
 mod lexer;
 mod parser;

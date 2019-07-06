@@ -1,6 +1,7 @@
 #![allow(missing_docs)]
 
 use crate::{Comment, Gcode};
+use core::fmt::Write;
 
 pub trait Sink {
     type Error;
@@ -9,22 +10,19 @@ pub trait Sink {
     fn emit_comment(&mut self, comment: &Comment<'_>) -> Result<(), Self::Error>;
 }
 
-#[cfg(feature = "std")]
 #[derive(Debug, Clone, PartialEq)]
 pub struct PrettyWriterSink<W> {
     writer: W,
 }
 
-#[cfg(feature = "std")]
-impl<W: std::io::Write> PrettyWriterSink<W> {
+impl<W: Write> PrettyWriterSink<W> {
     pub fn new(writer: W) -> PrettyWriterSink<W> {
         PrettyWriterSink { writer }
     }
 }
 
-#[cfg(feature = "std")]
-impl<W: std::io::Write> Sink for PrettyWriterSink<W> {
-    type Error = std::io::Error;
+impl<W: Write> Sink for PrettyWriterSink<W> {
+    type Error = core::fmt::Error;
 
     fn emit_gcode(&mut self, gcode: &Gcode) -> Result<(), Self::Error> {
         if let Some(n) = gcode.line_number() {
