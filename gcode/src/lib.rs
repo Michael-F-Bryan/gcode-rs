@@ -15,6 +15,8 @@
 //!   [`Gcode::MAX_ARGUMENT_COUNT`] for more).
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(cbuild, crate_type = "cdylib")]
+#![cfg_attr(cbuild, crate_type = "staticlib")]
 #![deny(
     rust_2018_idioms,
     missing_docs,

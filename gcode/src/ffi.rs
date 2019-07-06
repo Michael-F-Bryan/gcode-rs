@@ -23,6 +23,10 @@ pub enum ParseResult {
 }
 
 /// Parse a UTF-8 string as gcode.
+/// 
+/// Under the hood the parser will walk the string, notifying the caller of
+/// events (e.g. encountered g-code, unexpected input) by invoking callbacks as
+/// it goes.
 #[no_mangle]
 pub unsafe extern "C" fn parse_gcode(gcode: *const c_char, length: c_int, callbacks: Callbacks) -> ParseResult {
     if gcode.is_null() {
