@@ -28,11 +28,18 @@
     unused_qualifications
 )]
 
+#[cfg(test)]
+#[macro_use]
+extern crate std;
+
 mod lexer;
 mod parser;
 #[cfg(feature = "transforms")]
 pub mod transforms;
 mod types;
+
+#[cfg(cargo_c)]
+pub mod ffi;
 
 pub use crate::parser::*;
 #[cfg(feature = "transforms")]

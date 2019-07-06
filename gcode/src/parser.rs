@@ -385,14 +385,14 @@ mod tests {
         let comment = &block.comments()[0];
         assert_eq!(comment.body(), "; This is a comment");
         assert_eq!(
-            comment.span,
+            comment.span(),
             Span {
                 start: 0,
                 end: src.len() - 1,
                 source_line: 0
             }
         );
-        assert_eq!(block.span(), comment.span);
+        assert_eq!(block.span(), comment.span());
     }
 
     #[test]
