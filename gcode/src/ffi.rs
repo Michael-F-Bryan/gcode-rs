@@ -59,13 +59,6 @@ pub unsafe extern "C" fn parse_gcode(gcode: *const c_char, length: c_int, callba
     }
 }
 
-pub type UnexpectedEOF = unsafe extern "C" fn(user_data: *mut c_void, expected: *const TokenKind, expected_len: c_int);
-pub type MangledInput = unsafe extern "C" fn(user_data: *mut c_void, input: *const c_char, input_len: c_int, span: Span);
-pub type UnexpectedToken = unsafe extern "C" fn(user_data: *mut c_void, found: TokenKind, span: Span, expected: *const TokenKind, expected_len: c_int);
-pub type BlockStarted = unsafe extern "C" fn(user_data: *mut c_void, line_number: c_int, deleted: c_int, span: Span);
-pub type ParsedGcode = unsafe extern "C" fn(user_data: *mut c_void, line_number: c_int, mnemonic: Mnemonic, major_number: c_int, minor_number: c_int, span: Span, arguments: *const Argument, argument_len: c_int);
-pub type ParsedComment = unsafe extern "C" fn(user_data: *mut c_void, span: Span, body: *const c_char, body_len: c_int);
-
 /// A set of callbacks used to notify of progress when parsing gcodes.
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[repr(C)]
@@ -73,17 +66,17 @@ pub struct Callbacks {
     /// A pointer to some arbitrary data provided by the user.
     pub user_data: *mut c_void,
     /// An unexpected EOF was encountered.
-    pub on_unexpected_eof: Option<UnexpectedEOF>,
+    pub on_unexpected_eof: Option<unsafe extern "C" fn(user_data: *mut c_void, expected: *const TokenKind, expected_len: c_int)>,
     /// Skipping unparseable input.
-    pub on_mangled_input: Option<MangledInput>,
+    pub on_mangled_input: Option<unsafe extern "C" fn(user_data: *mut c_void, input: *const c_char, input_len: c_int, span: Span)>,
     /// Encountered a token which wasn't expected.
-    pub on_unexpected_token: Option<UnexpectedToken>,
+    pub on_unexpected_token: Option<unsafe extern "C" fn(user_data: *mut c_void, found: TokenKind, span: Span, expected: *const TokenKind, expected_len: c_int)>,
     /// The parser started parsing a new block.
-    pub on_start_block: Option<BlockStarted>,
+    pub on_start_block: Option<unsafe extern "C" fn(user_data: *mut c_void, line_number: c_int, deleted: c_int, span: Span)>,
     /// Parsed a g-code.
-    pub on_gcode: Option<ParsedGcode>,
+    pub on_gcode: Option<unsafe extern "C" fn(user_data: *mut c_void, line_number: c_int, mnemonic: Mnemonic, major_number: c_int, minor_number: c_int, span: Span, arguments: *const Argument, argument_len: c_int)>,
     /// Parsed a comment.
-    pub on_comment: Option<ParsedComment>,
+    pub on_comment: Option<unsafe extern "C" fn(user_data: *mut c_void, span: Span, body: *const c_char, body_len: c_int)>,
 }
 
 impl Callbacks {
