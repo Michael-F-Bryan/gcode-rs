@@ -87,6 +87,7 @@ impl Default for Span {
 /// The various token types that make up a gcode program.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[allow(missing_docs)]
+#[repr(C)]
 pub enum TokenKind {
     Letter,
     Number,
@@ -424,8 +425,7 @@ pub struct Comment<'input> {
     body: Cow<'input, str>,
     #[cfg(not(feature = "std"))]
     body: &'input str,
-    /// Where the `Comment` is placed within the source text.
-    pub span: Span,
+    span: Span,
 }
 
 cfg_if::cfg_if! {
@@ -464,6 +464,13 @@ cfg_if::cfg_if! {
                 self.body
             }
         }
+    }
+}
+
+impl<'input> Comment<'input> {
+    /// Where the `Comment` is placed within the source text.
+    pub fn span(&self) -> Span {
+        self.span
     }
 }
 

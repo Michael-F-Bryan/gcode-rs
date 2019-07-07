@@ -42,6 +42,11 @@ fn main() {
 }
 ```
 
+## C API
+
+This crate can also be used like a normal C library. This is done using the 
+[cargo-c].
+
 ## Useful Links
 
 - [The thread that kicked this idea off][thread]
@@ -53,3 +58,4 @@ fn main() {
 [docs]: https://michael-f-bryan.github.io/gcode-rs/
 [p3]: https://github.com/Michael-F-Bryan/gcode-rs/blob/master/tests/data/program_3.gcode
 [nist]: http://ws680.nist.gov/publication/get_pdf.cfm?pub_id=823374
+[cargo-c]: https://github.com/lu-zero/cargo-c

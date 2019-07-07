@@ -15,6 +15,8 @@
 //!   [`Gcode::MAX_ARGUMENT_COUNT`] for more).
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(cbuild, crate_type = "cdylib")]
+#![cfg_attr(cbuild, crate_type = "staticlib")]
 #![deny(
     rust_2018_idioms,
     missing_docs,
@@ -28,11 +30,18 @@
     unused_qualifications
 )]
 
+#[cfg(test)]
+#[macro_use]
+extern crate std;
+
 mod lexer;
 mod parser;
 #[cfg(feature = "transforms")]
 pub mod transforms;
 mod types;
+
+#[cfg(cargo_c)]
+pub mod ffi;
 
 pub use crate::parser::*;
 #[cfg(feature = "transforms")]
