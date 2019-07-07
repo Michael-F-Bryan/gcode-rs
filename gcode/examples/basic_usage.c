@@ -110,7 +110,11 @@ void on_gcode(void *user_data, int line_number, Mnemonic mnemonic, int major_num
             break;
     }
 
-    printf("%d.%d", major_number, minor_number);
+    printf("%d", major_number);
+
+    if (minor_number != 0) {
+        printf(".%d", minor_number);
+    }
 
     for (int i = 0; i < argument_len; i++) {
         Argument arg = arguments[i];
