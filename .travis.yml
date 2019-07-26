@@ -7,11 +7,13 @@ env:
 matrix:
   include:
     # Linux
-    - env: FEATURES=
+    - env: FEATURES=--no-default-features
+      rust: 1.31.0
+    - env: FEATURES=--all-features
       rust: 1.31.0
 
     # Use nightly for better docs
-    - env: FEATURES=
+    - env: FEATURES=--all-features
       rust: nightly
 
 before_script:
