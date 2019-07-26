@@ -1,27 +1,13 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
+mod comment;
 mod lexer;
+mod span;
+mod words;
 
-use core::ops::Range;
+pub use crate::comment::Comment;
+pub use crate::span::Span;
+pub use crate::words::Word;
 
-/// A half-open range which indicates the location of something in a body of
-/// text.
-#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
-#[repr(C)]
-pub struct Span {
-    /// The byte index corresponding to the item's start.
-    pub start: usize,
-    /// The index one byte past the item's end.
-    pub end: usize,
-    pub line: usize,
-}
-
-impl Span {
-    pub fn get_text<'input>(&self, src: &'input str) -> Option<&'input str> {
-        src.get(self.start..self.end)
-    }
-}
-
-impl From<Span> for Range<usize> {
-    fn from(other: Span) -> Range<usize> {
-        other.start .. other.end
-    }
-}
+#[cfg(feature = "std")]
+pub use crate::comment::OwnedComment;
