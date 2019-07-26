@@ -10,6 +10,9 @@ keywords = ["gcode", "parser"]
 categories = ["no-std", "parser-implementations", "embedded"]
 edition = "2018"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [badges]
 appveyor = { repository = "Michael-F-Bryan/gcode-rs" }
 travis-ci = { repository = "Michael-F-Bryan/gcode-rs" }
@@ -18,6 +21,8 @@ maintenance = { status = "actively-developed" }
 [features]
 default = ["std"]
 std = []
+large_buffers = []
 
-[package.metadata.docs.rs]
-all-features = true
+[dependencies]
+cfg-if = "0.1.9"
+arrayvec = "0.4.11"

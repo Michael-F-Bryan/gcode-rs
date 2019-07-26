@@ -30,7 +30,7 @@ impl OwnedComment {
     {
         OwnedComment {
             value: value.into(),
-            span: span,
+            span,
         }
     }
 }

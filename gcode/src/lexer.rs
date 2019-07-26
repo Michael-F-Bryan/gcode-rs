@@ -134,7 +134,7 @@ impl<'input> Lexer<'input> {
             self.current_position += 1;
             Some(Token {
                 kind: TokenType::Letter,
-                value: &self.src[start..start + 1],
+                value: &self.src[start..=start],
                 span: Span {
                     start,
                     end: start + 1,
@@ -192,7 +192,7 @@ impl<'input> Iterator for Lexer<'input> {
     type Item = Token<'input>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        const MSG: &'static str = "This should be unreachable, we've already done a bounds check";
+        const MSG: &str = "This should be unreachable, we've already done a bounds check";
         self.skip_whitespace();
 
         let start = self.current_position;
@@ -215,7 +215,7 @@ impl<'input> Iterator for Lexer<'input> {
                 span: Span {
                     start,
                     end: self.current_position,
-                    line: line,
+                    line,
                 },
             })
         } else {
