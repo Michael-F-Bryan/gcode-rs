@@ -1,6 +1,8 @@
 use crate::lexer::{Lexer, Token, TokenType};
 use crate::words::{Atom, Word, WordsOrComments};
 use crate::{Comment, GCode, Mnemonic, Span};
+#[cfg(not(feature = "std"))]
+use arrayvec::ArrayVec;
 use core::iter::Peekable;
 
 cfg_if::cfg_if! {
@@ -18,11 +20,11 @@ cfg_if::cfg_if! {
         /// The maximum number of [`GCode`]s when compiled without the `std`
         /// feature.
         ///
-        pub const MAX_COMMAND_LEN: usize = 2;
+        pub const MAX_COMMAND_LEN: usize = 6;
         /// The maximum number of [`Comment`]s when compiled without the `std`
         /// feature.
         ///
-        pub const MAX_COMMENT_LEN: usize = 1;
+        pub const MAX_COMMENT_LEN: usize = 3;
     } else {
         /// The maximum number of [`GCode`]s when compiled without the `std`
         /// feature.
@@ -254,15 +256,20 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::prelude::v1::*;
+    use std::sync::Mutex;
 
-    #[derive(Debug, Default)]
-    struct MockCallbacks {
-        unexpected_line_number: Vec<(f32, Span)>,
+    #[derive(Debug)]
+    struct MockCallbacks<'a> {
+        unexpected_line_number: &'a Mutex<Vec<(f32, Span)>>,
     }
 
-    impl Callbacks for MockCallbacks {
+    impl<'a> Callbacks for MockCallbacks<'a> {
         fn unexpected_line_number(&mut self, line_number: f32, span: Span) {
-            self.unexpected_line_number.push((line_number, span));
+            self.unexpected_line_number
+                .lock()
+                .unwrap()
+                .push((line_number, span));
         }
     }
 
@@ -302,13 +309,20 @@ mod tests {
     #[test]
     fn line_numbers_after_the_start_are_an_error() {
         let src = "G90 N42";
-        let mut cb = MockCallbacks::default();
-        let got: Vec<_> = parse_with_callbacks(src, &mut cb).collect();
+        let unexpected_line_number = Default::default();
+        let got: Vec<_> = parse_with_callbacks(
+            src,
+            MockCallbacks {
+                unexpected_line_number: &unexpected_line_number,
+            },
+        )
+        .collect();
 
         assert_eq!(got.len(), 1);
         assert!(got[0].line_number().is_none());
-        assert_eq!(cb.unexpected_line_number.len(), 1);
-        assert_eq!(cb.unexpected_line_number[0].0, 42.0);
+        let unexpected_line_number = unexpected_line_number.lock().unwrap();
+        assert_eq!(unexpected_line_number.len(), 1);
+        assert_eq!(unexpected_line_number[0].0, 42.0);
     }
 
     #[test]

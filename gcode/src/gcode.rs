@@ -4,6 +4,7 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
         type Arguments = Vec<Word>;
     } else {
+        use arrayvec::ArrayVec;
         type Arguments = ArrayVec<[Word; GCode::MAX_ARGUMENT_LEN]>;
     }
 }
