@@ -156,9 +156,7 @@ impl<'input> Lexer<'input> {
         let value = self.chomp(|c| {
             letters_seen += 1;
 
-            if c == '-' && letters_seen == 1 {
-                true
-            } else if c.is_ascii_digit() {
+            if (c == '-' && letters_seen == 1) || c.is_ascii_digit() {
                 true
             } else if c == '.' && !decimal_seen {
                 decimal_seen = true;

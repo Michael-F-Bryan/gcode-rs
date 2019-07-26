@@ -144,6 +144,49 @@ where
             last_gcode_type: None,
         }
     }
+
+    fn handle_line_number(&mut self, word: Word, line: &mut Line<'_>, temp_gcode: &Option<GCode>) {
+        if line.gcodes().is_empty() && line.line_number().is_none() && temp_gcode.is_none() {
+            line.set_line_number(word);
+        } else {
+            self.callbacks.unexpected_line_number(word.value, word.span);
+        }
+    }
+
+    fn handle_arg(&mut self, word: Word, line: &mut Line<'_>, temp_gcode: &mut Option<GCode>) {
+        if let Some(mnemonic) = Mnemonic::for_letter(word.letter) {
+            // we need to start another gcode. push the one we were building
+            // onto the line so we can start working on the next one
+            self.last_gcode_type = Some(word);
+            if let Some(completed) = temp_gcode.take() {
+                line.push_gcode(completed);
+            }
+            *temp_gcode = Some(GCode::new(mnemonic, word.value, word.span));
+            return;
+        }
+
+        // we've got an argument, try adding it to the gcode we're building
+        if let Some(temp) = temp_gcode {
+            temp.push_argument(word);
+            return;
+        }
+
+        // we haven't already started building a gcode, maybe the author elided
+        // the command ("G90") and wants to use the one from the last line?
+        match self.last_gcode_type {
+            Some(ty) => {
+                let mut new_gcode =
+                    GCode::new(Mnemonic::for_letter(ty.letter).unwrap(), ty.value, ty.span);
+                new_gcode.push_argument(word);
+                *temp_gcode = Some(new_gcode);
+            }
+            // oh well, you can't say we didn't try...
+            None => {
+                self.callbacks
+                    .argument_without_a_command(word.letter, word.value, word.span);
+            }
+        }
+    }
 }
 
 impl<'input, I, C> Iterator for Lines<'input, I, C>
@@ -169,47 +212,9 @@ where
                 Atom::Comment(comment) => line.push_comment(comment),
                 // line numbers are annoying, so handle them separately
                 Atom::Word(word) if word.letter.to_ascii_lowercase() == 'n' => {
-                    if line.gcodes().is_empty()
-                        && line.line_number().is_none()
-                        && temp_gcode.is_none()
-                    {
-                        line.set_line_number(word);
-                    } else {
-                        self.callbacks.unexpected_line_number(word.value, word.span);
-                    }
+                    self.handle_line_number(word, &mut line, &temp_gcode);
                 }
-                Atom::Word(word) => match Mnemonic::for_letter(word.letter) {
-                    Some(mnemonic) => {
-                        self.last_gcode_type = Some(word);
-                        temp_gcode = Some(GCode::new(mnemonic, word.value, word.span));
-                    }
-                    None => {
-                        // we've got an argument, get a mutable reference to the
-                        // gcode we're adding it to
-                        let gcode = match temp_gcode {
-                            Some(ref mut temp) => temp,
-                            None => match self.last_gcode_type {
-                                // we haven't already started building a gcode,
-                                // maybe the author elided the G90 and wants to use
-                                // the one from the last line?
-                                Some(ty) => {
-                                    temp_gcode = Some(GCode::new(
-                                        Mnemonic::for_letter(ty.letter).unwrap(),
-                                        ty.value,
-                                        ty.span,
-                                    ));
-                                    temp_gcode.as_mut().unwrap()
-                                }
-                                None => {
-                                    self.callbacks.argument_without_a_command(word.letter, word.value, word.span);
-                                    continue;
-                                },
-                            },
-                        };
-
-                        gcode.push_argument(word);
-                    }
-                },
+                Atom::Word(word) => self.handle_arg(word, &mut line, &mut temp_gcode),
                 _ => unimplemented!(),
             }
         }
