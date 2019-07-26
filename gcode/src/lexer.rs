@@ -134,15 +134,43 @@ impl<'input> Lexer<'input> {
             self.current_position += 1;
             Some(Token {
                 kind: TokenType::Letter,
-                value: &self.src[start..start+1],
+                value: &self.src[start..start + 1],
                 span: Span {
-                    start, end: start + 1,
-                    line:self.current_line,
-                }
+                    start,
+                    end: start + 1,
+                    line: self.current_line,
+                },
             })
         } else {
             None
         }
+    }
+
+    fn tokenize_number(&mut self) -> Option<Token<'input>> {
+        let mut decimal_seen = false;
+        let start = self.current_position;
+        let line = self.current_line;
+
+        let value = self.chomp(|c| {
+            if c.is_ascii_digit() {
+                true
+            } else if c == '.' && !decimal_seen {
+                decimal_seen = true;
+                true
+            } else {
+                false
+            }
+        })?;
+
+        Some(Token {
+            kind: TokenType::Number,
+            value,
+            span: Span {
+                start,
+                line,
+                end: self.current_position,
+            },
+        })
     }
 
     fn finished(&self) -> bool {
@@ -164,6 +192,7 @@ impl<'input> Iterator for Lexer<'input> {
     type Item = Token<'input>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        const MSG: &'static str = "This should be unreachable, we've already done a bounds check";
         self.skip_whitespace();
 
         let start = self.current_position;
@@ -171,15 +200,15 @@ impl<'input> Iterator for Lexer<'input> {
 
         while let Some(kind) = self.peek() {
             match kind {
-                TokenType::Comment => return Some(self.tokenize_comment().expect("Unreachable")),
-                TokenType::Letter => return Some(self.tokenize_letter().expect("Unreachable")),
+                TokenType::Comment => return Some(self.tokenize_comment().expect(MSG)),
+                TokenType::Letter => return Some(self.tokenize_letter().expect(MSG)),
+                TokenType::Number => return Some(self.tokenize_number().expect(MSG)),
                 TokenType::Unknown => self.current_position += 1,
-                _ => unimplemented!(),
             }
         }
 
         if self.current_position != start {
-            // trailing garbage
+            // make sure we deal with trailing garbage
             Some(Token {
                 kind: TokenType::Unknown,
                 value: &self.src[start..],
@@ -282,5 +311,17 @@ mod tests {
         assert_eq!(got.kind, TokenType::Letter);
         assert_eq!(got.span.end, 1);
         assert_eq!(lexer.current_position, 1);
+    }
+
+    #[test]
+    fn normal_number() {
+        let mut lexer = Lexer::new("3.14.56\nf");
+
+        let got = lexer.next().unwrap();
+
+        assert_eq!(got.value, "3.14");
+        assert_eq!(got.kind, TokenType::Number);
+        assert_eq!(got.span.end, 4);
+        assert_eq!(lexer.current_position, 4);
     }
 }
