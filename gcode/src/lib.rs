@@ -12,7 +12,7 @@ mod span;
 mod words;
 
 pub use crate::comment::Comment;
-pub use crate::gcode::GCode;
+pub use crate::gcode::{GCode, Mnemonic};
 pub use crate::lines::{
     parse, parse_with_callbacks, Callbacks, Line, MAX_COMMAND_LEN, MAX_COMMENT_LEN,
 };

@@ -16,6 +16,18 @@ pub enum Mnemonic {
     ToolChange,
 }
 
+impl Mnemonic {
+    pub fn for_letter(letter: char) -> Option<Mnemonic> {
+        match letter.to_ascii_lowercase() {
+            'g' => Some(Mnemonic::General),
+            'm' => Some(Mnemonic::Miscellaneous),
+            'o' => Some(Mnemonic::ProgramNumber),
+            't' => Some(Mnemonic::ToolChange),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct GCode {
     mnemonic: Mnemonic,

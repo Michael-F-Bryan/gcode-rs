@@ -12,7 +12,7 @@ impl From<char> for TokenType {
     fn from(c: char) -> TokenType {
         if c.is_ascii_alphabetic() {
             TokenType::Letter
-        } else if c.is_ascii_digit() || c == '.' {
+        } else if c.is_ascii_digit() || c == '.' || c == '-' {
             TokenType::Number
         } else if c == '(' || c == ';' || c == ')' {
             TokenType::Comment
@@ -147,12 +147,18 @@ impl<'input> Lexer<'input> {
     }
 
     fn tokenize_number(&mut self) -> Option<Token<'input>> {
-        let mut decimal_seen = false;
         let start = self.current_position;
         let line = self.current_line;
 
+        let mut decimal_seen = false;
+        let mut letters_seen = 0;
+
         let value = self.chomp(|c| {
-            if c.is_ascii_digit() {
+            letters_seen += 1;
+
+            if c == '-' && letters_seen == 1 {
+                true
+            } else if c.is_ascii_digit() {
                 true
             } else if c == '.' && !decimal_seen {
                 decimal_seen = true;
@@ -323,5 +329,14 @@ mod tests {
         assert_eq!(got.kind, TokenType::Number);
         assert_eq!(got.span.end, 4);
         assert_eq!(lexer.current_position, 4);
+    }
+
+    #[test]
+    fn negative_number() {
+        let mut lexer = Lexer::new("-3.14\nf");
+
+        let got = lexer.next().unwrap();
+
+        assert_eq!(got.value, "-3.14");
     }
 }
