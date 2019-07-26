@@ -1,10 +1,15 @@
-use crate::lexer::{Token, TokenType};
+use crate::lexer::{Lexer, Token, TokenType};
 use crate::{Comment, Span};
 
+/// A [`char`]-[`f32`] pair, used for things like arguments (`X3.14`), command
+/// numbers (`G90`) and line numbers (`N10`).
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Word {
+    /// The letter part of this [`Word`].
     pub letter: char,
+    /// The value part.
     pub value: f32,
+    /// Where the [`Word`] lies in the original string.
     pub span: Span,
 }
 
@@ -71,6 +76,12 @@ where
         }
 
         last_letter.map(Atom::BrokenWord)
+    }
+}
+
+impl<'input> From<&'input str> for WordsOrComments<Lexer<'input>> {
+    fn from(other: &'input str) -> WordsOrComments<Lexer<'input>> {
+        WordsOrComments::new(Lexer::new(other))
     }
 }
 
