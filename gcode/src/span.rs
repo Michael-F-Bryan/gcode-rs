@@ -1,4 +1,5 @@
 use core::ops::Range;
+use core::cmp;
 
 /// A half-open range which indicates the location of something in a body of
 /// text.
@@ -15,6 +16,14 @@ pub struct Span {
 impl Span {
     pub fn get_text<'input>(&self, src: &'input str) -> Option<&'input str> {
         src.get(self.start..self.end)
+    }
+
+    pub fn merge(self, other: Span) -> Span {
+        Span {
+            start: cmp::min(self.start, other.start),
+            end: cmp::max(self.end, other.end),
+            line: cmp::min(self.line, other.line),
+        }
     }
 }
 
