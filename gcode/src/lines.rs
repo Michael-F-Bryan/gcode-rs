@@ -1,4 +1,4 @@
-use crate::lexer::Lexer;
+use crate::lexer::{Lexer, Token, TokenType};
 use crate::words::{Atom, Word, WordsOrComments};
 use crate::{Comment, GCode, Mnemonic, Span};
 use core::iter::Peekable;
@@ -86,6 +86,8 @@ pub trait Callbacks {
     fn gcode_buffer_overflowed(&mut self, _gcode: GCode) {}
     fn unexpected_line_number(&mut self, _line_number: f32, _span: Span) {}
     fn argument_without_a_command(&mut self, _letter: char, _value: f32, _span: Span) {}
+    fn number_without_a_letter(&mut self, _value: &str, _span: Span) {}
+    fn letter_without_a_number(&mut self, _value: &str, _span: Span) {}
 }
 
 impl<'a, C: Callbacks> Callbacks for &'a mut C {
@@ -103,6 +105,14 @@ impl<'a, C: Callbacks> Callbacks for &'a mut C {
 
     fn argument_without_a_command(&mut self, letter: char, value: f32, span: Span) {
         (*self).argument_without_a_command(letter, value, span);
+    }
+
+    fn number_without_a_letter(&mut self, value: &str, span: Span) {
+        (*self).number_without_a_letter(value, span);
+    }
+
+    fn letter_without_a_number(&mut self, value: &str, span: Span) {
+        (*self).letter_without_a_number(value, span);
     }
 }
 
@@ -187,6 +197,16 @@ where
             }
         }
     }
+
+    fn handle_broken_word(&mut self, token: Token<'_>) {
+        if token.kind == TokenType::Letter {
+            self.callbacks
+                .letter_without_a_number(token.value, token.span);
+        } else {
+            self.callbacks
+                .number_without_a_letter(token.value, token.span);
+        }
+    }
 }
 
 impl<'input, I, C> Iterator for Lines<'input, I, C>
@@ -215,7 +235,7 @@ where
                     self.handle_line_number(word, &mut line, &temp_gcode);
                 }
                 Atom::Word(word) => self.handle_arg(word, &mut line, &mut temp_gcode),
-                _ => unimplemented!(),
+                Atom::BrokenWord(token) => self.handle_broken_word(token),
             }
         }
 
