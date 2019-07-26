@@ -15,19 +15,5 @@ appveyor = { repository = "Michael-F-Bryan/gcode-rs" }
 travis-ci = { repository = "Michael-F-Bryan/gcode-rs" }
 maintenance = { status = "actively-developed" }
 
-[dependencies]
-arrayvec = { version = "0.4", default-features = false }
-libm = "0.1"
-cfg-if = "0.1"
-
-[dev-dependencies]
-pretty_assertions = "0.6"
-
-[features]
-default = ["large-buffers"]
-std = []
-transforms = []
-large-buffers = []
-
 [package.metadata.docs.rs]
 all-features = true

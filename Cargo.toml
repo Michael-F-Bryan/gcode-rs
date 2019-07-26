@@ -1,2 +1,2 @@
 [workspace]
-members = ["gcode", "gcode-simulator"]
+members = ["gcode"]
