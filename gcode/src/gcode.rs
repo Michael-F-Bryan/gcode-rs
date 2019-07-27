@@ -1,4 +1,5 @@
 use crate::{Span, Word};
+use core::fmt::{self, Display, Formatter};
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
@@ -9,6 +10,7 @@ cfg_if::cfg_if! {
     }
 }
 
+/// The general category for a [`GCode`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Mnemonic {
     General,
@@ -29,6 +31,18 @@ impl Mnemonic {
     }
 }
 
+impl Display for Mnemonic {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Mnemonic::General => write!(f, "G"),
+            Mnemonic::Miscellaneous => write!(f, "M"),
+            Mnemonic::ProgramNumber => write!(f, "O"),
+            Mnemonic::ToolChange => write!(f, "T"),
+        }
+    }
+}
+
+/// A single gcode command.
 #[derive(Debug, Clone, PartialEq)]
 pub struct GCode {
     mnemonic: Mnemonic,
@@ -51,9 +65,7 @@ impl GCode {
         }
     }
 
-    pub fn mnemonic(&self) -> Mnemonic {
-        self.mnemonic
-    }
+    pub fn mnemonic(&self) -> Mnemonic { self.mnemonic }
 
     pub fn major_number(&self) -> u32 {
         debug_assert!(self.number >= 0.0);
@@ -67,18 +79,31 @@ impl GCode {
         digit as u32
     }
 
-    pub fn arguments(&self) -> &[Word] {
-        &self.arguments
+    pub fn arguments(&self) -> &[Word] { &self.arguments }
+
+    pub fn span(&self) -> Span { self.span }
+
+    /// Add an argument to the list of arguments attached to this [`GCode`].
+    pub fn push_argument(&mut self, arg: Word) { self.arguments.push(arg); }
+
+    /// The builder equivalent of [`GCode::push_argument()`].
+    pub fn with_argument(mut self, arg: Word) -> Self {
+        self.push_argument(arg);
+        self
     }
 
-    pub fn span(&self) -> Span {
-        self.span
-    }
-
-    pub fn push_argument(&mut self, arg: Word) {
-        self.arguments.push(arg);
-    }
-
+    /// Get the value for a particular argument.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use gcode::{GCode, Mnemonic, Span, Word};
+    /// let gcode = GCode::new(Mnemonic::General, 1.0, Span::PLACEHOLDER)
+    ///     .with_argument(Word::new('X', 30.0, Span::PLACEHOLDER))
+    ///     .with_argument(Word::new('Y', -3.14, Span::PLACEHOLDER));
+    ///
+    /// assert_eq!(gcode.value_for('Y'), Some(-3.14));
+    /// ```
     pub fn value_for(&self, letter: char) -> Option<f32> {
         let letter = letter.to_ascii_lowercase();
 
@@ -97,6 +122,22 @@ impl Extend<Word> for GCode {
         for word in words {
             self.push_argument(word);
         }
+    }
+}
+
+impl Display for GCode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.mnemonic(), self.major_number())?;
+
+        if self.minor_number() != 0 {
+            write!(f, ".{}", self.minor_number())?;
+        }
+
+        for arg in self.arguments() {
+            write!(f, " {}", arg)?;
+        }
+
+        Ok(())
     }
 }
 

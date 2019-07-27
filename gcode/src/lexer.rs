@@ -24,9 +24,9 @@ impl From<char> for TokenType {
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub(crate) struct Token<'input> {
-    pub kind: TokenType,
-    pub value: &'input str,
-    pub span: Span,
+    pub(crate) kind: TokenType,
+    pub(crate) value: &'input str,
+    pub(crate) span: Span,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -37,7 +37,7 @@ pub(crate) struct Lexer<'input> {
 }
 
 impl<'input> Lexer<'input> {
-    pub fn new(src: &'input str) -> Self {
+    pub(crate) fn new(src: &'input str) -> Self {
         Lexer {
             current_position: 0,
             current_line: 0,
@@ -82,9 +82,7 @@ impl<'input> Lexer<'input> {
         }
     }
 
-    fn skip_whitespace(&mut self) {
-        let _ = self.chomp(char::is_whitespace);
-    }
+    fn skip_whitespace(&mut self) { let _ = self.chomp(char::is_whitespace); }
 
     fn tokenize_comment(&mut self) -> Option<Token<'input>> {
         let start = self.current_position;
@@ -177,9 +175,7 @@ impl<'input> Lexer<'input> {
         })
     }
 
-    fn finished(&self) -> bool {
-        self.current_position >= self.src.len()
-    }
+    fn finished(&self) -> bool { self.current_position >= self.src.len() }
 
     fn peek(&self) -> Option<TokenType> {
         self.rest().chars().next().map(TokenType::from)
@@ -187,16 +183,15 @@ impl<'input> Lexer<'input> {
 }
 
 impl<'input> From<&'input str> for Lexer<'input> {
-    fn from(other: &'input str) -> Lexer<'input> {
-        Lexer::new(other)
-    }
+    fn from(other: &'input str) -> Lexer<'input> { Lexer::new(other) }
 }
 
 impl<'input> Iterator for Lexer<'input> {
     type Item = Token<'input>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        const MSG: &str = "This should be unreachable, we've already done a bounds check";
+        const MSG: &str =
+            "This should be unreachable, we've already done a bounds check";
         self.skip_whitespace();
 
         let start = self.current_position;
@@ -204,9 +199,15 @@ impl<'input> Iterator for Lexer<'input> {
 
         while let Some(kind) = self.peek() {
             match kind {
-                TokenType::Comment => return Some(self.tokenize_comment().expect(MSG)),
-                TokenType::Letter => return Some(self.tokenize_letter().expect(MSG)),
-                TokenType::Number => return Some(self.tokenize_number().expect(MSG)),
+                TokenType::Comment => {
+                    return Some(self.tokenize_comment().expect(MSG))
+                },
+                TokenType::Letter => {
+                    return Some(self.tokenize_letter().expect(MSG))
+                },
+                TokenType::Number => {
+                    return Some(self.tokenize_number().expect(MSG))
+                },
                 TokenType::Unknown => self.current_position += 1,
             }
         }

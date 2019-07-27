@@ -1,5 +1,8 @@
-use crate::lexer::{Lexer, Token, TokenType};
-use crate::{Comment, Span};
+use crate::{
+    lexer::{Lexer, Token, TokenType},
+    Comment, Span,
+};
+use core::fmt::{self, Display, Formatter};
 
 /// A [`char`]-[`f32`] pair, used for things like arguments (`X3.14`), command
 /// numbers (`G90`) and line numbers (`N10`).
@@ -11,6 +14,22 @@ pub struct Word {
     pub value: f32,
     /// Where the [`Word`] lies in the original string.
     pub span: Span,
+}
+
+impl Word {
+    pub fn new(letter: char, value: f32, span: Span) -> Self {
+        Word {
+            letter,
+            value,
+            span,
+        }
+    }
+}
+
+impl Display for Word {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.letter, self.value)
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -42,9 +61,7 @@ impl<'input, I> WordsOrComments<I>
 where
     I: Iterator<Item = Token<'input>>,
 {
-    pub fn new(tokens: I) -> Self {
-        WordsOrComments { tokens }
-    }
+    pub(crate) fn new(tokens: I) -> Self { WordsOrComments { tokens } }
 }
 
 impl<'input, I> Iterator for WordsOrComments<I>
@@ -56,17 +73,19 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         // keep track of the last letter so we can deal with a trailing letter
         // that has no number
-        let mut last_letter: Option<Token> = None;
+        let mut last_letter: Option<Token<'_>> = None;
 
         while let Some(token) = self.tokens.next() {
             let Token { kind, value, span } = token;
 
             match kind {
                 TokenType::Unknown => return Some(Atom::Unknown(token)),
-                TokenType::Comment => return Some(Atom::Comment(Comment { value, span })),
+                TokenType::Comment => {
+                    return Some(Atom::Comment(Comment { value, span }))
+                },
                 TokenType::Letter if last_letter.is_none() => {
                     last_letter = Some(token);
-                }
+                },
                 TokenType::Number if last_letter.is_some() => {
                     let letter_token = last_letter.unwrap();
                     let span = letter_token.span.merge(span);
@@ -80,7 +99,7 @@ where
                         value,
                         span,
                     }));
-                }
+                },
                 _ => return Some(Atom::BrokenWord(token)),
             }
         }
@@ -102,7 +121,8 @@ mod tests {
 
     #[test]
     fn pass_comments_through() {
-        let mut words = WordsOrComments::new(Lexer::new("(this is a comment) 3.14"));
+        let mut words =
+            WordsOrComments::new(Lexer::new("(this is a comment) 3.14"));
 
         let got = words.next().unwrap();
 

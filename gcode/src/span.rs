@@ -1,5 +1,4 @@
-use core::cmp;
-use core::ops::Range;
+use core::{cmp, ops::Range};
 
 /// A half-open range which indicates the location of something in a body of
 /// text.
@@ -48,13 +47,9 @@ impl Span {
 }
 
 impl From<Span> for Range<usize> {
-    fn from(other: Span) -> Range<usize> {
-        other.start..other.end
-    }
+    fn from(other: Span) -> Range<usize> { other.start..other.end }
 }
 
 impl Default for Span {
-    fn default() -> Span {
-        Span::PLACEHOLDER
-    }
+    fn default() -> Span { Span::PLACEHOLDER }
 }

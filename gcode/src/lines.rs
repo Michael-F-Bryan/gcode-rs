@@ -1,6 +1,8 @@
-use crate::lexer::{Lexer, Token, TokenType};
-use crate::words::{Atom, Word, WordsOrComments};
-use crate::{Comment, GCode, Mnemonic, Span};
+use crate::{
+    lexer::{Lexer, Token, TokenType},
+    words::{Atom, Word, WordsOrComments},
+    Comment, GCode, Mnemonic, Span,
+};
 #[cfg(not(feature = "std"))]
 use arrayvec::ArrayVec;
 use core::iter::Peekable;
@@ -46,13 +48,9 @@ pub struct Line<'input> {
 }
 
 impl<'input> Line<'input> {
-    pub fn gcodes(&self) -> &[GCode] {
-        &self.gcodes
-    }
+    pub fn gcodes(&self) -> &[GCode] { &self.gcodes }
 
-    pub fn comments(&self) -> &[Comment<'input>] {
-        &self.comments
-    }
+    pub fn comments(&self) -> &[Comment<'input>] { &self.comments }
 
     pub fn push_gcode(&mut self, gcode: GCode) {
         self.span = self.span.merge(gcode.span());
@@ -65,19 +63,19 @@ impl<'input> Line<'input> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.gcodes.is_empty() && self.comments.is_empty() && self.line_number().is_none()
+        self.gcodes.is_empty()
+            && self.comments.is_empty()
+            && self.line_number().is_none()
     }
 
-    pub fn line_number(&self) -> Option<Word> {
-        self.line_number
-    }
+    pub fn line_number(&self) -> Option<Word> { self.line_number }
 
     pub fn set_line_number<W: Into<Option<Word>>>(&mut self, line_number: W) {
         match line_number.into() {
             Some(n) => {
                 self.span = self.span.merge(n.span);
                 self.line_number = Some(n);
-            }
+            },
             None => self.line_number = None,
         }
     }
@@ -87,7 +85,13 @@ pub trait Callbacks {
     fn unknown_content(&mut self, _text: &str, _span: Span) {}
     fn gcode_buffer_overflowed(&mut self, _gcode: GCode) {}
     fn unexpected_line_number(&mut self, _line_number: f32, _span: Span) {}
-    fn argument_without_a_command(&mut self, _letter: char, _value: f32, _span: Span) {}
+    fn argument_without_a_command(
+        &mut self,
+        _letter: char,
+        _value: f32,
+        _span: Span,
+    ) {
+    }
     fn number_without_a_letter(&mut self, _value: &str, _span: Span) {}
     fn letter_without_a_number(&mut self, _value: &str, _span: Span) {}
 }
@@ -105,7 +109,12 @@ impl<'a, C: Callbacks> Callbacks for &'a mut C {
         (*self).unexpected_line_number(line_number, span);
     }
 
-    fn argument_without_a_command(&mut self, letter: char, value: f32, span: Span) {
+    fn argument_without_a_command(
+        &mut self,
+        letter: char,
+        value: f32,
+        span: Span,
+    ) {
         (*self).argument_without_a_command(letter, value, span);
     }
 
@@ -122,7 +131,9 @@ struct NopCallbacks;
 
 impl Callbacks for NopCallbacks {}
 
-pub fn parse<'input>(src: &'input str) -> impl Iterator<Item = Line<'input>> + 'input {
+pub fn parse<'input>(
+    src: &'input str,
+) -> impl Iterator<Item = Line<'input>> + 'input {
     parse_with_callbacks(src, NopCallbacks)
 }
 
@@ -157,15 +168,28 @@ where
         }
     }
 
-    fn handle_line_number(&mut self, word: Word, line: &mut Line<'_>, temp_gcode: &Option<GCode>) {
-        if line.gcodes().is_empty() && line.line_number().is_none() && temp_gcode.is_none() {
+    fn handle_line_number(
+        &mut self,
+        word: Word,
+        line: &mut Line<'_>,
+        temp_gcode: &Option<GCode>,
+    ) {
+        if line.gcodes().is_empty()
+            && line.line_number().is_none()
+            && temp_gcode.is_none()
+        {
             line.set_line_number(word);
         } else {
             self.callbacks.unexpected_line_number(word.value, word.span);
         }
     }
 
-    fn handle_arg(&mut self, word: Word, line: &mut Line<'_>, temp_gcode: &mut Option<GCode>) {
+    fn handle_arg(
+        &mut self,
+        word: Word,
+        line: &mut Line<'_>,
+        temp_gcode: &mut Option<GCode>,
+    ) {
         if let Some(mnemonic) = Mnemonic::for_letter(word.letter) {
             // we need to start another gcode. push the one we were building
             // onto the line so we can start working on the next one
@@ -187,16 +211,22 @@ where
         // the command ("G90") and wants to use the one from the last line?
         match self.last_gcode_type {
             Some(ty) => {
-                let mut new_gcode =
-                    GCode::new(Mnemonic::for_letter(ty.letter).unwrap(), ty.value, ty.span);
+                let mut new_gcode = GCode::new(
+                    Mnemonic::for_letter(ty.letter).unwrap(),
+                    ty.value,
+                    ty.span,
+                );
                 new_gcode.push_argument(word);
                 *temp_gcode = Some(new_gcode);
-            }
+            },
             // oh well, you can't say we didn't try...
             None => {
-                self.callbacks
-                    .argument_without_a_command(word.letter, word.value, word.span);
-            }
+                self.callbacks.argument_without_a_command(
+                    word.letter,
+                    word.value,
+                    word.span,
+                );
+            },
         }
     }
 
@@ -230,13 +260,17 @@ where
             }
 
             match self.atoms.next().expect("unreachable") {
-                Atom::Unknown(token) => self.callbacks.unknown_content(token.value, token.span),
+                Atom::Unknown(token) => {
+                    self.callbacks.unknown_content(token.value, token.span)
+                },
                 Atom::Comment(comment) => line.push_comment(comment),
                 // line numbers are annoying, so handle them separately
                 Atom::Word(word) if word.letter.to_ascii_lowercase() == 'n' => {
                     self.handle_line_number(word, &mut line, &temp_gcode);
-                }
-                Atom::Word(word) => self.handle_arg(word, &mut line, &mut temp_gcode),
+                },
+                Atom::Word(word) => {
+                    self.handle_arg(word, &mut line, &mut temp_gcode)
+                },
                 Atom::BrokenWord(token) => self.handle_broken_word(token),
             }
         }
@@ -256,8 +290,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::prelude::v1::*;
-    use std::sync::Mutex;
+    use std::{prelude::v1::*, sync::Mutex};
 
     #[derive(Debug)]
     struct MockCallbacks<'a> {

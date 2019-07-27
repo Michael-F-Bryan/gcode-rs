@@ -9,7 +9,11 @@ macro_rules! bench {
         #[bench]
         #[allow(non_snake_case)]
         fn $name(b: &mut Bencher) {
-            let src = include_str!(concat!("../tests/data/", stringify!($name), ".gcode"));
+            let src = include_str!(concat!(
+                "../tests/data/",
+                stringify!($name),
+                ".gcode"
+            ));
             b.bytes = src.len() as u64;
 
             b.iter(|| gcode::parse(src).count());
