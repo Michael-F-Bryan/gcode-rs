@@ -79,6 +79,8 @@ impl<'input> Line<'input> {
             None => self.line_number = None,
         }
     }
+
+    pub fn span(&self) -> Span { self.span }
 }
 
 pub trait Callbacks {

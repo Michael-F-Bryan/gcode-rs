@@ -1,2 +1,2 @@
 [workspace]
-members = ["gcode"]
+members = ["gcode", "gcode-ffi"]

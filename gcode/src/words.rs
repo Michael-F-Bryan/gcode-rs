@@ -7,6 +7,7 @@ use core::fmt::{self, Display, Formatter};
 /// A [`char`]-[`f32`] pair, used for things like arguments (`X3.14`), command
 /// numbers (`G90`) and line numbers (`N10`).
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[repr(C)]
 pub struct Word {
     /// The letter part of this [`Word`].
     pub letter: char,

@@ -12,6 +12,7 @@ cfg_if::cfg_if! {
 
 /// The general category for a [`GCode`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[repr(C)]
 pub enum Mnemonic {
     General,
     Miscellaneous,
