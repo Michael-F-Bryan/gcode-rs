@@ -12,6 +12,10 @@ cfg_if::cfg_if! {
 
 /// The general category for a [`GCode`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    feature = "serde-1",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 #[repr(C)]
 pub enum Mnemonic {
     General,
@@ -45,6 +49,10 @@ impl Display for Mnemonic {
 
 /// A single gcode command.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(
+    feature = "serde-1",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct GCode {
     mnemonic: Mnemonic,
     number: f32,

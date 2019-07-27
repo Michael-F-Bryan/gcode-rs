@@ -3,6 +3,10 @@ use core::{cmp, ops::Range};
 /// A half-open range which indicates the location of something in a body of
 /// text.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    feature = "serde-1",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 #[repr(C)]
 pub struct Span {
     /// The byte index corresponding to the item's start.

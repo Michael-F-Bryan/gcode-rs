@@ -40,8 +40,13 @@ cfg_if::cfg_if! {
 }
 
 #[derive(Debug, Default, Clone, PartialEq)]
+#[cfg_attr(
+    feature = "serde-1",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct Line<'input> {
     gcodes: Commands,
+    #[cfg_attr(feature = "serde-1", serde(borrow))]
     comments: Comments<'input>,
     line_number: Option<Word>,
     span: Span,

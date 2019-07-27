@@ -5,6 +5,10 @@ use std::borrow::Cow;
 
 /// A comment.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    feature = "serde-1",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct Comment<'input> {
     /// The comment itself.
     pub value: &'input str,
@@ -15,6 +19,10 @@ pub struct Comment<'input> {
 /// An owned version of [`Comment`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg(feature = "std")]
+#[cfg_attr(
+    feature = "serde-1",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
 pub struct OwnedComment {
     /// The comment itself.
     pub value: Cow<'static, str>,
