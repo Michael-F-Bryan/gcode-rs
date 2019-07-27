@@ -1,3 +1,4 @@
+//! C bindings to the `gcode` crate.
 #![deny(
     bare_trait_objects,
     elided_lifetimes_in_paths,
@@ -10,18 +11,24 @@
     variant_size_differences
 )]
 
-use gcode::{Comment, GCode, Span, Word};
+use gcode::{Comment, GCode, Mnemonic, Span, Word};
 use std::{
     os::raw::{c_char, c_int, c_void},
     slice,
 };
 
+/// Parse the provided string to the end, triggering callbacks when gcodes and
+/// comments are encountered.
 #[no_mangle]
-pub unsafe extern "C" fn parse(
+pub unsafe extern "C" fn parse_gcode(
     src: *const c_char,
     len: c_int,
     vtable: VTable,
 ) -> ParseResult {
+    if src.is_null() || len < 0 {
+        return ParseResult::InvalidArgument;
+    }
+
     let buffer = slice::from_raw_parts(src as *const u8, len as usize);
 
     let src = match std::str::from_utf8(buffer) {
@@ -38,11 +45,21 @@ pub unsafe extern "C" fn parse(
     ParseResult::Success
 }
 
+/// The outcome of parsing.
+///
+/// Note that the parser itself is quite tolerant of garbled input text (e.g.
+/// unrecognised characters or invalid syntax), so in general the only time when
+/// it'll fail outright is due to incorrect arguments.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(C)]
 pub enum ParseResult {
+    /// The operation was successful.
     Success = 0,
+    /// The input text is invalid UTF-8.
     InvalidUTF8 = 1,
+    /// An invalid argument was provided (e.g. the string is a null pointer or
+    /// the length isn't non-negative).
+    InvalidArgument = 2,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -110,8 +127,8 @@ impl gcode::Callbacks for Callbacks {
     }
 }
 
-/// Callbacks fired during the parsing process to notify the caller when
-/// "something" happens.
+/// A bunch of function pointers fired during the parsing process to notify the
+/// caller when "something" happens.
 #[derive(Debug, Copy, Clone)]
 #[repr(C)]
 pub struct VTable {
@@ -138,6 +155,7 @@ pub struct VTable {
     pub on_gcode: Option<
         unsafe extern "C" fn(
             user_data: *mut c_void,
+            mnemonic: Mnemonic,
             major_number: c_int,
             minor_number: c_int,
             args: *const Word,
@@ -220,6 +238,7 @@ impl VTable {
                 unsafe {
                     cb(
                         self.user_data,
+                        gcode.mnemonic(),
                         gcode.major_number() as c_int,
                         gcode.minor_number() as c_int,
                         args.as_ptr(),
