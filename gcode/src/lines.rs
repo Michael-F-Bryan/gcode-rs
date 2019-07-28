@@ -263,7 +263,7 @@ where
         while let Some(next_span) = self.atoms.peek().map(|a| a.span()) {
             if !line.is_empty() && next_span.line != line.span.line {
                 // we've started the next line
-                return Some(line);
+                break;
             }
 
             match self.atoms.next().expect("unreachable") {
@@ -403,5 +403,15 @@ mod tests {
             },
         ];
         assert_eq!(g01.arguments(), should_be.as_slice());
+    }
+
+    #[test]
+    fn multiple_commands_on_the_same_line() {
+        let src = "G01 X5 G90 (comment) G91 M10\nG01";
+        let got : Vec<_> = parse(src).collect();
+
+        assert_eq!(got.len(), 2);
+        let line = &got[0];
+        assert_eq!(line.gcodes.len(), 4);
     }
 }

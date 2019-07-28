@@ -127,7 +127,7 @@ void on_gcode(void *user_data, Mnemonic mnemonic, int major_number, int minor_nu
 
 void on_comment(void *user_data, const char *comment, int len, Span span) {
     State *state = (State*)user_data;
-    state->gcodes += 1;
+    state->comments += 1;
 
     printf("# %.*s\n", len, comment);
 }

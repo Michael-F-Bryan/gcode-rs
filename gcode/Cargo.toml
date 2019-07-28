@@ -29,3 +29,6 @@ cfg-if = "0.1.9"
 arrayvec = "0.4.11"
 serde = { version = "1.0", optional = true }
 serde_derive = { version = "1.0", optional = true }
+
+[dev-dependencies]
+pretty_assertions = "0.6.1"
