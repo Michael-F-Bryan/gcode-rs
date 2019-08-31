@@ -1,55 +1,33 @@
-# Based on the "trust" template v0.1.2
-# https://github.com/japaric/trust/tree/v0.1.2
-
-dist: trusty
 language: rust
-services: docker
-sudo: required
 
 env:
   global:
-    - CRATE_NAME=gcode
     - secure: KYlhj8S0cH4AT1fkrecOIMmJrvnC3nUDQZ+fTtstVvm+rrV6KqwRqy6WfekRNq3Le6S7SsH5SyyJFfdFFkHVtpUSnYvd2pxy7mrYpgFba/9vJxndJYSqI6TuxJ5tx+HxouCEFVNZg8f1De+RtGayD2f4xOixRbSHQO3kzH2Cz0pzTBMas5cfveImjHwc+abwp/tp0VKgCz/91V698/cDC0RWVX6aUSe3z1lBN/mmnqXLiDLqcT1xlQqq5JJZ2SjCnLoSnwqMPZzWGBIxz9mvqsE9531pgj1YWYUkQGGNLotwdrpkRhTALVTZJBoKcDqN9rAvdIrw32ufJ2RwO6AjBonurCcZwCYzGDxSulyjrXchKN+hPQ/qpz5kwAh8o9vLfExVYP/gKaDTKVAiva8Zdi3tT/8WYhXm2P+UH2U4qFuhgYxr/bi/HIsVqPRgurKtgK0keCHh+h6VqGOpy49Td9r3uCzWdCiC2vawThQEPNl3NF0BhA5mpQkEEtAcO7tKagvptBaZTLP1gxtT1eTcYvWypff4Eo3m1TXFf4dkKk23gblK9UAzdbqrH0WqFWLLyHv+vwCNA6hdV4BfiiS/dseuB/66tQ6so3vwoVcTyPEy9U1cFzCxu64J1OcmTY1h72fToAiBNjoDevzofbZPduQruVYLqZj74e1tvl4xPOM=
 
 matrix:
   include:
     # Linux
-    - env: TARGET=i686-unknown-linux-gnu
-      rust: stable
-    - env: TARGET=x86_64-unknown-linux-gnu
-      rust: stable
+    - env: FEATURES=--no-default-features
+      rust: 1.31.0
+    - env: FEATURES=--all-features
+      rust: 1.31.0
 
-    # OSX
-    - env: TARGET=x86_64-apple-darwin
-      os: osx
-      rust: stable
-
-    # Bare metal
-    #- env: TARGET=thumbv7m-none-eabi DISABLE_TESTS=1
-
-    # Make sure we support a minimum rustc version
-    - env: TARGET=x86_64-unknown-linux-gnu
-      rust: 1.31.0 # first version where the 2018 edition is stable
-
-    # Use nightly for ensuring our README example compiles
-    - env: TARGET=x86_64-unknown-linux-gnu
+    # Use nightly for better docs
+    - env: FEATURES=--all-features
       rust: nightly
 
-before_install:
-  - set -e
-  - rustup self update
-
-install:
-  - bash ci/install.sh
-  - source ~/.cargo/env || true
+before_script:
+  set -e
 
 script:
-  - bash ci/script.sh
+  - cargo build --all --verbose $FEATURES
+  - cargo test --all --verbose $FEATURES
+  - cargo doc --all --verbose $FEATURES
 
 after_script: set +e
 
-before_deploy:
-  - bash ci/before_deploy.sh
+before_cache:
+  - chmod -R a+r $HOME/.cargo
 
 deploy:
   - provider: pages
@@ -59,20 +37,7 @@ deploy:
     local-dir: target/doc
     on:
       branch: master
-      rust: stable
-      condition: $TRAVIS_OS_NAME = linux && $TARGET = x86_64-unknown-linux-gnu
-  - provider: releases
-    api_key: $GH_TOKEN
-    file_glob: true
-    file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
-    on:
-      condition: $TRAVIS_RUST_VERSION = stable
-      tags: true
-    skip_cleanup: true
-
-cache: cargo
-before_cache:
-  - chmod -R a+r $HOME/.cargo
+      rust: nightly
 
 branches:
   only:

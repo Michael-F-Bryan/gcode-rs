@@ -1,394 +1,341 @@
-use crate::types::{Span, TokenKind};
-use arrayvec::ArrayString;
+use crate::Span;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+pub(crate) enum TokenType {
+    Letter,
+    Number,
+    Comment,
+    Unknown,
+}
+
+impl From<char> for TokenType {
+    fn from(c: char) -> TokenType {
+        if c.is_ascii_alphabetic() {
+            TokenType::Letter
+        } else if c.is_ascii_digit() || c == '.' || c == '-' {
+            TokenType::Number
+        } else if c == '(' || c == ';' || c == ')' {
+            TokenType::Comment
+        } else {
+            TokenType::Unknown
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub(crate) struct Token<'input> {
+    pub(crate) kind: TokenType,
+    pub(crate) value: &'input str,
+    pub(crate) span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub(crate) struct Lexer<'input> {
-    src: &'input str,
-    current_index: usize,
+    current_position: usize,
     current_line: usize,
+    src: &'input str,
 }
 
 impl<'input> Lexer<'input> {
-    pub fn new(src: &'input str) -> Lexer<'input> {
+    pub(crate) fn new(src: &'input str) -> Self {
         Lexer {
-            src,
-            current_index: 0,
+            current_position: 0,
             current_line: 0,
+            src,
         }
     }
 
-    fn step(&mut self) -> Option<Token<'input>> {
-        let next = self.peek()?;
-
-        match next {
-            '\n' => Some(self.tokenize_newline()),
-            '(' | ';' => Some(self.tokenize_comment()),
-            '%' => Some(self.tokenize_percent()),
-            '/' => Some(self.tokenize_forward_slash()),
-            '.' | '-' => Some(self.tokenize_number()),
-            other if other.is_numeric() => Some(self.tokenize_number()),
-            other if other.is_ascii_alphabetic() => Some(self.tokenize_letter()),
-            _ => Some(self.consume_garbage()),
-        }
-    }
-
-    fn take_while<P>(&mut self, mut predicate: P) -> &'input str
+    /// Keep advancing the [`Lexer`] as long as a `predicate` returns `true`,
+    /// returning the chomped string, if any.
+    fn chomp<F>(&mut self, mut predicate: F) -> Option<&'input str>
     where
-        P: FnMut(char) -> bool,
+        F: FnMut(char) -> bool,
     {
-        let start = self.current_index;
+        let start = self.current_position;
+        let mut end = start;
+        let mut line_endings = 0;
 
-        while let Some(c) = self.peek() {
-            if predicate(c) {
-                self.advance();
-            } else {
+        for letter in self.rest().chars() {
+            if !predicate(letter) {
                 break;
             }
+            if letter == '\n' {
+                line_endings += 1;
+            }
+            end += letter.len_utf8();
         }
 
-        &self.src[start..self.current_index]
-    }
-
-    fn consume_garbage(&mut self) -> Token<'input> {
-        let garbage = self.take_while(|c| match c {
-            '\n' | '(' | ';' | '%' | '/' | '.' | '-' => false,
-            other if other.is_whitespace() => true,
-            other => !other.is_numeric() && !other.is_ascii_alphabetic(),
-        });
-
-        debug_assert!(!garbage.is_empty());
-        Token::Garbage(garbage)
-    }
-
-    fn tokenize_number(&mut self) -> Token<'input> {
-        // gcode numbers are funny. They can sometimes contain internal
-        // whitespace, so we can't directly use `f32::from_str()`. Instead we
-        // copy to a temporary buffer, read the number, then try to parse that.
-        let mut buffer: ArrayString<[u8; 32]> = ArrayString::new();
-        let mut seen_decimal = false;
-        let mut input_is_malformed = false;
-        let start = self.current_index;
-
-        while let Some(next) = self.peek() {
-            if next == '\n' || next == '\r' {
-                break;
-            }
-
-            if next == '.' {
-                if seen_decimal {
-                    break;
-                } else {
-                    seen_decimal = true;
-                }
-            }
-
-            if next != '.' && next != '-' && !next.is_numeric() && !next.is_whitespace() {
-                break;
-            }
-
-            if !next.is_whitespace() && !input_is_malformed && buffer.try_push(next).is_err() {
-                // Pushing any more characters would overflow our buffer.
-                // You can't really parse a 32-digit number without loss of
-                // precision anyway, so from here on we're going to pretend
-                // the whole thing is malformed and garbage.
-                input_is_malformed = true;
-            }
-
-            let _ = self.advance();
-        }
-
-        // a solitary dot (plus whitespace) is also malformed
-        input_is_malformed = input_is_malformed || buffer.trim() == ".";
-
-        if input_is_malformed {
-            Token::Garbage(&self.src[start..self.current_index])
+        if start == end {
+            None
         } else {
-            Token::Number(buffer.parse().expect("Parse should never fail"))
+            self.current_position = end;
+            self.current_line += line_endings;
+            Some(&self.src[start..end])
         }
-    }
-
-    fn tokenize_forward_slash(&mut self) -> Token<'input> {
-        let slash = self.advance().unwrap();
-        debug_assert!(slash == '/');
-
-        Token::ForwardSlash
-    }
-
-    fn tokenize_percent(&mut self) -> Token<'input> {
-        let percent = self.advance().unwrap();
-        debug_assert!(percent == '%');
-
-        let comment = self.take_while(|c| c != '\n');
-
-        // skip past the newline
-        let _ = self.advance();
-
-        if comment.is_empty() {
-            Token::Percent(None)
-        } else {
-            Token::Percent(Some(comment))
-        }
-    }
-
-    fn tokenize_comment(&mut self) -> Token<'input> {
-        let start = self.current_index;
-        let comment_char = self.advance().unwrap();
-
-        let end_of_comment = match comment_char {
-            '(' => ')',
-            ';' => '\n',
-            _ => unreachable!(),
-        };
-
-        // skip the comment body
-        let _ = self.take_while(|c| c != end_of_comment);
-
-        // we want to include the closing paren, but ignore a trailing newline
-        let end = if end_of_comment == ')' {
-            // step past the end-of-comment character
-            let _ = self.advance();
-            self.current_index
-        } else {
-            self.current_index
-        };
-
-        Token::Comment(&self.src[start..end])
-    }
-
-    fn tokenize_letter(&mut self) -> Token<'input> {
-        let c = self.advance().unwrap();
-        debug_assert!(c.is_ascii_alphabetic());
-
-        Token::Letter(c)
-    }
-
-    fn tokenize_newline(&mut self) -> Token<'input> {
-        let c = self.advance().unwrap();
-        debug_assert!(c == '\n');
-
-        Token::Newline
-    }
-
-    fn skip_whitespace(&mut self) {
-        let _ = self.take_while(|c| c != '\n' && c.is_whitespace());
-    }
-
-    fn advance(&mut self) -> Option<char> {
-        let next = self.peek();
-
-        if let Some(c) = next {
-            self.current_index += c.len_utf8();
-            if c == '\n' {
-                self.current_line += 1;
-            }
-        }
-
-        next
     }
 
     fn rest(&self) -> &'input str {
-        &self.src[self.current_index..]
-    }
-
-    fn peek(&self) -> Option<char> {
-        self.rest().chars().next()
-    }
-
-    fn here(&self) -> Span {
-        Span {
-            start: self.current_index,
-            end: self.current_index,
-            source_line: self.current_line,
+        if self.finished() {
+            ""
+        } else {
+            &self.src[self.current_position..]
         }
     }
+
+    fn skip_whitespace(&mut self) { let _ = self.chomp(char::is_whitespace); }
+
+    fn tokenize_comment(&mut self) -> Option<Token<'input>> {
+        let start = self.current_position;
+        let line = self.current_line;
+
+        if self.rest().starts_with(';') {
+            // the comment is every character from ';' to '\n' or EOF
+            let comment = self.chomp(|c| c != '\n').unwrap_or("");
+            let end = self.current_position;
+
+            Some(Token {
+                kind: TokenType::Comment,
+                value: comment,
+                span: Span { start, end, line },
+            })
+        } else if self.rest().starts_with('(') {
+            // skip past the comment body
+            let _ = self.chomp(|c| c != '\n' && c != ')');
+
+            // at this point, it's guaranteed that the next character is '\n',
+            // ')' or EOF
+            let kind = self.peek().unwrap_or(TokenType::Unknown);
+
+            if kind == TokenType::Comment {
+                // we need to consume the closing paren
+                self.current_position += 1;
+            }
+
+            let end = self.current_position;
+            let value = &self.src[start..end];
+
+            Some(Token {
+                kind,
+                value,
+                span: Span { start, end, line },
+            })
+        } else {
+            None
+        }
+    }
+
+    fn tokenize_letter(&mut self) -> Option<Token<'input>> {
+        let c = self.rest().chars().next()?;
+        let start = self.current_position;
+
+        if c.is_ascii_alphabetic() {
+            self.current_position += 1;
+            Some(Token {
+                kind: TokenType::Letter,
+                value: &self.src[start..=start],
+                span: Span {
+                    start,
+                    end: start + 1,
+                    line: self.current_line,
+                },
+            })
+        } else {
+            None
+        }
+    }
+
+    fn tokenize_number(&mut self) -> Option<Token<'input>> {
+        let start = self.current_position;
+        let line = self.current_line;
+
+        let mut decimal_seen = false;
+        let mut letters_seen = 0;
+
+        let value = self.chomp(|c| {
+            letters_seen += 1;
+
+            if (c == '-' && letters_seen == 1) || c.is_ascii_digit() {
+                true
+            } else if c == '.' && !decimal_seen {
+                decimal_seen = true;
+                true
+            } else {
+                false
+            }
+        })?;
+
+        Some(Token {
+            kind: TokenType::Number,
+            value,
+            span: Span {
+                start,
+                line,
+                end: self.current_position,
+            },
+        })
+    }
+
+    fn finished(&self) -> bool { self.current_position >= self.src.len() }
+
+    fn peek(&self) -> Option<TokenType> {
+        self.rest().chars().next().map(TokenType::from)
+    }
+}
+
+impl<'input> From<&'input str> for Lexer<'input> {
+    fn from(other: &'input str) -> Lexer<'input> { Lexer::new(other) }
 }
 
 impl<'input> Iterator for Lexer<'input> {
-    type Item = (Token<'input>, Span);
+    type Item = Token<'input>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        const MSG: &str =
+            "This should be unreachable, we've already done a bounds check";
         self.skip_whitespace();
-        let mut span = self.here();
 
-        let tok = self.step()?;
-        span.end = self.current_index;
+        let start = self.current_position;
+        let line = self.current_line;
 
-        Some((tok, span))
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub(crate) enum Token<'input> {
-    Letter(char),
-    Number(f32),
-    Comment(&'input str),
-    Newline,
-    ForwardSlash,
-    /// A `%` delimiter with optional comment.
-    Percent(Option<&'input str>),
-    /// A stupidly long decimal number was encountered. It'd normally overflow
-    /// and break stuff if we tried to parse it, so pass it through to the
-    /// parser as an erroneous variant.
-    Garbage(&'input str),
-}
-
-impl<'input> Token<'input> {
-    pub fn unwrap_letter(&self) -> char {
-        match *self {
-            Token::Letter(l) => l,
-            _ => unreachable!("Expected {:?} to be a letter", self),
+        while let Some(kind) = self.peek() {
+            match kind {
+                TokenType::Comment => {
+                    return Some(self.tokenize_comment().expect(MSG))
+                },
+                TokenType::Letter => {
+                    return Some(self.tokenize_letter().expect(MSG))
+                },
+                TokenType::Number => {
+                    return Some(self.tokenize_number().expect(MSG))
+                },
+                TokenType::Unknown => self.current_position += 1,
+            }
         }
-    }
 
-    pub fn unwrap_number(&self) -> f32 {
-        match *self {
-            Token::Number(n) => n,
-            _ => unreachable!("Expected {:?} to be a number", self),
+        if self.current_position != start {
+            // make sure we deal with trailing garbage
+            Some(Token {
+                kind: TokenType::Unknown,
+                value: &self.src[start..],
+                span: Span {
+                    start,
+                    end: self.current_position,
+                    line,
+                },
+            })
+        } else {
+            None
         }
-    }
-
-    pub fn kind(&self) -> TokenKind {
-        match *self {
-            Token::Letter(_) => TokenKind::Letter,
-            Token::Number(_) => TokenKind::Number,
-            Token::Comment(_) => TokenKind::Comment,
-            Token::Newline => TokenKind::Newline,
-            Token::ForwardSlash => TokenKind::ForwardSlash,
-            Token::Percent(None) => TokenKind::Percent,
-            Token::Percent(Some(_)) => TokenKind::Percent,
-            Token::Garbage(_) => TokenKind::Garbage,
-        }
-    }
-}
-
-impl<'input> From<char> for Token<'input> {
-    fn from(other: char) -> Self {
-        Token::Letter(other)
-    }
-}
-
-impl<'input> From<f32> for Token<'input> {
-    fn from(other: f32) -> Self {
-        Token::Number(other)
-    }
-}
-
-impl<'input> From<i32> for Token<'input> {
-    fn from(other: i32) -> Self {
-        Token::Number(other as f32)
-    }
-}
-
-impl<'input> From<&'input str> for Token<'input> {
-    fn from(other: &'input str) -> Self {
-        Token::Comment(other)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::prelude::v1::*;
-
-    macro_rules! lexer_test {
-        ($name:ident, $src:expr => $should_be:expr) => {
-            lexer_test!{
-                $name, $src => $should_be;
-                |lexy, span, src| {
-                    assert_eq!(span, Span { start: 0, end: src.len(), source_line: 0 });
-                    assert_eq!(lexy.current_index, src.len());
-                }
-            }
-        };
-        (ignore_span $name:ident, $src:expr => $should_be:expr) => {
-            lexer_test!($name, $src => $should_be; |_lexy, _span, _src| {});
-        };
-        ($name:ident, $src:expr => $should_be:expr;
-         |$lexer_name:ident, $span_name:ident, $src_name:ident| $span_check:expr) => {
-            #[test]
-            fn $name() {
-                let $src_name = $src;
-                let should_be = Token::from($should_be);
-                let mut $lexer_name = Lexer::new($src_name);
-
-                let (token, $span_name) = $lexer_name.next().unwrap();
-
-                assert_eq!(token, should_be);
-                $span_check;
-            }
-        };
-    }
-
-    lexer_test!(lex_a_letter, "W" => Token::Letter('W'));
-    lexer_test!(lex_a_lowercase_letter, "g" => 'g');
-    lexer_test!(lex_comment_in_parens, "(this is a comment)" => "(this is a comment)");
-    lexer_test!(ignore_span lex_newline_comment, "; this is a comment\n" =>"; this is a comment");
-    lexer_test!(lex_bare_percent, "%" => Token::Percent(None));
-    lexer_test!(lex_bare_percent_with_newline, "%\n" => Token::Percent(None));
-    lexer_test!(lex_percent_with_comment, "% This is a comment\n" => Token::Percent(Some(" This is a comment")));
-    lexer_test!(lex_a_forward_slash, "/" => Token::ForwardSlash);
-    lexer_test!(integer, "42" => 42);
-    lexer_test!(decimal, "1.23" => 1.23);
-    lexer_test!(negative_number, "-1.23" => -1.23);
-    lexer_test!(integer_with_space, "1 23" => 123);
-    lexer_test!(funky_spaces, "1 23. 4 5" => 123.45);
-    lexer_test!(ignore_long_numbers_as_malformed, "1234567890 1234567890 1234567890 1234567890" =>
-                Token::Garbage("1234567890 1234567890 1234567890 1234567890"));
-    lexer_test!(no_leading_zero, ".5" => 0.5);
-    lexer_test!(anything_else_is_garbage, "💩$&&&**#'\"  \t=" => Token::Garbage("💩$&&&**#'\"  \t="));
-    lexer_test!(solitary_dot_is_garbage, "." => Token::Garbage("."));
 
     #[test]
-    fn recognise_a_newline() {
-        let src = "\n";
-        let should_be = Token::Newline;
-        let mut lexy = Lexer::new(src);
+    fn take_while_works_as_expected() {
+        let mut lexer = Lexer::new("12345abcd");
 
-        let (token, span) = lexy.next().unwrap();
+        let got = lexer.chomp(|c| c.is_digit(10));
 
-        assert_eq!(token, should_be);
+        assert_eq!(got, Some("12345"));
+        assert_eq!(lexer.current_position, 5);
+        assert_eq!(lexer.rest(), "abcd");
+    }
+
+    #[test]
+    fn skip_whitespace() {
+        let mut lexer = Lexer::new("  \n\r\t  ");
+
+        lexer.skip_whitespace();
+
+        assert_eq!(lexer.current_position, lexer.src.len());
+        assert_eq!(lexer.current_line, 1);
+    }
+
+    #[test]
+    fn tokenize_a_semicolon_comment() {
+        let mut lexer = Lexer::new("; this is a comment\nbut this is not");
+        let newline = lexer.src.find('\n').unwrap();
+
+        let got = lexer.next().unwrap();
+
+        assert_eq!(got.value, "; this is a comment");
+        assert_eq!(got.kind, TokenType::Comment);
         assert_eq!(
-            span,
+            got.span,
             Span {
                 start: 0,
-                end: src.len(),
-                source_line: 0,
+                end: newline,
+                line: 0
             }
         );
-        assert_eq!(lexy.current_line, 1);
+        assert_eq!(lexer.current_position, newline);
     }
 
     #[test]
-    fn tokenize_a_full_sentence() {
-        let src = "% percent comment\nG90.0X 5 .5Y- 8(comment)\nNxx/; comment to end of line\n%";
+    fn tokenize_a_parens_comment() {
+        let mut lexer = Lexer::new("( this is a comment) but this is not");
+        let comment = "( this is a comment)";
 
-        let got: Vec<_> = Lexer::new(src).collect();
+        let got = lexer.next().unwrap();
 
-        let should_be = vec![
-            (
-                Token::Percent(Some(" percent comment")),
-                Span::new(0, 18, 0),
-            ),
-            (Token::Letter('G'), Span::new(18, 19, 1)),
-            (Token::Number(90.0), Span::new(19, 23, 1)),
-            (Token::Letter('X'), Span::new(23, 24, 1)),
-            (Token::Number(5.5), Span::new(25, 29, 1)),
-            (Token::Letter('Y'), Span::new(29, 30, 1)),
-            (Token::Number(-8.0), Span::new(30, 33, 1)),
-            (Token::Comment("(comment)"), Span::new(33, 42, 1)),
-            (Token::Newline, Span::new(42, 43, 1)),
-            (Token::Letter('N'), Span::new(43, 44, 2)),
-            (Token::Letter('x'), Span::new(44, 45, 2)),
-            (Token::Letter('x'), Span::new(45, 46, 2)),
-            (Token::ForwardSlash, Span::new(46, 47, 2)),
-            (
-                Token::Comment("; comment to end of line"),
-                Span::new(47, 71, 2),
-            ),
-            (Token::Newline, Span::new(71, 72, 2)),
-            (Token::Percent(None), Span::new(72, 73, 3)),
-        ];
+        assert_eq!(got.value, comment);
+        assert_eq!(got.kind, TokenType::Comment);
+        assert_eq!(
+            got.span,
+            Span {
+                start: 0,
+                end: comment.len(),
+                line: 0
+            }
+        );
+        assert_eq!(lexer.current_position, comment.len());
+    }
 
-        assert_eq!(got, should_be);
+    #[test]
+    fn unclosed_parens_are_garbage() {
+        let mut lexer = Lexer::new("( missing a closing paren");
+
+        let got = lexer.next().unwrap();
+
+        assert_eq!(got.value, lexer.src);
+        assert_eq!(got.kind, TokenType::Unknown);
+        assert_eq!(got.span.end, lexer.src.len());
+        assert_eq!(lexer.current_position, lexer.src.len());
+    }
+
+    #[test]
+    fn tokenize_a_letter() {
+        let mut lexer = Lexer::new("asd\nf");
+
+        let got = lexer.next().unwrap();
+
+        assert_eq!(got.value, "a");
+        assert_eq!(got.kind, TokenType::Letter);
+        assert_eq!(got.span.end, 1);
+        assert_eq!(lexer.current_position, 1);
+    }
+
+    #[test]
+    fn normal_number() {
+        let mut lexer = Lexer::new("3.14.56\nf");
+
+        let got = lexer.next().unwrap();
+
+        assert_eq!(got.value, "3.14");
+        assert_eq!(got.kind, TokenType::Number);
+        assert_eq!(got.span.end, 4);
+        assert_eq!(lexer.current_position, 4);
+    }
+
+    #[test]
+    fn negative_number() {
+        let mut lexer = Lexer::new("-3.14\nf");
+
+        let got = lexer.next().unwrap();
+
+        assert_eq!(got.value, "-3.14");
     }
 }

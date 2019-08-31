@@ -1,0 +1,11 @@
+language = "C"
+include_guard = "GCODE_H"
+sys_includes = ["stdint.h", "stddef.h"]
+no_includes = true
+
+[enum]
+rename_variants = "QualifiedScreamingSnakeCase"
+
+[parse]
+parse_deps = true
+exclude = ["cc", "cbindgen", "arrayvec"]
