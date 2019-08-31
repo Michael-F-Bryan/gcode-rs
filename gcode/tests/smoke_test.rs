@@ -1,13 +1,18 @@
-use gcode::{Span, GCode, Mnemonic, Word};
+use gcode::{GCode, Mnemonic, Span, Word};
 
 macro_rules! smoke_test {
     ($name:ident, $filename:expr) => {
         #[test]
         fn $name() {
-            let src = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/data/", $filename));
+            let src = include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/data/",
+                $filename
+            ));
             let src = sanitise_input(src);
 
-            let _got: Vec<_> = gcode::parse_with_callbacks(&src, PanicOnError).collect();
+            let _got: Vec<_> =
+                gcode::parse_with_callbacks(&src, PanicOnError).collect();
         }
     };
 }
@@ -50,7 +55,7 @@ fn expected_program_2_output() {
         GCode::new(Mnemonic::ToolChange, 2.0, Span::PLACEHOLDER),
         GCode::new(Mnemonic::Miscellaneous, 3.0, Span::PLACEHOLDER)
             .with_argument(Word::new('S', 447.0, Span::PLACEHOLDER))
-            .with_argument(Word::new('F', 80.0, Span::PLACEHOLDER)) ,
+            .with_argument(Word::new('F', 80.0, Span::PLACEHOLDER)),
     ];
     pretty_assertions::assert_eq!(gcodes, expected);
 }
@@ -61,23 +66,31 @@ impl gcode::Callbacks for PanicOnError {
     fn unknown_content(&mut self, text: &str, span: Span) {
         panic!("Unknown content at {:?}: {}", span, text);
     }
+
     fn gcode_buffer_overflowed(&mut self, _gcode: GCode) {
         panic!("Buffer overflow");
     }
+
     fn unexpected_line_number(&mut self, line_number: f32, span: Span) {
         panic!("Unexlected line number at {:?}: {}", span, line_number);
     }
+
     fn argument_without_a_command(
         &mut self,
         letter: char,
         value: f32,
         span: Span,
     ) {
-        panic!("Argument without a command at {:?}: {}{}", span, letter, value);
+        panic!(
+            "Argument without a command at {:?}: {}{}",
+            span, letter, value
+        );
     }
+
     fn number_without_a_letter(&mut self, value: &str, span: Span) {
         panic!("Number without a letter at {:?}: {}", span, value);
     }
+
     fn letter_without_a_number(&mut self, value: &str, span: Span) {
         panic!("Letter without a number at {:?}: {}", span, value);
     }

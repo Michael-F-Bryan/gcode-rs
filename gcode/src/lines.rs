@@ -410,7 +410,7 @@ mod tests {
     #[test]
     fn multiple_commands_on_the_same_line() {
         let src = "G01 X5 G90 (comment) G91 M10\nG01";
-        let got : Vec<_> = parse(src).collect();
+        let got: Vec<_> = parse(src).collect();
 
         assert_eq!(got.len(), 2);
         let line = &got[0];
