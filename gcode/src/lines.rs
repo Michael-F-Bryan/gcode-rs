@@ -134,6 +134,7 @@ impl<'a, C: Callbacks> Callbacks for &'a mut C {
     }
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
 struct NopCallbacks;
 
 impl Callbacks for NopCallbacks {}
@@ -153,6 +154,7 @@ pub fn parse_with_callbacks<'input, C: Callbacks + 'input>(
     Lines::new(atoms, callbacks)
 }
 
+#[derive(Debug)]
 struct Lines<'input, I, C>
 where
     I: Iterator<Item = Atom<'input>>,
