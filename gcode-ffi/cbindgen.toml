@@ -2,6 +2,7 @@ language = "C"
 include_guard = "GCODE_H"
 sys_includes = ["stdint.h", "stddef.h"]
 no_includes = true
+style = "both"
 
 [enum]
 rename_variants = "QualifiedScreamingSnakeCase"
