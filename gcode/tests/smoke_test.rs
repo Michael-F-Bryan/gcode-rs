@@ -20,6 +20,8 @@ macro_rules! smoke_test {
 smoke_test!(program_1, "program_1.gcode");
 smoke_test!(program_2, "program_2.gcode");
 smoke_test!(program_3, "program_3.gcode");
+smoke_test!(pi_octcat, "PI_octcat.gcode");
+smoke_test!(pi_rustlogo, "PI_rustlogo.gcode");
 
 #[test]
 #[ignore]
@@ -72,7 +74,7 @@ impl gcode::Callbacks for PanicOnError {
     }
 
     fn unexpected_line_number(&mut self, line_number: f32, span: Span) {
-        panic!("Unexlected line number at {:?}: {}", span, line_number);
+        panic!("Unexpected line number at {:?}: {}", span, line_number);
     }
 
     fn argument_without_a_command(
@@ -97,6 +99,17 @@ impl gcode::Callbacks for PanicOnError {
 }
 
 fn sanitise_input(src: &str) -> String {
+    let mut src = src.to_string();
+    let callbacks = [handle_percent, ignore_message_lines];
+
+    for cb in &callbacks {
+        src = cb(&src);
+    }
+
+    src
+}
+
+fn handle_percent(src: &str) -> String {
     let pieces: Vec<&str> = src.split('%').collect();
 
     match pieces.len() {
@@ -106,4 +119,14 @@ fn sanitise_input(src: &str) -> String {
         3 => pieces[1].to_string(),
         _ => panic!(),
     }
+}
+
+fn ignore_message_lines(src: &str) -> String {
+    // "M117 Printing..." uses string arguments, not the normal char-float word
+    let blacklist = ["M117"];
+
+    src.lines()
+        .filter(|line| blacklist.iter().all(|word| !line.contains(word)))
+        .collect::<Vec<_>>()
+        .join("\n")
 }

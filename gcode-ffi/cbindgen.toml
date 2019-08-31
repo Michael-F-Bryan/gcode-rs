@@ -8,4 +8,4 @@ rename_variants = "QualifiedScreamingSnakeCase"
 
 [parse]
 parse_deps = true
-exclude = ["cc", "cbindgen"]
+exclude = ["cc", "cbindgen", "arrayvec"]
