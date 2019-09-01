@@ -22,6 +22,7 @@ smoke_test!(program_2, "program_2.gcode");
 smoke_test!(program_3, "program_3.gcode");
 smoke_test!(pi_octcat, "PI_octcat.gcode");
 smoke_test!(pi_rustlogo, "PI_rustlogo.gcode");
+smoke_test!(insulpro_piping, "Insulpro.Piping.-.115mm.OD.-.40mm.WT.txt");
 
 #[test]
 #[ignore]
