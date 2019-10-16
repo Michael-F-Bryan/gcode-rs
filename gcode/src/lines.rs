@@ -103,7 +103,7 @@ pub trait Callbacks {
     fn letter_without_a_number(&mut self, _value: &str, _span: Span) {}
 }
 
-impl<'a, C: Callbacks> Callbacks for &'a mut C {
+impl<'a, C: Callbacks + ?Sized> Callbacks for &'a mut C {
     fn unknown_content(&mut self, text: &str, span: Span) {
         (*self).unknown_content(text, span);
     }
