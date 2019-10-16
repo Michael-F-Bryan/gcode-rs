@@ -9,3 +9,4 @@ description = "Motion planning and simulation built on top of gcode-rs."
 
 [dependencies]
 gcode = { path = "../gcode", features = ["std"] }
+uom = "0.25.0"
