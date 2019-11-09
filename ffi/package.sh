@@ -32,7 +32,7 @@ log "Generating gcode.h"
 GCODE_H="$TEMP/gcode.h"
 cbindgen --output "$GCODE_H" "$GCODE_FFI_DIR"
 
-TARGET_TRIPLE="$(rustup target list | grep '(default)' | awk '{print $1}')"
+TARGET_TRIPLE="$(rustc --version --verbose | grep host | cut -f2 -d' ')"
 ARCHIVE="$TARGET_DIR/gcode-$VERSION.$TARGET_TRIPLE.zip"
 log "Bundling artifacts in $ARCHIVE"
 rm -f "$ARCHIVE"
