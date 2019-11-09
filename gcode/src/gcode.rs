@@ -79,12 +79,12 @@ impl GCode {
     pub fn major_number(&self) -> u32 {
         debug_assert!(self.number >= 0.0);
 
-        self.number.floor() as u32
+        libm::floorf(self.number) as u32
     }
 
     pub fn minor_number(&self) -> u32 {
-        let fract = self.number - self.number.floor();
-        let digit = (fract * 10.0).round();
+        let fract = self.number - libm::floorf(self.number);
+        let digit = libm::roundf(fract * 10.0);
         digit as u32
     }
 
