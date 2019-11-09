@@ -20,13 +20,13 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["std"]
-std = []
+std = ["arrayvec/std"]
 large_buffers = []
 serde-1 = ["serde", "serde_derive"]
 
 [dependencies]
 cfg-if = "0.1.9"
-arrayvec = "0.4.11"
+arrayvec = { version ="0.4.11", default-features = false }
 serde = { version = "1.0", optional = true }
 serde_derive = { version = "1.0", optional = true }
 
