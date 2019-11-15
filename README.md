@@ -7,6 +7,9 @@
 
 A gcode parser designed for use in `#[no_std]` environments.
 
+For an example of the `gcode` crate in use, see 
+[@etrombly][etrombly]'s [`gcode-yew`][gc-y].
+
 ## Useful Links
 
 - [The thread that kicked this idea off][thread]
@@ -19,3 +22,5 @@ A gcode parser designed for use in `#[no_std]` environments.
 [p3]: https://github.com/Michael-F-Bryan/gcode-rs/blob/master/tests/data/program_3.gcode
 [nist]: http://ws680.nist.gov/publication/get_pdf.cfm?pub_id=823374
 [cargo-c]: https://github.com/lu-zero/cargo-c
+[etrombly]: https://github.com/etrombly
+[gc-y]: https://github.com/etrombly/gcode-yew
