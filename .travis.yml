@@ -26,6 +26,7 @@ before_script:
   - set -e
 
 script:
+  - cd gcode
   - cargo build --all --verbose $FEATURES $TARGET
   - cargo test --all --verbose $FEATURES $TARGET
   - cargo doc --all --verbose $FEATURES $TARGET
