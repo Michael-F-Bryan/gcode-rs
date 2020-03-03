@@ -8,13 +8,15 @@ matrix:
   include:
     # MSRV from arrayvec
     - rust: 1.36.0
+    # and check each feature individually
+    - env: FEATURES="--no-default-features serde-1"
+    - env: FEATURES="--no-default-features std"
     # Make sure it compiles without std by targeting an embedded platform
     - env: 
       - TARGET=thumbv7em-none-eabihf
       - FEATURES=--no-default-features
-    # and check each feature individually
-    - env: FEATURES="--no-default-features serde-1"
-    - env: FEATURES="--no-default-features std"
+      script:
+      - cargo build --verbose $FEATURES $TARGET
 
     # Use nightly for better docs
     - env: 
