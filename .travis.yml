@@ -11,10 +11,11 @@ matrix:
       rust: 1.31.0
     - env: FEATURES=--all-features
       rust: 1.31.0
-    - env: TARGET=thumbv7em-none-eabihf
+    # Make sure it compiles without std by targeting an embedded platform
+    - env: TARGET=thumbv7em-none-eabihf FEATURES=--no-default-features
 
     # Use nightly for better docs
-    - env: FEATURES=--all-features FEATURES=--no-default-features
+    - env: FEATURES=--all-features FEATURES=--all-features
       rust: nightly
 
 before_script:
