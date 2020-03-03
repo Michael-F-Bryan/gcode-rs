@@ -22,6 +22,7 @@ pub struct Word {
 }
 
 impl Word {
+    /// Create a new [`Word`].
     pub fn new(letter: char, value: f32, span: Span) -> Self {
         Word {
             letter,

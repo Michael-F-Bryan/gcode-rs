@@ -9,15 +9,15 @@ use arrayvec::{Array, ArrayVec};
 use core::fmt::{self, Debug, Display, Formatter};
 
 /// The default buffer type for this platform.
-/// 
-/// This is a type alias for [`SmallFixedBuffers`] because the crate is compiled 
+///
+/// This is a type alias for [`SmallFixedBuffers`] because the crate is compiled
 /// without the *"std"* feature.
 #[cfg(not(feature = "std"))]
 pub type DefaultBuffers = SmallFixedBuffers;
 
 /// The default buffer type for this platform.
-/// 
-/// This is a type alias for [`VecBuffers`] because the crate is compiled 
+///
+/// This is a type alias for [`VecBuffers`] because the crate is compiled
 /// with the *"std"* feature.
 #[cfg(feature = "std")]
 pub type DefaultBuffers = VecBuffers;
@@ -29,7 +29,7 @@ pub trait Buffers<'input> {
     type Comments: Buffer<Comment<'input>> + Default;
 }
 
-/// Something which can store items sequentially in memory. This doesn't 
+/// Something which can store items sequentially in memory. This doesn't
 /// necessarily require dynamic memory allocation.
 pub trait Buffer<T> {
     /// Try to add another item to this [`Buffer`], returning the item if there
@@ -58,7 +58,7 @@ impl<T, A: Array<Item = T>> Buffer<T> for ArrayVec<A> {
 /// // the explicit type for a `GCode` backed by `SmallFixedBuffers`
 /// type SmallBufferGCode<'a> = GCode<<SmallFixedBuffers as Buffers<'a>>::Arguments>;
 ///
-/// let gcode_size = std::mem::size_of::<SmallBufferGCode<'_>>(); 
+/// let gcode_size = std::mem::size_of::<SmallBufferGCode<'_>>();
 /// assert!(gcode_size  <= 200, "Got {}", gcode_size);
 /// ```
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -73,7 +73,7 @@ impl<'input> Buffers<'input> for SmallFixedBuffers {
 with_std! {
     /// A [`Buffers`] implementation which uses [`std::vec::Vec`] for storing items.
     ///
-    /// In terms of memory usage, this has the potential to use a lot less overall 
+    /// In terms of memory usage, this has the potential to use a lot less overall
     /// than something like [`SmallFixedBuffers`] because we've traded deterministic
     /// memory usage for only allocating memory when it is required.
     #[derive(Debug, Copy, Clone, PartialEq)]
@@ -95,9 +95,9 @@ with_std! {
     }
 }
 
-/// An error returned when [`Buffer::try_push()`] fails. 
+/// An error returned when [`Buffer::try_push()`] fails.
 ///
-/// When a [`Buffer`] can't add an item, it will use [`CapacityError`] to pass 
+/// When a [`Buffer`] can't add an item, it will use [`CapacityError`] to pass
 /// the original item back to the caller.
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct CapacityError<T>(pub T);

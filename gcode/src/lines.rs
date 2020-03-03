@@ -37,10 +37,13 @@ where
 }
 
 impl<'input, B: Buffers<'input>> Line<'input, B> {
+    /// All [`GCode`]s in this line.
     pub fn gcodes(&self) -> &[GCode<B::Arguments>] { self.gcodes.as_slice() }
 
+    /// All [`Comment`]s in this line.
     pub fn comments(&self) -> &[Comment<'input>] { self.comments.as_slice() }
-
+    
+    /// Try to add another [`GCode`] to the line.
     pub fn push_gcode(
         &mut self,
         gcode: GCode<B::Arguments>,
@@ -53,19 +56,28 @@ impl<'input, B: Buffers<'input>> Line<'input, B> {
         Ok(())
     }
 
-    pub fn push_comment(&mut self, comment: Comment<'input>) {
-        self.span = self.span.merge(comment.span);
-        self.comments.try_push(comment).unwrap();
+    /// Try to add a [`Comment`] to the line.
+    pub fn push_comment(
+        &mut self,
+        comment: Comment<'input>,
+    ) -> Result<(), CapacityError<Comment<'input>>> {
+        let span = self.span.merge(comment.span);
+        self.comments.try_push(comment)?;
+        self.span = span;
+        Ok(())
     }
 
+    /// Does the [`Line`] contain anything at all?
     pub fn is_empty(&self) -> bool {
         self.gcodes.as_slice().is_empty()
             && self.comments.as_slice().is_empty()
             && self.line_number().is_none()
     }
 
+    /// Try to get the line number, if there was one.
     pub fn line_number(&self) -> Option<Word> { self.line_number }
 
+    /// Set the [`Line::line_number()`].
     pub fn set_line_number<W: Into<Option<Word>>>(&mut self, line_number: W) {
         match line_number.into() {
             Some(n) => {
@@ -76,6 +88,7 @@ impl<'input, B: Buffers<'input>> Line<'input, B> {
         }
     }
 
+    /// Get the [`Line`]'s position in its source text.
     pub fn span(&self) -> Span { self.span }
 }
 
@@ -84,7 +97,7 @@ pub trait Callbacks {
     /// The parser encountered some text it wasn't able to make sense of.
     fn unknown_content(&mut self, _text: &str, _span: Span) {}
 
-    /// The [`Buffers::Commands`] buffer had insufficient capacity when trying 
+    /// The [`Buffers::Commands`] buffer had insufficient capacity when trying
     /// to add a [`GCode`].
     fn gcode_buffer_overflowed(
         &mut self,
@@ -97,9 +110,9 @@ pub trait Callbacks {
     }
 
     /// The [`Buffers::Arguments`] buffer had insufficient capacity when trying
-    /// to add a [`Word`]. 
+    /// to add a [`Word`].
     ///
-    /// To aid in diagnostics, the caller is also given the [`GCode`]'s 
+    /// To aid in diagnostics, the caller is also given the [`GCode`]'s
     /// mnemonic and major/minor numbers.
     fn gcode_argument_buffer_overflowed(
         &mut self,
@@ -110,10 +123,14 @@ pub trait Callbacks {
     ) {
     }
 
+    /// A [`Comment`] was encountered, but there wasn't enough room in
+    /// [`Buffers::Comments`].
+    fn comment_buffer_overflow(&mut self, _comment: Comment<'_>) {}
+
     /// A line number was encountered when it wasn't expected.
     fn unexpected_line_number(&mut self, _line_number: f32, _span: Span) {}
 
-    /// An argument was found, but the parser couldn't figure out which 
+    /// An argument was found, but the parser couldn't figure out which
     /// [`GCode`] it corresponds to.
     fn argument_without_a_command(
         &mut self,
@@ -167,6 +184,10 @@ impl<'a, C: Callbacks + ?Sized> Callbacks for &'a mut C {
         );
     }
 
+    fn comment_buffer_overflow(&mut self, comment: Comment<'_>) {
+        (*self).comment_buffer_overflow(comment);
+    }
+
     fn unexpected_line_number(&mut self, line_number: f32, span: Span) {
         (*self).unexpected_line_number(line_number, span);
     }
@@ -194,12 +215,15 @@ struct NopCallbacks;
 
 impl Callbacks for NopCallbacks {}
 
+/// Parse each [`Line`] in some text, ignoring any errors that may occur.
 pub fn parse<'input>(
     src: &'input str,
 ) -> impl Iterator<Item = Line<'input>> + 'input {
     parse_with_callbacks(src, NopCallbacks)
 }
 
+/// Parse each line in some text, using the provided [`Callbacks`] when a parse
+/// error occurs that we can recover from.
 pub fn parse_with_callbacks<'input, C: Callbacks + 'input>(
     src: &'input str,
     callbacks: C,
@@ -328,6 +352,10 @@ where
         );
     }
 
+    fn on_comment_push_error(&mut self, comment: Comment<'_>) {
+        self.callbacks.comment_buffer_overflow(comment);
+    }
+
     fn on_gcode_push_error(&mut self, gcode: GCode<B::Arguments>) {
         self.callbacks.gcode_buffer_overflowed(
             gcode.mnemonic(),
@@ -362,7 +390,11 @@ where
                 Atom::Unknown(token) => {
                     self.callbacks.unknown_content(token.value, token.span)
                 },
-                Atom::Comment(comment) => line.push_comment(comment),
+                Atom::Comment(comment) => {
+                    if let Err(e) = line.push_comment(comment) {
+                        self.on_comment_push_error(e.0);
+                    }
+                },
                 // line numbers are annoying, so handle them separately
                 Atom::Word(word) if word.letter.to_ascii_lowercase() == 'n' => {
                     self.handle_line_number(word, &mut line, &temp_gcode);

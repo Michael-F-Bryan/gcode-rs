@@ -41,7 +41,8 @@ impl Display for Mnemonic {
     }
 }
 
-/// A single gcode command.
+/// The in-memory representation of a single command in the G-code language
+/// (e.g. `"G01 X50.0 Y-20.0"`).
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde-1",
@@ -55,6 +56,7 @@ pub struct GCode<A> {
 }
 
 impl GCode<<DefaultBuffers as Buffers<'_>>::Arguments> {
+    /// Create a new [`GCode`] which uses the [`DefaultBuffers`] buffer.
     pub fn new(mnemonic: Mnemonic, number: f32, span: Span) -> Self {
         GCode {
             mnemonic,
@@ -66,6 +68,7 @@ impl GCode<<DefaultBuffers as Buffers<'_>>::Arguments> {
 }
 
 impl<A: Buffer<Word>> GCode<A> {
+    /// Create a new [`GCode`] which uses a custom [`Buffer`].
     pub fn new_with_argument_buffer(
         mnemonic: Mnemonic,
         number: f32,
@@ -80,22 +83,27 @@ impl<A: Buffer<Word>> GCode<A> {
         }
     }
 
+    /// The overall category this [`GCode`] belongs to.
     pub fn mnemonic(&self) -> Mnemonic { self.mnemonic }
 
+    /// The integral part of a command number (i.e. the `12` in `G12.3`).
     pub fn major_number(&self) -> u32 {
         debug_assert!(self.number >= 0.0);
 
         libm::floorf(self.number) as u32
     }
 
+    /// The fractional part of a command number (i.e. the `3` in `G12.3`).
     pub fn minor_number(&self) -> u32 {
         let fract = self.number - libm::floorf(self.number);
         let digit = libm::roundf(fract * 10.0);
         digit as u32
     }
 
+    /// The arguments attached to this [`GCode`].
     pub fn arguments(&self) -> &[Word] { self.arguments.as_slice() }
 
+    /// Where the [`GCode`] was found in its source text.
     pub fn span(&self) -> Span { self.span }
 
     /// Add an argument to the list of arguments attached to this [`GCode`].
