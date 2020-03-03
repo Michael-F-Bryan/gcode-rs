@@ -22,6 +22,7 @@ mod lexer;
 mod lines;
 mod span;
 mod words;
+mod buffers;
 
 pub use crate::{
     comment::Comment,
@@ -32,6 +33,7 @@ pub use crate::{
     },
     span::Span,
     words::Word,
+    buffers::{Buffers, Buffer, VecBuffers, SmallFixedBuffers, DefaultBuffers},
 };
 
 #[cfg(feature = "std")]
