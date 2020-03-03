@@ -19,9 +19,9 @@ matrix:
 
 before_script:
   - |
-    if [ -z "$TARGET" ]; then
+    if [ ! -z "$TARGET" ]; then
       rustup target add $TARGET
-      export $TARGET="--target $TARGET"
+      export TARGET="--target $TARGET"
     fi
   - set -e
 
