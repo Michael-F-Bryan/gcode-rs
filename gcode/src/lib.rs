@@ -16,24 +16,20 @@
 #[macro_use]
 extern crate std;
 
+pub mod buffers;
 mod comment;
 mod gcode;
 mod lexer;
 mod lines;
 mod span;
 mod words;
-mod buffers;
 
 pub use crate::{
     comment::Comment,
     gcode::{GCode, Mnemonic},
-    lines::{
-        parse, parse_with_callbacks, Callbacks, Line, MAX_COMMAND_LEN,
-        MAX_COMMENT_LEN,
-    },
+    lines::{parse, parse_with_callbacks, Callbacks, Line},
     span::Span,
     words::Word,
-    buffers::{Buffers, Buffer, VecBuffers, SmallFixedBuffers, DefaultBuffers},
 };
 
 #[cfg(feature = "std")]

@@ -70,7 +70,14 @@ impl gcode::Callbacks for PanicOnError {
         panic!("Unknown content at {:?}: {}", span, text);
     }
 
-    fn gcode_buffer_overflowed(&mut self, _gcode: GCode) {
+    fn gcode_buffer_overflowed(
+        &mut self,
+        _mnemonic: Mnemonic,
+        _major_number: u32,
+        _minor_number: u32,
+        _arguments: &[Word],
+        _span: Span,
+    ) {
         panic!("Buffer overflow");
     }
 

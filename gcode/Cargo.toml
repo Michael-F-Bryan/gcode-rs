@@ -21,7 +21,6 @@ maintenance = { status = "actively-developed" }
 [features]
 default = ["std"]
 std = ["arrayvec/std"]
-large_buffers = []
 serde-1 = ["serde", "serde_derive"]
 
 [dependencies]
