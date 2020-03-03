@@ -59,7 +59,7 @@ impl<T, A: Array<Item = T>> Buffer<T> for ArrayVec<A> {
 /// type SmallBufferGCode<'a> = GCode<<SmallFixedBuffers as Buffers<'a>>::Arguments>;
 ///
 /// let gcode_size = std::mem::size_of::<SmallBufferGCode<'_>>();
-/// assert!(gcode_size  <= 200, "Got {}", gcode_size);
+/// assert!(gcode_size  <= 250, "Got {}", gcode_size);
 /// ```
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub enum SmallFixedBuffers {}
