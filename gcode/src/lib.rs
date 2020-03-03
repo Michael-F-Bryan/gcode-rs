@@ -11,10 +11,14 @@
     variant_size_differences
 )]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[cfg(all(test, not(feature = "std")))]
 #[macro_use]
 extern crate std;
+
+#[macro_use]
+mod macros;
 
 pub mod buffers;
 mod comment;
@@ -31,6 +35,3 @@ pub use crate::{
     span::Span,
     words::Word,
 };
-
-#[cfg(feature = "std")]
-pub use crate::comment::OwnedComment;

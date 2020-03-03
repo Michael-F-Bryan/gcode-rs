@@ -70,30 +70,29 @@ impl<'input> Buffers<'input> for SmallFixedBuffers {
     type Comments = ArrayVec<[Comment<'input>; 1]>;
 }
 
-/// A [`Buffers`] implementation which uses [`std::vec::Vec`] for storing items.
-///
-/// In terms of memory usage, this has the potential to use a lot less overall 
-/// than something like [`SmallFixedBuffers`] because we've traded deterministic
-/// memory usage for only allocating memory when it is required.
-#[derive(Debug, Copy, Clone, PartialEq)]
-#[cfg(feature = "std")]
-pub enum VecBuffers {}
+with_std! {
+    /// A [`Buffers`] implementation which uses [`std::vec::Vec`] for storing items.
+    ///
+    /// In terms of memory usage, this has the potential to use a lot less overall 
+    /// than something like [`SmallFixedBuffers`] because we've traded deterministic
+    /// memory usage for only allocating memory when it is required.
+    #[derive(Debug, Copy, Clone, PartialEq)]
+    pub enum VecBuffers {}
 
-#[cfg(feature = "std")]
-impl<'input> Buffers<'input> for VecBuffers {
-    type Arguments = Vec<Word>;
-    type Commands = Vec<GCode<Self::Arguments>>;
-    type Comments = Vec<Comment<'input>>;
-}
-
-#[cfg(feature = "std")]
-impl<T> Buffer<T> for Vec<T> {
-    fn try_push(&mut self, item: T) -> Result<(), CapacityError<T>> {
-        self.push(item);
-        Ok(())
+    impl<'input> Buffers<'input> for VecBuffers {
+        type Arguments = Vec<Word>;
+        type Commands = Vec<GCode<Self::Arguments>>;
+        type Comments = Vec<Comment<'input>>;
     }
 
-    fn as_slice(&self) -> &[T] { &self }
+    impl<T> Buffer<T> for Vec<T> {
+        fn try_push(&mut self, item: T) -> Result<(), CapacityError<T>> {
+            self.push(item);
+            Ok(())
+        }
+
+        fn as_slice(&self) -> &[T] { &self }
+    }
 }
 
 /// An error returned when [`Buffer::try_push()`] fails. 
@@ -109,5 +108,6 @@ impl<T: Debug> Display for CapacityError<T> {
     }
 }
 
-#[cfg(feature = "std")]
-impl<T: Debug> std::error::Error for CapacityError<T> {}
+with_std! {
+    impl<T: Debug> std::error::Error for CapacityError<T> {}
+}
