@@ -6,6 +6,7 @@ use crate::{
 };
 use core::{iter::Peekable, marker::PhantomData};
 
+/// A single line, possibly containing some [`Comment`]s or [`GCode`]s.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde-1",
@@ -78,8 +79,13 @@ impl<'input, B: Buffers<'input>> Line<'input, B> {
     pub fn span(&self) -> Span { self.span }
 }
 
+/// Callbacks used during the parsing process to indicate possible errors.
 pub trait Callbacks {
+    /// The parser encountered some text it wasn't able to make sense of.
     fn unknown_content(&mut self, _text: &str, _span: Span) {}
+
+    /// The [`Buffers::Commands`] buffer had insufficient capacity when trying 
+    /// to add a [`GCode`].
     fn gcode_buffer_overflowed(
         &mut self,
         _mnemonic: Mnemonic,
@@ -89,6 +95,12 @@ pub trait Callbacks {
         _span: Span,
     ) {
     }
+
+    /// The [`Buffers::Arguments`] buffer had insufficient capacity when trying
+    /// to add a [`Word`]. 
+    ///
+    /// To aid in diagnostics, the caller is also given the [`GCode`]'s 
+    /// mnemonic and major/minor numbers.
     fn gcode_argument_buffer_overflowed(
         &mut self,
         _mnemonic: Mnemonic,
@@ -97,7 +109,12 @@ pub trait Callbacks {
         _argument: Word,
     ) {
     }
+
+    /// A line number was encountered when it wasn't expected.
     fn unexpected_line_number(&mut self, _line_number: f32, _span: Span) {}
+
+    /// An argument was found, but the parser couldn't figure out which 
+    /// [`GCode`] it corresponds to.
     fn argument_without_a_command(
         &mut self,
         _letter: char,
@@ -105,7 +122,11 @@ pub trait Callbacks {
         _span: Span,
     ) {
     }
+
+    /// A [`Word`]'s number was encountered without an accompanying letter.
     fn number_without_a_letter(&mut self, _value: &str, _span: Span) {}
+
+    /// A [`Word`]'s letter was encountered without an accompanying number.
     fn letter_without_a_number(&mut self, _value: &str, _span: Span) {}
 }
 
