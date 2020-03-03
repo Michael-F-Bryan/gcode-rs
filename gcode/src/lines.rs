@@ -14,7 +14,6 @@ use core::{iter::Peekable, marker::PhantomData};
 )]
 pub struct Line<'input, B: Buffers<'input> = DefaultBuffers> {
     gcodes: B::Commands,
-    #[cfg_attr(feature = "serde-1", serde(borrow))]
     comments: B::Comments,
     line_number: Option<Word>,
     span: Span,
@@ -539,5 +538,20 @@ mod tests {
         assert_eq!(got.len(), 2);
         let line = &got[0];
         assert_eq!(line.gcodes.len(), 4);
+    }
+
+    /// I wasn't sure if the `#[derive(Serialize)]` would work given we use
+    /// `B::Comments`, which would borrow from the original source.
+    #[test]
+    #[cfg(feature = "serde-1")]
+    fn you_can_actually_serialize_lines() {
+        let src = "G01 X5 G90 (comment) G91 M10\nG01";
+        let line = parse(src).next().unwrap();
+        
+        fn assert_serializable<S: serde::Serialize>(_: &S) {}
+        fn assert_deserializable<'de, D: serde::Deserialize<'de>>() {}
+
+        assert_serializable(&line);
+        assert_deserializable::<Line<'_>>();
     }
 }
