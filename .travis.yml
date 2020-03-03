@@ -18,9 +18,12 @@ matrix:
       rust: nightly
 
 before_script:
+  - |
+    if [ -z "$TARGET" ]; then
+      rustup target add $TARGET
+      export $TARGET="--target $TARGET"
+    fi
   - set -e
-  - if [ -z "$TARGET" ]; then rustup target add $TARGET; fi
-  - export $TARGET="--target $TARGET"
 
 script:
   - cargo build --all --verbose $FEATURES $TARGET
