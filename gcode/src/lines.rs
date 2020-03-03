@@ -422,6 +422,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arrayvec::ArrayVec;
     use std::{prelude::v1::*, sync::Mutex};
 
     #[derive(Debug)]
@@ -436,6 +437,23 @@ mod tests {
                 .unwrap()
                 .push((line_number, span));
         }
+    }
+
+    enum BigBuffers {}
+
+    impl<'input> Buffers<'input> for BigBuffers {
+        type Arguments = ArrayVec<[Word; 16]>;
+        type Commands = ArrayVec<[GCode<Self::Arguments>; 16]>;
+        type Comments = ArrayVec<[Comment<'input>; 16]>;
+    }
+
+    fn parse(
+        src: &str,
+    ) -> Lines<'_, impl Iterator<Item = Atom<'_>>, NopCallbacks, BigBuffers>
+    {
+        let tokens = Lexer::new(src);
+        let atoms = WordsOrComments::new(tokens);
+        Lines::new(atoms, NopCallbacks)
     }
 
     #[test]
@@ -547,7 +565,7 @@ mod tests {
     fn you_can_actually_serialize_lines() {
         let src = "G01 X5 G90 (comment) G91 M10\nG01";
         let line = parse(src).next().unwrap();
-        
+
         fn assert_serializable<S: serde::Serialize>(_: &S) {}
         fn assert_deserializable<'de, D: serde::Deserialize<'de>>() {}
 

@@ -182,13 +182,17 @@ impl<A: Buffer<Word>> Display for GCode<A> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arrayvec::ArrayVec;
+    use std::prelude::v1::*;
+
+    type BigBuffer = ArrayVec<[Word; 128]>;
 
     #[test]
     fn correct_major_number() {
         let code = GCode {
             mnemonic: Mnemonic::General,
             number: 90.5,
-            arguments: Vec::default(),
+            arguments: BigBuffer::default(),
             span: Span::default(),
         };
 
@@ -201,7 +205,7 @@ mod tests {
             let code = GCode {
                 mnemonic: Mnemonic::General,
                 number: 10.0 + (i as f32) / 10.0,
-                arguments: Vec::default(),
+                arguments: BigBuffer::default(),
                 span: Span::default(),
             };
             println!("{:?}", code);
@@ -212,20 +216,24 @@ mod tests {
 
     #[test]
     fn get_argument_values() {
-        let mut code =
-            GCode::<Vec<_>>::new(Mnemonic::General, 90.0, Span::default());
-        code.extend(vec![
-            Word {
-                letter: 'X',
-                value: 10.0,
-                span: Span::default(),
-            },
-            Word {
-                letter: 'y',
-                value: -3.14,
-                span: Span::default(),
-            },
-        ]);
+        let mut code = GCode::new_with_argument_buffer(
+            Mnemonic::General,
+            90.0,
+            Span::default(),
+            BigBuffer::default(),
+        );
+        code.push_argument(Word {
+            letter: 'X',
+            value: 10.0,
+            span: Span::default(),
+        })
+        .unwrap();
+        code.push_argument(Word {
+            letter: 'y',
+            value: -3.14,
+            span: Span::default(),
+        })
+        .unwrap();
 
         assert_eq!(code.value_for('X'), Some(10.0));
         assert_eq!(code.value_for('x'), Some(10.0));

@@ -3,6 +3,7 @@ use gcode::{GCode, Mnemonic, Span, Word};
 macro_rules! smoke_test {
     ($name:ident, $filename:expr) => {
         #[test]
+        #[cfg(feature = "std")]
         fn $name() {
             let src = include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -106,6 +107,7 @@ impl gcode::Callbacks for PanicOnError {
     }
 }
 
+#[allow(dead_code)]
 fn sanitise_input(src: &str) -> String {
     let mut src = src.to_string();
     let callbacks = [handle_percent, ignore_message_lines];
@@ -117,6 +119,7 @@ fn sanitise_input(src: &str) -> String {
     src
 }
 
+#[allow(dead_code)]
 fn handle_percent(src: &str) -> String {
     let pieces: Vec<&str> = src.split('%').collect();
 
@@ -129,6 +132,7 @@ fn handle_percent(src: &str) -> String {
     }
 }
 
+#[allow(dead_code)]
 fn ignore_message_lines(src: &str) -> String {
     // "M117 Printing..." uses string arguments, not the normal char-float word
     let blacklist = ["M117"];
