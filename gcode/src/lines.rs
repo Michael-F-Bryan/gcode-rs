@@ -42,7 +42,7 @@ impl<'input, B: Buffers<'input>> Line<'input, B> {
 
     /// All [`Comment`]s in this line.
     pub fn comments(&self) -> &[Comment<'input>] { self.comments.as_slice() }
-    
+
     /// Try to add another [`GCode`] to the line.
     pub fn push_gcode(
         &mut self,

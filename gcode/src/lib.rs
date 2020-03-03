@@ -8,7 +8,8 @@
     unsafe_code,
     unused_qualifications,
     unused_results,
-    variant_size_differences
+    variant_size_differences,
+    intra_doc_link_resolution_failure
 )]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
