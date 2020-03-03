@@ -11,18 +11,21 @@ matrix:
       rust: 1.31.0
     - env: FEATURES=--all-features
       rust: 1.31.0
+    - env: TARGET=thumbv7em-none-eabihf
 
     # Use nightly for better docs
-    - env: FEATURES=--all-features
+    - env: FEATURES=--all-features FEATURES=--no-default-features
       rust: nightly
 
 before_script:
-  set -e
+  - set -e
+  - if [ -z "$TARGET" ]; then rustup target add $TARGET; fi
+  - export $TARGET="--target $TARGET"
 
 script:
-  - cargo build --all --verbose $FEATURES
-  - cargo test --all --verbose $FEATURES
-  - cargo doc --all --verbose $FEATURES
+  - cargo build --all --verbose $FEATURES $TARGET
+  - cargo test --all --verbose $FEATURES $TARGET
+  - cargo doc --all --verbose $FEATURES $TARGET
 
 after_script: set +e
 
