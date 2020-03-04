@@ -22,6 +22,7 @@ impl Span {
     pub const PLACEHOLDER: Span =
         Span::new(usize::max_value(), usize::max_value(), usize::max_value());
 
+    /// Create a new [`Span`].
     pub const fn new(start: usize, end: usize, line: usize) -> Self {
         Span { start, end, line }
     }

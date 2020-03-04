@@ -214,16 +214,25 @@ struct NopCallbacks;
 
 impl Callbacks for NopCallbacks {}
 
-/// Parse each [`Line`] in some text, ignoring any errors that may occur.
+/// Parse each [`GCode`] in some text, ignoring any errors that may occur or
+/// [`Comment`]s that are found.
+///
+/// This function is probably what you are looking for if you just want to read
+/// the [`GCode`] commands in a program. If more detailed information is needed,
+/// have a look at [`full_parse_with_callbacks()`].
 pub fn parse<'input>(
     src: &'input str,
-) -> impl Iterator<Item = Line<'input>> + 'input {
-    parse_with_callbacks(src, NopCallbacks)
+) -> impl Iterator<Item = GCode<impl Buffer<Word>>> + 'input {
+    full_parse_with_callbacks(src, NopCallbacks).flat_map(|line| line.gcodes)
 }
 
-/// Parse each line in some text, using the provided [`Callbacks`] when a parse
-/// error occurs that we can recover from.
-pub fn parse_with_callbacks<'input, C: Callbacks + 'input>(
+/// Parse each [`Line`] in some text, using the provided [`Callbacks`] when a
+/// parse error occurs that we can recover from.
+///
+/// Unlike [`parse()`], this function will also give you access to any comments
+/// and line numbers that are found, plus the location of the entire [`Line`]
+/// in its source text.
+pub fn full_parse_with_callbacks<'input, C: Callbacks + 'input>(
     src: &'input str,
     callbacks: C,
 ) -> impl Iterator<Item = Line<'input>> + 'input {
@@ -493,7 +502,7 @@ mod tests {
     fn line_numbers_after_the_start_are_an_error() {
         let src = "G90 N42";
         let unexpected_line_number = Default::default();
-        let got: Vec<_> = parse_with_callbacks(
+        let got: Vec<_> = full_parse_with_callbacks(
             src,
             MockCallbacks {
                 unexpected_line_number: &unexpected_line_number,

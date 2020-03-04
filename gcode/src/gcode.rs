@@ -12,13 +12,27 @@ use core::fmt::{self, Display, Formatter};
 )]
 #[repr(C)]
 pub enum Mnemonic {
+    /// Preparatory commands, often telling the controller what kind of motion
+    /// or offset is desired.
     General,
+    /// Auxilliary commands.
     Miscellaneous,
+    /// Used to give the current program a unique "name".
     ProgramNumber,
+    /// Tool selection.
     ToolChange,
 }
 
 impl Mnemonic {
+    /// Try to convert a letter to its [`Mnemonic`] equivalent.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use gcode::Mnemonic;
+    /// assert_eq!(Mnemonic::for_letter('M'), Some(Mnemonic::Miscellaneous));
+    /// assert_eq!(Mnemonic::for_letter('g'), Some(Mnemonic::General));
+    /// ```
     pub fn for_letter(letter: char) -> Option<Mnemonic> {
         match letter.to_ascii_lowercase() {
             'g' => Some(Mnemonic::General),

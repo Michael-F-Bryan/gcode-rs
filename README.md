@@ -3,7 +3,6 @@
 [![Crates.io version](https://img.shields.io/crates/v/gcode.svg)](https://crates.io/crates/gcode)
 [![Docs](https://docs.rs/gcode/badge.svg)](https://docs.rs/gcode/)
 [![Build Status](https://travis-ci.org/Michael-F-Bryan/gcode-rs.svg?branch=master)](https://travis-ci.org/Michael-F-Bryan/gcode-rs)
-![MIT or Apache-2.0 License](https://img.shields.io/github/license/Michael-F-Bryan/gcode-rs)
 
 A gcode parser designed for use in `#[no_std]` environments.
 

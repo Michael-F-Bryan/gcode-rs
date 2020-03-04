@@ -24,8 +24,11 @@ pub type DefaultBuffers = VecBuffers;
 
 /// A set of type aliases defining the types to use when storing data.
 pub trait Buffers<'input> {
+    /// The [`Buffer`] used to store [`GCode`] arguments.
     type Arguments: Buffer<Word> + Default;
+    /// The [`Buffer`] used to store [`GCode`]s.
     type Commands: Buffer<GCode<Self::Arguments>> + Default;
+    /// The [`Buffer`] used to store [`Comment`]s.
     type Comments: Buffer<Comment<'input>> + Default;
 }
 
