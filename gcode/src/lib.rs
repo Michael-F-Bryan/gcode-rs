@@ -131,11 +131,11 @@ mod span;
 mod words;
 
 pub use crate::{
-    callbacks::Callbacks,
+    callbacks::{Callbacks, NopCallbacks},
     comment::Comment,
     gcode::{GCode, Mnemonic},
     line::Line,
-    parser::{full_parse_with_callbacks, parse},
+    parser::{full_parse_with_callbacks, parse, Parser},
     span::Span,
     words::Word,
 };

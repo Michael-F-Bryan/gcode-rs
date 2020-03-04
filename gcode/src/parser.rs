@@ -1,8 +1,8 @@
 use crate::{
-    buffers::{Buffer, Buffers},
+    buffers::{Buffer, Buffers, DefaultBuffers},
     lexer::{Lexer, Token, TokenType},
     words::{Atom, Word, WordsOrComments},
-    Callbacks, Comment, GCode, Line, Mnemonic,
+    Callbacks, Comment, GCode, Line, Mnemonic, NopCallbacks,
 };
 use core::{iter::Peekable, marker::PhantomData};
 
@@ -19,11 +19,6 @@ pub fn parse<'input>(
         .flat_map(|line| line.into_gcodes())
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Default)]
-struct NopCallbacks;
-
-impl Callbacks for NopCallbacks {}
-
 /// Parse each [`Line`] in some text, using the provided [`Callbacks`] when a
 /// parse error occurs that we can recover from.
 ///
@@ -36,11 +31,42 @@ pub fn full_parse_with_callbacks<'input, C: Callbacks + 'input>(
 ) -> impl Iterator<Item = Line<'input>> + 'input {
     let tokens = Lexer::new(src);
     let atoms = WordsOrComments::new(tokens);
-    Parser::new(atoms, callbacks)
+    Lines::new(atoms, callbacks)
+}
+
+/// A parser for parsing g-code programs.
+#[derive(Debug)]
+pub struct Parser<'input, C, B = DefaultBuffers> {
+    // Explicitly instantiate Lines so Parser's type parameters don't expose
+    // internal details
+    lines: Lines<'input, WordsOrComments<'input, Lexer<'input>>, C, B>,
+}
+
+impl<'input, C, B> Parser<'input, C, B> {
+    /// Create a new [`Parser`] from some source text and a set of
+    /// [`Callbacks`].
+    pub fn new(src: &'input str, callbacks: C) -> Self {
+        let tokens = Lexer::new(src);
+        let atoms = WordsOrComments::new(tokens);
+        let lines = Lines::new(atoms, callbacks);
+        Parser { lines }
+    }
+}
+
+impl<'input, B> From<&'input str> for Parser<'input, NopCallbacks, B> {
+    fn from(src: &'input str) -> Self { Parser::new(src, NopCallbacks) }
+}
+
+impl<'input, C: Callbacks, B: Buffers<'input>> Iterator
+    for Parser<'input, C, B>
+{
+    type Item = Line<'input, B>;
+
+    fn next(&mut self) -> Option<Self::Item> { self.lines.next() }
 }
 
 #[derive(Debug)]
-struct Parser<'input, I, C, B>
+struct Lines<'input, I, C, B>
 where
     I: Iterator<Item = Atom<'input>>,
 {
@@ -50,21 +76,26 @@ where
     _buffers: PhantomData<B>,
 }
 
-impl<'input, I, C, B> Parser<'input, I, C, B>
+impl<'input, I, C, B> Lines<'input, I, C, B>
 where
     I: Iterator<Item = Atom<'input>>,
-    C: Callbacks,
-    B: Buffers<'input>,
 {
     fn new(atoms: I, callbacks: C) -> Self {
-        Parser {
+        Lines {
             atoms: atoms.peekable(),
             callbacks,
             last_gcode_type: None,
             _buffers: PhantomData,
         }
     }
+}
 
+impl<'input, I, C, B> Lines<'input, I, C, B>
+where
+    I: Iterator<Item = Atom<'input>>,
+    C: Callbacks,
+    B: Buffers<'input>,
+{
     fn handle_line_number(
         &mut self,
         word: Word,
@@ -173,7 +204,7 @@ where
     }
 }
 
-impl<'input, I, C, B> Iterator for Parser<'input, I, C, B>
+impl<'input, I, C, B> Iterator for Lines<'input, I, C, B>
 where
     I: Iterator<Item = Atom<'input>> + 'input,
     C: Callbacks,
@@ -257,11 +288,11 @@ mod tests {
 
     fn parse(
         src: &str,
-    ) -> Parser<'_, impl Iterator<Item = Atom<'_>>, NopCallbacks, BigBuffers>
+    ) -> Lines<'_, impl Iterator<Item = Atom<'_>>, NopCallbacks, BigBuffers>
     {
         let tokens = Lexer::new(src);
         let atoms = WordsOrComments::new(tokens);
-        Parser::new(atoms, NopCallbacks)
+        Lines::new(atoms, NopCallbacks)
     }
 
     #[test]

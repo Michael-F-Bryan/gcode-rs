@@ -117,3 +117,9 @@ impl<'a, C: Callbacks + ?Sized> Callbacks for &'a mut C {
         (*self).letter_without_a_number(value, span);
     }
 }
+
+/// A set of callbacks that ignore any errors that occur.
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
+pub struct NopCallbacks;
+
+impl Callbacks for NopCallbacks {}
