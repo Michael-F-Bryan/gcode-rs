@@ -123,6 +123,6 @@ impl<'a, C: Callbacks + ?Sized> Callbacks for &'a mut C {
 
 /// A set of callbacks that ignore any errors that occur.
 #[derive(Debug, Copy, Clone, PartialEq, Default)]
-pub struct NopCallbacks;
+pub struct Nop;
 
-impl Callbacks for NopCallbacks {}
+impl Callbacks for Nop {}

@@ -2,7 +2,7 @@ use crate::{
     buffers::{Buffer, Buffers, DefaultBuffers},
     lexer::{Lexer, Token, TokenType},
     words::{Atom, Word, WordsOrComments},
-    Callbacks, Comment, GCode, Line, Mnemonic, NopCallbacks,
+    Callbacks, Comment, GCode, Line, Mnemonic, Nop,
 };
 use core::{iter::Peekable, marker::PhantomData};
 
@@ -15,8 +15,7 @@ use core::{iter::Peekable, marker::PhantomData};
 pub fn parse<'input>(
     src: &'input str,
 ) -> impl Iterator<Item = GCode<impl Buffer<Word>>> + 'input {
-    full_parse_with_callbacks(src, NopCallbacks)
-        .flat_map(|line| line.into_gcodes())
+    full_parse_with_callbacks(src, Nop).flat_map(|line| line.into_gcodes())
 }
 
 /// Parse each [`Line`] in some text, using the provided [`Callbacks`] when a
@@ -53,8 +52,8 @@ impl<'input, C, B> Parser<'input, C, B> {
     }
 }
 
-impl<'input, B> From<&'input str> for Parser<'input, NopCallbacks, B> {
-    fn from(src: &'input str) -> Self { Parser::new(src, NopCallbacks) }
+impl<'input, B> From<&'input str> for Parser<'input, Nop, B> {
+    fn from(src: &'input str) -> Self { Parser::new(src, Nop) }
 }
 
 impl<'input, C: Callbacks, B: Buffers<'input>> Iterator
@@ -288,11 +287,10 @@ mod tests {
 
     fn parse(
         src: &str,
-    ) -> Lines<'_, impl Iterator<Item = Atom<'_>>, NopCallbacks, BigBuffers>
-    {
+    ) -> Lines<'_, impl Iterator<Item = Atom<'_>>, Nop, BigBuffers> {
         let tokens = Lexer::new(src);
         let atoms = WordsOrComments::new(tokens);
-        Lines::new(atoms, NopCallbacks)
+        Lines::new(atoms, Nop)
     }
 
     #[test]

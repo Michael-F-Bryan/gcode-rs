@@ -98,7 +98,7 @@
 //! [`buffers::SmallFixedBuffers`] will allow.
 //!
 //! ```rust
-//! use gcode::{Word, Comment, GCode, NopCallbacks, Parser, buffers::Buffers};
+//! use gcode::{Word, Comment, GCode, Nop, Parser, buffers::Buffers};
 //! use arrayvec::ArrayVec;
 //!
 //! enum MyBuffers {}
@@ -111,7 +111,7 @@
 //!
 //! let src = "G90 G01 X5.1";
 //!
-//! let parser: Parser<NopCallbacks, MyBuffers> = Parser::new(src, NopCallbacks);
+//! let parser: Parser<Nop, MyBuffers> = Parser::new(src, Nop);
 //!
 //! let lines = parser.count();
 //! assert_eq!(lines, 1);
@@ -178,7 +178,7 @@ mod span;
 mod words;
 
 pub use crate::{
-    callbacks::{Callbacks, NopCallbacks},
+    callbacks::{Callbacks, Nop},
     comment::Comment,
     gcode::{GCode, Mnemonic},
     line::Line,
