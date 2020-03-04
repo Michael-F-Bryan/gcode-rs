@@ -22,7 +22,7 @@
 //! ```rust
 //! use gcode::Mnemonic;
 //!
-//! let src = "G90 G00 X50.0 Y-10";
+//! let src = "G90 \n G00 X50.0 Y-10";
 //!
 //! let got: Vec<_> = gcode::parse(src).collect();
 //!
@@ -75,13 +75,17 @@
 //!
 //! let mut errors = Errors::default();
 //!
-//! let lines: Vec<_> = gcode::full_parse_with_callbacks(src, &mut errors).collect();
+//! {
+//!     let lines: Vec<_> = gcode::full_parse_with_callbacks(src, &mut errors)
+//!         .collect();
+//!     
+//!     assert_eq!(lines.len(), 3);
+//!     let total_gcodes: usize = lines.iter()
+//!         .map(|line| line.gcodes().len())
+//!         .sum();
+//!     assert_eq!(total_gcodes, 2);
+//! }
 //!
-//! assert_eq!(lines.len(), 3);
-//! let total_gcodes: usize = lines.iter().map(|line| line.gcodes().len()).sum();
-//! assert_eq!(total_gcodes, 2);
-//!
-//! println!("{:?}", errors);
 //! assert_eq!(errors.unexpected_line_number, 1);
 //! assert_eq!(errors.letter_without_number, 1);
 //! assert_eq!(errors.garbage.len(), 1);
