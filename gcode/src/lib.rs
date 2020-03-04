@@ -13,7 +13,7 @@
 //! - **performance:** parsing should be reasonably fast, guaranteeing `O(n)`
 //!   time complexity with no backtracking
 //!
-//! # Examples
+//! # Getting Started
 //!
 //! The typical entry point to this crate is via the [`parse()`] function. This
 //! gives you an iterator over the [`GCode`]s in a string of text, ignoring any
@@ -88,6 +88,8 @@
 //! assert_eq!(errors.garbage[0], "$$%# ");
 //! ```
 //!
+//! # Customising Memory Usage
+//!
 //! You'll need to manually create a [`Parser`] if you want control over buffer
 //! sizes instead of relying on [`buffers::DefaultBuffers`].
 //!
@@ -114,6 +116,24 @@
 //! let lines = parser.count();
 //! assert_eq!(lines, 1);
 //! ```
+//!
+//! # Spans
+//!
+//! Something that distinguishes this crate from a lot of other g-code parsers
+//! is that each element's original location, its [`Span`], is retained and
+//! passed to the caller.
+//!
+//! This is important for applications such as:
+//!
+//! - Indicating where in the source text a parsing error or semantic error has
+//!   occurred
+//! - Visually highlighting the command currently being executed when stepping
+//!   through a program in a simulator
+//! - Reporting what point a CNC machine is up to when executing a job
+//!
+//! It's pretty easy to check whether something contains its [`Span`], just look
+//! for a `span()` method (e.g. [`GCode::span()`]) or a `span` field (e.g.
+//! [`Comment::span`]).
 //!
 //! # Cargo Features
 //!

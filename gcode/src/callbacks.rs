@@ -1,5 +1,8 @@
 use crate::{Comment, Mnemonic, Span, Word};
 
+#[allow(unused_imports)] // rustdoc links
+use crate::{buffers::Buffers, GCode};
+
 /// Callbacks used during the parsing process to indicate possible errors.
 pub trait Callbacks {
     /// The parser encountered some text it wasn't able to make sense of.
