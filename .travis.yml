@@ -6,23 +6,39 @@ env:
 
 matrix:
   include:
-    # Linux
-    - env: FEATURES=--no-default-features
-      rust: 1.31.0
-    - env: FEATURES=--all-features
-      rust: 1.31.0
+    # MSRV from arrayvec
+    - rust: 1.36.0
+    # and check each feature individually
+    - env: FEATURES="--no-default-features --features serde-1"
+    - env: FEATURES="--no-default-features --features std"
+    # Make sure it compiles without std by targeting an embedded platform
+    - env: 
+      - TARGET=thumbv7em-none-eabihf
+      - FEATURES=--no-default-features
+      script:
+      - cd gcode
+      - cargo build --verbose $FEATURES $TARGET
 
     # Use nightly for better docs
-    - env: FEATURES=--all-features
+    - env: 
+      - FEATURES=--all-features 
+      - RUSTDOCFLAGS="--cfg docsrs"
       rust: nightly
 
 before_script:
-  set -e
+  - |
+    if [ ! -z "$TARGET" ]; then
+      rustup target add $TARGET
+      export TARGET="--target $TARGET"
+    fi
+  - set -e
 
 script:
-  - cargo build --all --verbose $FEATURES
-  - cargo test --all --verbose $FEATURES
-  - cargo doc --all --verbose $FEATURES
+  - cd gcode
+  - cargo build --no-default-features
+  - cargo build --verbose $FEATURES $TARGET
+  - cargo test --verbose $FEATURES $TARGET
+  - cargo doc --verbose $FEATURES $TARGET
 
 after_script: set +e
 

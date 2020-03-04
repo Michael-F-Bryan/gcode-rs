@@ -1,14 +1,8 @@
-use crate::{Span, Word};
+use crate::{
+    buffers::{Buffer, Buffers, CapacityError, DefaultBuffers},
+    Span, Word,
+};
 use core::fmt::{self, Display, Formatter};
-
-cfg_if::cfg_if! {
-    if #[cfg(feature = "std")] {
-        type Arguments = Vec<Word>;
-    } else {
-        use arrayvec::ArrayVec;
-        type Arguments = ArrayVec<[Word; GCode::MAX_ARGUMENT_LEN]>;
-    }
-}
 
 /// The general category for a [`GCode`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -47,57 +41,89 @@ impl Display for Mnemonic {
     }
 }
 
-/// A single gcode command.
+/// The in-memory representation of a single command in the G-code language
+/// (e.g. `"G01 X50.0 Y-20.0"`).
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde-1",
     derive(serde_derive::Serialize, serde_derive::Deserialize)
 )]
-pub struct GCode {
+pub struct GCode<A> {
     mnemonic: Mnemonic,
     number: f32,
-    arguments: Arguments,
+    arguments: A,
     span: Span,
 }
 
-impl GCode {
-    /// The maximum number of [`Word`]s when compiled without the `std`
-    /// feature.
-    pub const MAX_ARGUMENT_LEN: usize = 5;
-
+impl GCode<<DefaultBuffers as Buffers<'_>>::Arguments> {
+    /// Create a new [`GCode`] which uses the [`DefaultBuffers`] buffer.
     pub fn new(mnemonic: Mnemonic, number: f32, span: Span) -> Self {
         GCode {
             mnemonic,
             number,
             span,
-            arguments: Arguments::default(),
+            arguments: <DefaultBuffers as Buffers<'_>>::Arguments::default(),
+        }
+    }
+}
+
+impl<A: Buffer<Word>> GCode<A> {
+    /// Create a new [`GCode`] which uses a custom [`Buffer`].
+    pub fn new_with_argument_buffer(
+        mnemonic: Mnemonic,
+        number: f32,
+        span: Span,
+        arguments: A,
+    ) -> Self {
+        GCode {
+            mnemonic,
+            number,
+            span,
+            arguments,
         }
     }
 
+    /// The overall category this [`GCode`] belongs to.
     pub fn mnemonic(&self) -> Mnemonic { self.mnemonic }
 
+    /// The integral part of a command number (i.e. the `12` in `G12.3`).
     pub fn major_number(&self) -> u32 {
         debug_assert!(self.number >= 0.0);
 
         libm::floorf(self.number) as u32
     }
 
+    /// The fractional part of a command number (i.e. the `3` in `G12.3`).
     pub fn minor_number(&self) -> u32 {
         let fract = self.number - libm::floorf(self.number);
         let digit = libm::roundf(fract * 10.0);
         digit as u32
     }
 
-    pub fn arguments(&self) -> &[Word] { &self.arguments }
+    /// The arguments attached to this [`GCode`].
+    pub fn arguments(&self) -> &[Word] { self.arguments.as_slice() }
 
+    /// Where the [`GCode`] was found in its source text.
     pub fn span(&self) -> Span { self.span }
 
     /// Add an argument to the list of arguments attached to this [`GCode`].
-    pub fn push_argument(&mut self, arg: Word) { self.arguments.push(arg); }
+    pub fn push_argument(
+        &mut self,
+        arg: Word,
+    ) -> Result<(), CapacityError<Word>> {
+        self.arguments.try_push(arg)
+    }
 
     /// The builder equivalent of [`GCode::push_argument()`].
+    ///
+    /// # Panics
+    ///
+    /// This will panic if the underlying [`Buffer`] returns a
+    /// [`CapacityError`].
     pub fn with_argument(mut self, arg: Word) -> Self {
-        self.push_argument(arg);
+        if let Err(e) = self.push_argument(arg) {
+            panic!("Unable to add the argument {:?}: {}", arg, e);
+        }
         self
     }
 
@@ -126,15 +152,18 @@ impl GCode {
     }
 }
 
-impl Extend<Word> for GCode {
+impl<A: Buffer<Word>> Extend<Word> for GCode<A> {
     fn extend<I: IntoIterator<Item = Word>>(&mut self, words: I) {
         for word in words {
-            self.push_argument(word);
+            if let Err(_) = self.push_argument(word) {
+                // we can't add any more arguments
+                return;
+            }
         }
     }
 }
 
-impl Display for GCode {
+impl<A: Buffer<Word>> Display for GCode<A> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}{}", self.mnemonic(), self.major_number())?;
 
@@ -153,13 +182,17 @@ impl Display for GCode {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use arrayvec::ArrayVec;
+    use std::prelude::v1::*;
+
+    type BigBuffer = ArrayVec<[Word; 128]>;
 
     #[test]
     fn correct_major_number() {
         let code = GCode {
             mnemonic: Mnemonic::General,
             number: 90.5,
-            arguments: Arguments::default(),
+            arguments: BigBuffer::default(),
             span: Span::default(),
         };
 
@@ -172,7 +205,7 @@ mod tests {
             let code = GCode {
                 mnemonic: Mnemonic::General,
                 number: 10.0 + (i as f32) / 10.0,
-                arguments: Arguments::default(),
+                arguments: BigBuffer::default(),
                 span: Span::default(),
             };
             println!("{:?}", code);
@@ -183,19 +216,24 @@ mod tests {
 
     #[test]
     fn get_argument_values() {
-        let mut code = GCode::new(Mnemonic::General, 90.0, Span::default());
-        code.extend(vec![
-            Word {
-                letter: 'X',
-                value: 10.0,
-                span: Span::default(),
-            },
-            Word {
-                letter: 'y',
-                value: -3.14,
-                span: Span::default(),
-            },
-        ]);
+        let mut code = GCode::new_with_argument_buffer(
+            Mnemonic::General,
+            90.0,
+            Span::default(),
+            BigBuffer::default(),
+        );
+        code.push_argument(Word {
+            letter: 'X',
+            value: 10.0,
+            span: Span::default(),
+        })
+        .unwrap();
+        code.push_argument(Word {
+            letter: 'y',
+            value: -3.14,
+            span: Span::default(),
+        })
+        .unwrap();
 
         assert_eq!(code.value_for('X'), Some(10.0));
         assert_eq!(code.value_for('x'), Some(10.0));
