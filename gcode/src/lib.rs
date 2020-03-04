@@ -85,7 +85,7 @@
 //! assert_eq!(errors.unexpected_line_number, 1);
 //! assert_eq!(errors.letter_without_number, 1);
 //! assert_eq!(errors.garbage.len(), 1);
-//! assert_eq!(errors.garbage[0], "$$%#");
+//! assert_eq!(errors.garbage[0], "$$%# ");
 //! ```
 //!
 //! # Cargo Features

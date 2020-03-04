@@ -59,28 +59,32 @@ impl<'input> Atom<'input> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct WordsOrComments<I> {
+pub(crate) struct WordsOrComments<'input, I> {
     tokens: I,
+    /// keep track of the last letter so we can deal with a trailing letter
+    /// that has no number
+    last_letter: Option<Token<'input>>,
 }
 
-impl<'input, I> WordsOrComments<I>
+impl<'input, I> WordsOrComments<'input, I>
 where
     I: Iterator<Item = Token<'input>>,
 {
-    pub(crate) fn new(tokens: I) -> Self { WordsOrComments { tokens } }
+    pub(crate) fn new(tokens: I) -> Self {
+        WordsOrComments {
+            tokens,
+            last_letter: None,
+        }
+    }
 }
 
-impl<'input, I> Iterator for WordsOrComments<I>
+impl<'input, I> Iterator for WordsOrComments<'input, I>
 where
     I: Iterator<Item = Token<'input>>,
 {
     type Item = Atom<'input>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // keep track of the last letter so we can deal with a trailing letter
-        // that has no number
-        let mut last_letter: Option<Token<'_>> = None;
-
         while let Some(token) = self.tokens.next() {
             let Token { kind, value, span } = token;
 
@@ -89,11 +93,11 @@ where
                 TokenType::Comment => {
                     return Some(Atom::Comment(Comment { value, span }))
                 },
-                TokenType::Letter if last_letter.is_none() => {
-                    last_letter = Some(token);
+                TokenType::Letter if self.last_letter.is_none() => {
+                    self.last_letter = Some(token);
                 },
-                TokenType::Number if last_letter.is_some() => {
-                    let letter_token = last_letter.unwrap();
+                TokenType::Number if self.last_letter.is_some() => {
+                    let letter_token = self.last_letter.take().unwrap();
                     let span = letter_token.span.merge(span);
 
                     debug_assert_eq!(letter_token.value.len(), 1);
@@ -110,12 +114,12 @@ where
             }
         }
 
-        last_letter.map(Atom::BrokenWord)
+        self.last_letter.take().map(Atom::BrokenWord)
     }
 }
 
-impl<'input> From<&'input str> for WordsOrComments<Lexer<'input>> {
-    fn from(other: &'input str) -> WordsOrComments<Lexer<'input>> {
+impl<'input> From<&'input str> for WordsOrComments<'input, Lexer<'input>> {
+    fn from(other: &'input str) -> WordsOrComments<'input, Lexer<'input>> {
         WordsOrComments::new(Lexer::new(other))
     }
 }
