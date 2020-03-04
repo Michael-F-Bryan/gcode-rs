@@ -1,218 +1,10 @@
 use crate::{
-    buffers::{Buffer, Buffers, CapacityError, DefaultBuffers},
+    buffers::{Buffer, Buffers},
     lexer::{Lexer, Token, TokenType},
     words::{Atom, Word, WordsOrComments},
-    Comment, GCode, Mnemonic, Span,
+    Callbacks, Comment, GCode, Line, Mnemonic,
 };
 use core::{iter::Peekable, marker::PhantomData};
-
-/// A single line, possibly containing some [`Comment`]s or [`GCode`]s.
-#[derive(Debug, Clone, PartialEq)]
-#[cfg_attr(
-    feature = "serde-1",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
-)]
-pub struct Line<'input, B: Buffers<'input> = DefaultBuffers> {
-    gcodes: B::Commands,
-    comments: B::Comments,
-    line_number: Option<Word>,
-    span: Span,
-}
-
-impl<'input, B> Default for Line<'input, B>
-where
-    B: Buffers<'input>,
-    B::Commands: Default,
-    B::Comments: Default,
-{
-    fn default() -> Line<'input, B> {
-        Line {
-            gcodes: B::Commands::default(),
-            comments: B::Comments::default(),
-            line_number: None,
-            span: Span::default(),
-        }
-    }
-}
-
-impl<'input, B: Buffers<'input>> Line<'input, B> {
-    /// All [`GCode`]s in this line.
-    pub fn gcodes(&self) -> &[GCode<B::Arguments>] { self.gcodes.as_slice() }
-
-    /// All [`Comment`]s in this line.
-    pub fn comments(&self) -> &[Comment<'input>] { self.comments.as_slice() }
-
-    /// Try to add another [`GCode`] to the line.
-    pub fn push_gcode(
-        &mut self,
-        gcode: GCode<B::Arguments>,
-    ) -> Result<(), CapacityError<GCode<B::Arguments>>> {
-        // Note: We need to make sure a failed push doesn't change our span
-        let span = self.span.merge(gcode.span());
-        self.gcodes.try_push(gcode)?;
-        self.span = span;
-
-        Ok(())
-    }
-
-    /// Try to add a [`Comment`] to the line.
-    pub fn push_comment(
-        &mut self,
-        comment: Comment<'input>,
-    ) -> Result<(), CapacityError<Comment<'input>>> {
-        let span = self.span.merge(comment.span);
-        self.comments.try_push(comment)?;
-        self.span = span;
-        Ok(())
-    }
-
-    /// Does the [`Line`] contain anything at all?
-    pub fn is_empty(&self) -> bool {
-        self.gcodes.as_slice().is_empty()
-            && self.comments.as_slice().is_empty()
-            && self.line_number().is_none()
-    }
-
-    /// Try to get the line number, if there was one.
-    pub fn line_number(&self) -> Option<Word> { self.line_number }
-
-    /// Set the [`Line::line_number()`].
-    pub fn set_line_number<W: Into<Option<Word>>>(&mut self, line_number: W) {
-        match line_number.into() {
-            Some(n) => {
-                self.span = self.span.merge(n.span);
-                self.line_number = Some(n);
-            },
-            None => self.line_number = None,
-        }
-    }
-
-    /// Get the [`Line`]'s position in its source text.
-    pub fn span(&self) -> Span { self.span }
-}
-
-/// Callbacks used during the parsing process to indicate possible errors.
-pub trait Callbacks {
-    /// The parser encountered some text it wasn't able to make sense of.
-    fn unknown_content(&mut self, _text: &str, _span: Span) {}
-
-    /// The [`Buffers::Commands`] buffer had insufficient capacity when trying
-    /// to add a [`GCode`].
-    fn gcode_buffer_overflowed(
-        &mut self,
-        _mnemonic: Mnemonic,
-        _major_number: u32,
-        _minor_number: u32,
-        _arguments: &[Word],
-        _span: Span,
-    ) {
-    }
-
-    /// The [`Buffers::Arguments`] buffer had insufficient capacity when trying
-    /// to add a [`Word`].
-    ///
-    /// To aid in diagnostics, the caller is also given the [`GCode`]'s
-    /// mnemonic and major/minor numbers.
-    fn gcode_argument_buffer_overflowed(
-        &mut self,
-        _mnemonic: Mnemonic,
-        _major_number: u32,
-        _minor_number: u32,
-        _argument: Word,
-    ) {
-    }
-
-    /// A [`Comment`] was encountered, but there wasn't enough room in
-    /// [`Buffers::Comments`].
-    fn comment_buffer_overflow(&mut self, _comment: Comment<'_>) {}
-
-    /// A line number was encountered when it wasn't expected.
-    fn unexpected_line_number(&mut self, _line_number: f32, _span: Span) {}
-
-    /// An argument was found, but the parser couldn't figure out which
-    /// [`GCode`] it corresponds to.
-    fn argument_without_a_command(
-        &mut self,
-        _letter: char,
-        _value: f32,
-        _span: Span,
-    ) {
-    }
-
-    /// A [`Word`]'s number was encountered without an accompanying letter.
-    fn number_without_a_letter(&mut self, _value: &str, _span: Span) {}
-
-    /// A [`Word`]'s letter was encountered without an accompanying number.
-    fn letter_without_a_number(&mut self, _value: &str, _span: Span) {}
-}
-
-impl<'a, C: Callbacks + ?Sized> Callbacks for &'a mut C {
-    fn unknown_content(&mut self, text: &str, span: Span) {
-        (*self).unknown_content(text, span);
-    }
-
-    fn gcode_buffer_overflowed(
-        &mut self,
-        mnemonic: Mnemonic,
-        major_number: u32,
-        minor_number: u32,
-        arguments: &[Word],
-        span: Span,
-    ) {
-        (*self).gcode_buffer_overflowed(
-            mnemonic,
-            major_number,
-            minor_number,
-            arguments,
-            span,
-        );
-    }
-
-    fn gcode_argument_buffer_overflowed(
-        &mut self,
-        mnemonic: Mnemonic,
-        major_number: u32,
-        minor_number: u32,
-        argument: Word,
-    ) {
-        (*self).gcode_argument_buffer_overflowed(
-            mnemonic,
-            major_number,
-            minor_number,
-            argument,
-        );
-    }
-
-    fn comment_buffer_overflow(&mut self, comment: Comment<'_>) {
-        (*self).comment_buffer_overflow(comment);
-    }
-
-    fn unexpected_line_number(&mut self, line_number: f32, span: Span) {
-        (*self).unexpected_line_number(line_number, span);
-    }
-
-    fn argument_without_a_command(
-        &mut self,
-        letter: char,
-        value: f32,
-        span: Span,
-    ) {
-        (*self).argument_without_a_command(letter, value, span);
-    }
-
-    fn number_without_a_letter(&mut self, value: &str, span: Span) {
-        (*self).number_without_a_letter(value, span);
-    }
-
-    fn letter_without_a_number(&mut self, value: &str, span: Span) {
-        (*self).letter_without_a_number(value, span);
-    }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Default)]
-struct NopCallbacks;
-
-impl Callbacks for NopCallbacks {}
 
 /// Parse each [`GCode`] in some text, ignoring any errors that may occur or
 /// [`Comment`]s that are found.
@@ -223,8 +15,14 @@ impl Callbacks for NopCallbacks {}
 pub fn parse<'input>(
     src: &'input str,
 ) -> impl Iterator<Item = GCode<impl Buffer<Word>>> + 'input {
-    full_parse_with_callbacks(src, NopCallbacks).flat_map(|line| line.gcodes)
+    full_parse_with_callbacks(src, NopCallbacks)
+        .flat_map(|line| line.into_gcodes())
 }
+
+#[derive(Debug, Copy, Clone, PartialEq, Default)]
+struct NopCallbacks;
+
+impl Callbacks for NopCallbacks {}
 
 /// Parse each [`Line`] in some text, using the provided [`Callbacks`] when a
 /// parse error occurs that we can recover from.
@@ -238,11 +36,11 @@ pub fn full_parse_with_callbacks<'input, C: Callbacks + 'input>(
 ) -> impl Iterator<Item = Line<'input>> + 'input {
     let tokens = Lexer::new(src);
     let atoms = WordsOrComments::new(tokens);
-    Lines::new(atoms, callbacks)
+    Parser::new(atoms, callbacks)
 }
 
 #[derive(Debug)]
-struct Lines<'input, I, C, B>
+struct Parser<'input, I, C, B>
 where
     I: Iterator<Item = Atom<'input>>,
 {
@@ -252,14 +50,14 @@ where
     _buffers: PhantomData<B>,
 }
 
-impl<'input, I, C, B> Lines<'input, I, C, B>
+impl<'input, I, C, B> Parser<'input, I, C, B>
 where
     I: Iterator<Item = Atom<'input>>,
     C: Callbacks,
     B: Buffers<'input>,
 {
     fn new(atoms: I, callbacks: C) -> Self {
-        Lines {
+        Parser {
             atoms: atoms.peekable(),
             callbacks,
             last_gcode_type: None,
@@ -375,7 +173,7 @@ where
     }
 }
 
-impl<'input, I, C, B> Iterator for Lines<'input, I, C, B>
+impl<'input, I, C, B> Iterator for Parser<'input, I, C, B>
 where
     I: Iterator<Item = Atom<'input>> + 'input,
     C: Callbacks,
@@ -389,7 +187,7 @@ where
         let mut temp_gcode = None;
 
         while let Some(next_span) = self.atoms.peek().map(|a| a.span()) {
-            if !line.is_empty() && next_span.line != line.span.line {
+            if !line.is_empty() && next_span.line != line.span().line {
                 // we've started the next line
                 break;
             }
@@ -431,6 +229,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Span;
     use arrayvec::ArrayVec;
     use std::{prelude::v1::*, sync::Mutex};
 
@@ -458,11 +257,11 @@ mod tests {
 
     fn parse(
         src: &str,
-    ) -> Lines<'_, impl Iterator<Item = Atom<'_>>, NopCallbacks, BigBuffers>
+    ) -> Parser<'_, impl Iterator<Item = Atom<'_>>, NopCallbacks, BigBuffers>
     {
         let tokens = Lexer::new(src);
         let atoms = WordsOrComments::new(tokens);
-        Lines::new(atoms, NopCallbacks)
+        Parser::new(atoms, NopCallbacks)
     }
 
     #[test]
@@ -474,7 +273,7 @@ mod tests {
         let line = &got[0];
         assert_eq!(line.comments().len(), 1);
         assert_eq!(line.gcodes().len(), 0);
-        assert_eq!(line.span, Span::new(0, src.len(), 0));
+        assert_eq!(line.span(), Span::new(0, src.len(), 0));
     }
 
     #[test]
@@ -495,7 +294,7 @@ mod tests {
                 span
             })
         );
-        assert_eq!(line.span, span);
+        assert_eq!(line.span(), span);
     }
 
     #[test]
@@ -524,7 +323,7 @@ mod tests {
 
         assert_eq!(got.len(), 1);
         let line = &got[0];
-        assert_eq!(line.gcodes.len(), 1);
+        assert_eq!(line.gcodes().len(), 1);
         let g90 = &line.gcodes()[0];
         assert_eq!(g90.major_number(), 90);
         assert_eq!(g90.minor_number(), 0);
@@ -538,7 +337,7 @@ mod tests {
 
         assert_eq!(got.len(), 1);
         let line = &got[0];
-        assert_eq!(line.gcodes.len(), 1);
+        assert_eq!(line.gcodes().len(), 1);
         let g01 = &line.gcodes()[0];
         assert_eq!(g01.major_number(), 1);
         assert_eq!(g01.minor_number(), 0);
@@ -564,7 +363,7 @@ mod tests {
 
         assert_eq!(got.len(), 2);
         let line = &got[0];
-        assert_eq!(line.gcodes.len(), 4);
+        assert_eq!(line.gcodes().len(), 4);
     }
 
     /// I wasn't sure if the `#[derive(Serialize)]` would work given we use

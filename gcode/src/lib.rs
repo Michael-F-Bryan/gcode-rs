@@ -121,17 +121,21 @@ extern crate std;
 mod macros;
 
 pub mod buffers;
+mod callbacks;
 mod comment;
 mod gcode;
 mod lexer;
-mod lines;
+mod line;
+mod parser;
 mod span;
 mod words;
 
 pub use crate::{
+    callbacks::Callbacks,
     comment::Comment,
     gcode::{GCode, Mnemonic},
-    lines::{full_parse_with_callbacks, parse, Callbacks, Line},
+    line::Line,
+    parser::{full_parse_with_callbacks, parse},
     span::Span,
     words::Word,
 };
