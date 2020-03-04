@@ -88,6 +88,33 @@
 //! assert_eq!(errors.garbage[0], "$$%# ");
 //! ```
 //!
+//! You'll need to manually create a [`Parser`] if you want control over buffer
+//! sizes instead of relying on [`buffers::DefaultBuffers`].
+//!
+//! You shouldn't normally need to do this unless you are on an embedded device
+//! and know your expected input will be bigger than
+//! [`buffers::SmallFixedBuffers`] will allow.
+//!
+//! ```rust
+//! use gcode::{Word, Comment, GCode, NopCallbacks, Parser, buffers::Buffers};
+//! use arrayvec::ArrayVec;
+//!
+//! enum MyBuffers {}
+//!
+//! impl<'input> Buffers<'input> for MyBuffers {
+//!     type Arguments = ArrayVec<[Word; 10]>;
+//!     type Commands = ArrayVec<[GCode<Self::Arguments>; 2]>;
+//!     type Comments = ArrayVec<[Comment<'input>; 1]>;
+//! }
+//!
+//! let src = "G90 G01 X5.1";
+//!
+//! let parser: Parser<NopCallbacks, MyBuffers> = Parser::new(src, NopCallbacks);
+//!
+//! let lines = parser.count();
+//! assert_eq!(lines, 1);
+//! ```
+//!
 //! # Cargo Features
 //!
 //! Additional functionality can be enabled by adding feature flags to your
