@@ -222,7 +222,6 @@ mod tests {
                 arguments: BigBuffer::default(),
                 span: Span::default(),
             };
-            println!("{:?}", code);
 
             assert_eq!(code.minor_number(), i);
         }

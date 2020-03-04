@@ -46,6 +46,7 @@
 //! ```rust
 //! use gcode::{Callbacks, Span};
 //!
+//! /// A custom set of [`Callbacks`] we'll use to keep track of errors.
 //! #[derive(Debug, Default)]
 //! struct Errors {
 //!     unexpected_line_number : usize,
@@ -105,6 +106,8 @@
 //! use gcode::{Word, Comment, GCode, Nop, Parser, buffers::Buffers};
 //! use arrayvec::ArrayVec;
 //!
+//! /// A type-level variable which contains definitions for each of our buffer
+//! /// types.
 //! enum MyBuffers {}
 //!
 //! impl<'input> Buffers<'input> for MyBuffers {
