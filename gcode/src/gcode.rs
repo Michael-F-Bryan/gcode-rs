@@ -199,7 +199,7 @@ mod tests {
     use arrayvec::ArrayVec;
     use std::prelude::v1::*;
 
-    type BigBuffer = ArrayVec<[Word; 128]>;
+    type BigBuffer = ArrayVec<[Word; 32]>;
 
     #[test]
     fn correct_major_number() {

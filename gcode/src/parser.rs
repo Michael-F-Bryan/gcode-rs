@@ -4,7 +4,7 @@ use crate::{
     words::{Atom, Word, WordsOrComments},
     Callbacks, Comment, GCode, Line, Mnemonic, Nop,
 };
-use core::{iter::Peekable, marker::PhantomData};
+use core::{iter::Peekable, marker::PhantomData, fmt::Debug};
 
 /// Parse each [`GCode`] in some text, ignoring any errors that may occur or
 /// [`Comment`]s that are found.
@@ -14,7 +14,7 @@ use core::{iter::Peekable, marker::PhantomData};
 /// have a look at [`full_parse_with_callbacks()`].
 pub fn parse<'input>(
     src: &'input str,
-) -> impl Iterator<Item = GCode<impl Buffer<Word>>> + 'input {
+) -> impl Iterator<Item = GCode<impl Buffer<Word> + Debug>> + 'input {
     full_parse_with_callbacks(src, Nop).flat_map(|line| line.into_gcodes())
 }
 
