@@ -1,5 +1,5 @@
 use crate::{
-    buffers::{Buffer, Buffers, CapacityError, DefaultBuffers},
+    buffers::{Buffer, CapacityError, DefaultArguments},
     Span, Word,
 };
 use core::fmt::{self, Display, Formatter};
@@ -62,21 +62,21 @@ impl Display for Mnemonic {
     feature = "serde-1",
     derive(serde_derive::Serialize, serde_derive::Deserialize)
 )]
-pub struct GCode<A> {
+pub struct GCode<A=DefaultArguments> {
     mnemonic: Mnemonic,
     number: f32,
     arguments: A,
     span: Span,
 }
 
-impl GCode<<DefaultBuffers as Buffers<'_>>::Arguments> {
-    /// Create a new [`GCode`] which uses the [`DefaultBuffers`] buffer.
+impl GCode {
+    /// Create a new [`GCode`] which uses the [`DefaultArguments`] buffer.
     pub fn new(mnemonic: Mnemonic, number: f32, span: Span) -> Self {
         GCode {
             mnemonic,
             number,
             span,
-            arguments: <DefaultBuffers as Buffers<'_>>::Arguments::default(),
+            arguments: DefaultArguments::default(),
         }
     }
 }
@@ -169,7 +169,7 @@ impl<A: Buffer<Word>> GCode<A> {
 impl<A: Buffer<Word>> Extend<Word> for GCode<A> {
     fn extend<I: IntoIterator<Item = Word>>(&mut self, words: I) {
         for word in words {
-            if let Err(_) = self.push_argument(word) {
+            if self.push_argument(word).is_err() {
                 // we can't add any more arguments
                 return;
             }
@@ -243,14 +243,14 @@ mod tests {
         .unwrap();
         code.push_argument(Word {
             letter: 'y',
-            value: -3.14,
+            value: -3.5,
             span: Span::default(),
         })
         .unwrap();
 
         assert_eq!(code.value_for('X'), Some(10.0));
         assert_eq!(code.value_for('x'), Some(10.0));
-        assert_eq!(code.value_for('Y'), Some(-3.14));
+        assert_eq!(code.value_for('Y'), Some(-3.5));
         assert_eq!(code.value_for('Z'), None);
     }
 }

@@ -3,24 +3,41 @@
 //! This module is mainly intended for use cases when the amount of space that
 //! can be consumed by buffers needs to be defined at compile time. For most
 //! users, the [`DefaultBuffers`] alias should be suitable.
+//! 
+//! For most end users it is probably simpler to determine a "good enough" 
+//! buffer size and create type aliases of [`GCode`] and [`Line`] for that size.
 
 use crate::{Comment, GCode, Word};
 use arrayvec::{Array, ArrayVec};
 use core::fmt::{self, Debug, Display, Formatter};
 
-/// The default buffer type for this platform.
-///
-/// This is a type alias for [`SmallFixedBuffers`] because the crate is compiled
-/// without the *"std"* feature.
-#[cfg(not(feature = "std"))]
-pub type DefaultBuffers = SmallFixedBuffers;
+cfg_if::cfg_if! {
+    if #[cfg(feature = "std")] {
+        /// The default buffer type for this platform.
+        ///
+        /// This is a type alias for [`VecBuffers`] because the crate is compiled
+        /// with the *"std"* feature.
+        pub type DefaultBuffers = VecBuffers;
 
-/// The default buffer type for this platform.
-///
-/// This is a type alias for [`VecBuffers`] because the crate is compiled
-/// with the *"std"* feature.
-#[cfg(feature = "std")]
-pub type DefaultBuffers = VecBuffers;
+        /// The default [`Buffer`] to use for a [`GCode`]'s arguments.
+        /// 
+        /// This is a type alias for [`Vec<Word>`] because the crate is compiled
+        /// with the *"std"* feature.
+        pub type DefaultArguments = Vec<Word>;
+    } else {
+        /// The default buffer type for this platform.
+        ///
+        /// This is a type alias for [`SmallFixedBuffers`] because the crate is compiled
+        /// without the *"std"* feature.
+        pub type DefaultBuffers = SmallFixedBuffers;
+
+        /// The default [`Buffer`] to use for a [`GCode`]'s arguments.
+        /// 
+        /// This is a type alias for [`ArrayVec`] because the crate is compiled
+        /// without the *"std"* feature.
+        pub type DefaultArguments = ArrayVec<[Word; 5]>;
+    }
+}
 
 /// A set of type aliases defining the types to use when storing data.
 pub trait Buffers<'input> {
@@ -68,7 +85,7 @@ impl<T, A: Array<Item = T>> Buffer<T> for ArrayVec<A> {
 pub enum SmallFixedBuffers {}
 
 impl<'input> Buffers<'input> for SmallFixedBuffers {
-    type Arguments = ArrayVec<[Word; 5]>;
+    type Arguments = DefaultArguments;
     type Commands = ArrayVec<[GCode<Self::Arguments>; 1]>;
     type Comments = ArrayVec<[Comment<'input>; 1]>;
 }
@@ -83,7 +100,7 @@ with_std! {
     pub enum VecBuffers {}
 
     impl<'input> Buffers<'input> for VecBuffers {
-        type Arguments = Vec<Word>;
+        type Arguments = DefaultArguments;
         type Commands = Vec<GCode<Self::Arguments>>;
         type Comments = Vec<Comment<'input>>;
     }

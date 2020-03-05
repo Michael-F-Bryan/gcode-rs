@@ -1,5 +1,5 @@
 use crate::{
-    buffers::{Buffer, Buffers, DefaultBuffers},
+    buffers::{Buffers, DefaultBuffers},
     lexer::{Lexer, Token, TokenType},
     words::{Atom, Word, WordsOrComments},
     Callbacks, Comment, GCode, Line, Mnemonic, Nop,
@@ -14,7 +14,7 @@ use core::{iter::Peekable, marker::PhantomData, fmt::Debug};
 /// have a look at [`full_parse_with_callbacks()`].
 pub fn parse<'input>(
     src: &'input str,
-) -> impl Iterator<Item = GCode<impl Buffer<Word> + Debug>> + 'input {
+) -> impl Iterator<Item = GCode> + 'input {
     full_parse_with_callbacks(src, Nop).flat_map(|line| line.into_gcodes())
 }
 
