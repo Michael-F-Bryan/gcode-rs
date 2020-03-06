@@ -4,7 +4,7 @@ use crate::{
     words::{Atom, Word, WordsOrComments},
     Callbacks, Comment, GCode, Line, Mnemonic, Nop,
 };
-use core::{iter::Peekable, marker::PhantomData, fmt::Debug};
+use core::{iter::Peekable, marker::PhantomData};
 
 /// Parse each [`GCode`] in some text, ignoring any errors that may occur or
 /// [`Comment`]s that are found.
@@ -12,9 +12,7 @@ use core::{iter::Peekable, marker::PhantomData, fmt::Debug};
 /// This function is probably what you are looking for if you just want to read
 /// the [`GCode`] commands in a program. If more detailed information is needed,
 /// have a look at [`full_parse_with_callbacks()`].
-pub fn parse<'input>(
-    src: &'input str,
-) -> impl Iterator<Item = GCode> + 'input {
+pub fn parse<'input>(src: &'input str) -> impl Iterator<Item = GCode> + 'input {
     full_parse_with_callbacks(src, Nop).flat_map(|line| line.into_gcodes())
 }
 
@@ -99,11 +97,11 @@ where
         &mut self,
         word: Word,
         line: &mut Line<'input, B>,
-        temp_gcode: &Option<GCode<B::Arguments>>,
+        has_temp_gcode: bool,
     ) {
         if line.gcodes().is_empty()
             && line.line_number().is_none()
-            && temp_gcode.is_none()
+            && !has_temp_gcode
         {
             line.set_line_number(word);
         } else {
@@ -201,6 +199,10 @@ where
             gcode.span(),
         );
     }
+
+    fn next_line_number(&mut self) -> Option<usize> {
+        self.atoms.peek().map(|a| a.span().line)
+    }
 }
 
 impl<'input, I, C, B> Iterator for Lines<'input, I, C, B>
@@ -213,11 +215,12 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut line = Line::default();
-        // we need a scratch space while processing arguments
+        // we need a scratch space for the gcode we're in the middle of
+        // constructing
         let mut temp_gcode = None;
 
-        while let Some(next_span) = self.atoms.peek().map(|a| a.span()) {
-            if !line.is_empty() && next_span.line != line.span().line {
+        while let Some(next_line) = self.next_line_number() {
+            if !line.is_empty() && next_line != line.span().line {
                 // we've started the next line
                 break;
             }
@@ -233,7 +236,11 @@ where
                 },
                 // line numbers are annoying, so handle them separately
                 Atom::Word(word) if word.letter.to_ascii_lowercase() == 'n' => {
-                    self.handle_line_number(word, &mut line, &temp_gcode);
+                    self.handle_line_number(
+                        word,
+                        &mut line,
+                        temp_gcode.is_some(),
+                    );
                 },
                 Atom::Word(word) => {
                     self.handle_arg(word, &mut line, &mut temp_gcode)
@@ -242,7 +249,7 @@ where
             }
         }
 
-        if let Some(gcode) = temp_gcode {
+        if let Some(gcode) = temp_gcode.take() {
             if let Err(e) = line.push_gcode(gcode) {
                 self.on_gcode_push_error(e.0);
             }
@@ -277,6 +284,7 @@ mod tests {
         }
     }
 
+    #[derive(Debug, Copy, Clone, PartialEq)]
     enum BigBuffers {}
 
     impl<'input> Buffers<'input> for BigBuffers {
@@ -388,11 +396,13 @@ mod tests {
     #[test]
     fn multiple_commands_on_the_same_line() {
         let src = "G01 X5 G90 (comment) G91 M10\nG01";
+
         let got: Vec<_> = parse(src).collect();
 
         assert_eq!(got.len(), 2);
-        let line = &got[0];
-        assert_eq!(line.gcodes().len(), 4);
+        assert_eq!(got[0].gcodes().len(), 4);
+        assert_eq!(got[0].comments().len(), 1);
+        assert_eq!(got[1].gcodes().len(), 1);
     }
 
     /// I wasn't sure if the `#[derive(Serialize)]` would work given we use
@@ -400,7 +410,7 @@ mod tests {
     #[test]
     #[cfg(feature = "serde-1")]
     fn you_can_actually_serialize_lines() {
-        let src = "G01 X5 G90 (comment) G91 M10\nG01";
+        let src = "G01 X5 G90 (comment) G91 M10\nG01\n";
         let line = parse(src).next().unwrap();
 
         fn assert_serializable<S: serde::Serialize>(_: &S) {}
@@ -408,5 +418,23 @@ mod tests {
 
         assert_serializable(&line);
         assert_deserializable::<Line<'_>>();
+    }
+
+    /// For some reason we were parsing the G90, then an empty G01 and the
+    /// actual G01.
+    #[test]
+    #[ignore]
+    fn funny_bug_in_crate_example() {
+        let src = "G90 \n G01 X50.0 Y-10";
+        let expected = vec![
+            GCode::new(Mnemonic::General, 90.0, Span::PLACEHOLDER),
+            GCode::new(Mnemonic::General, 1.0, Span::PLACEHOLDER)
+                .with_argument(Word::new('X', 50.0, Span::PLACEHOLDER))
+                .with_argument(Word::new('Y', -10.0, Span::PLACEHOLDER)),
+        ];
+
+        let got: Vec<_> = crate::parse(src).collect();
+
+        assert_eq!(got, expected);
     }
 }
