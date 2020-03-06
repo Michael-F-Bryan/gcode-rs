@@ -22,7 +22,10 @@
 //! ```rust
 //! use gcode::Mnemonic;
 //!
-//! let src = "G90 G00 X50.0 Y-10";
+//! let src = r#"
+//!     G90 
+//!     G00 X50.0 Y-10
+//! "#;
 //!
 //! let got: Vec<_> = gcode::parse(src).collect();
 //!
@@ -171,9 +174,9 @@
 #[macro_use]
 extern crate std;
 
-// #[cfg(test)]
-// #[macro_use]
-// extern crate pretty_assertions;
+#[cfg(test)]
+#[macro_use]
+extern crate pretty_assertions;
 
 #[macro_use]
 mod macros;

@@ -14,6 +14,9 @@ use core::{
     marker::PhantomData,
 };
 
+#[allow(unused_imports)] // for rustdoc links
+use crate::Line;
+
 cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
         /// The default buffer type for this platform.
