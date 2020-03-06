@@ -12,7 +12,7 @@ impl From<char> for TokenType {
     fn from(c: char) -> TokenType {
         if c.is_ascii_alphabetic() {
             TokenType::Letter
-        } else if c.is_ascii_digit() || c == '.' || c == '-' {
+        } else if c.is_ascii_digit() || c == '.' || c == '-' || c == '+' {
             TokenType::Number
         } else if c == '(' || c == ';' || c == ')' {
             TokenType::Comment
@@ -153,8 +153,9 @@ impl<'input> Lexer<'input> {
 
         let value = self.chomp(|c| {
             letters_seen += 1;
+            let is_sign = c == '-' || c == '+';
 
-            if (c == '-' && letters_seen == 1) || c.is_ascii_digit() {
+            if (is_sign && letters_seen == 1) || c.is_ascii_digit() {
                 true
             } else if c == '.' && !decimal_seen {
                 decimal_seen = true;
@@ -198,6 +199,16 @@ impl<'input> Iterator for Lexer<'input> {
         let line = self.current_line;
 
         while let Some(kind) = self.peek() {
+            if kind != TokenType::Unknown && self.current_position != start {
+                // we've finished processing some garbage
+                let end = self.current_position;
+                return Some(Token {
+                    kind: TokenType::Unknown,
+                    value: &self.src[start..end],
+                    span: Span::new(start, end, line),
+                });
+            }
+
             match kind {
                 TokenType::Comment => {
                     return Some(self.tokenize_comment().expect(MSG))
@@ -217,11 +228,7 @@ impl<'input> Iterator for Lexer<'input> {
             Some(Token {
                 kind: TokenType::Unknown,
                 value: &self.src[start..],
-                span: Span {
-                    start,
-                    end: self.current_position,
-                    line,
-                },
+                span: Span::new(start, self.current_position, line),
             })
         } else {
             None
@@ -307,6 +314,23 @@ mod tests {
     }
 
     #[test]
+    fn invalid_characters_are_all_garbage_until_next_valid_character() {
+        let mut lexer = Lexer::new("$# ! @ x52");
+        let expected = Token {
+            value: "$# ! @ ",
+            kind: TokenType::Unknown,
+            span: Span::new(0, 7, 0),
+        };
+
+        let got = lexer.next().unwrap();
+
+        assert_eq!(got, expected);
+        assert_eq!(lexer.current_position, 7);
+        let next = lexer.next().unwrap();
+        assert_eq!(next.value, "x");
+    }
+
+    #[test]
     fn tokenize_a_letter() {
         let mut lexer = Lexer::new("asd\nf");
 
@@ -337,5 +361,14 @@ mod tests {
         let got = lexer.next().unwrap();
 
         assert_eq!(got.value, "-3.14");
+    }
+
+    #[test]
+    fn positive_number() {
+        let mut lexer = Lexer::new("+3.14\nf");
+
+        let got = lexer.next().unwrap();
+
+        assert_eq!(got.value, "+3.14");
     }
 }

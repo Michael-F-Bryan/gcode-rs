@@ -13,7 +13,7 @@ macro_rules! smoke_test {
             let src = sanitise_input(src);
 
             let _got: Vec<_> =
-                gcode::parse_with_callbacks(&src, PanicOnError).collect();
+                gcode::full_parse_with_callbacks(&src, PanicOnError).collect();
         }
     };
 }
@@ -47,7 +47,8 @@ fn expected_program_2_output() {
 
     let src = include_str!("data/program_2.gcode");
 
-    let got: Vec<_> = gcode::parse_with_callbacks(src, PanicOnError).collect();
+    let got: Vec<_> =
+        gcode::full_parse_with_callbacks(src, PanicOnError).collect();
 
     // total lines
     assert_eq!(got.len(), 20);

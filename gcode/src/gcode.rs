@@ -1,8 +1,8 @@
 use crate::{
-    buffers::{Buffer, Buffers, CapacityError, DefaultBuffers},
+    buffers::{Buffer, CapacityError, DefaultArguments},
     Span, Word,
 };
-use core::fmt::{self, Display, Formatter};
+use core::fmt::{self, Debug, Display, Formatter};
 
 /// The general category for a [`GCode`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -12,13 +12,27 @@ use core::fmt::{self, Display, Formatter};
 )]
 #[repr(C)]
 pub enum Mnemonic {
+    /// Preparatory commands, often telling the controller what kind of motion
+    /// or offset is desired.
     General,
+    /// Auxilliary commands.
     Miscellaneous,
+    /// Used to give the current program a unique "name".
     ProgramNumber,
+    /// Tool selection.
     ToolChange,
 }
 
 impl Mnemonic {
+    /// Try to convert a letter to its [`Mnemonic`] equivalent.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use gcode::Mnemonic;
+    /// assert_eq!(Mnemonic::for_letter('M'), Some(Mnemonic::Miscellaneous));
+    /// assert_eq!(Mnemonic::for_letter('g'), Some(Mnemonic::General));
+    /// ```
     pub fn for_letter(letter: char) -> Option<Mnemonic> {
         match letter.to_ascii_lowercase() {
             'g' => Some(Mnemonic::General),
@@ -43,26 +57,26 @@ impl Display for Mnemonic {
 
 /// The in-memory representation of a single command in the G-code language
 /// (e.g. `"G01 X50.0 Y-20.0"`).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde-1",
     derive(serde_derive::Serialize, serde_derive::Deserialize)
 )]
-pub struct GCode<A> {
+pub struct GCode<A = DefaultArguments> {
     mnemonic: Mnemonic,
     number: f32,
     arguments: A,
     span: Span,
 }
 
-impl GCode<<DefaultBuffers as Buffers<'_>>::Arguments> {
-    /// Create a new [`GCode`] which uses the [`DefaultBuffers`] buffer.
+impl GCode {
+    /// Create a new [`GCode`] which uses the [`DefaultArguments`] buffer.
     pub fn new(mnemonic: Mnemonic, number: f32, span: Span) -> Self {
         GCode {
             mnemonic,
             number,
             span,
-            arguments: <DefaultBuffers as Buffers<'_>>::Arguments::default(),
+            arguments: DefaultArguments::default(),
         }
     }
 }
@@ -155,11 +169,32 @@ impl<A: Buffer<Word>> GCode<A> {
 impl<A: Buffer<Word>> Extend<Word> for GCode<A> {
     fn extend<I: IntoIterator<Item = Word>>(&mut self, words: I) {
         for word in words {
-            if let Err(_) = self.push_argument(word) {
+            if self.push_argument(word).is_err() {
                 // we can't add any more arguments
                 return;
             }
         }
+    }
+}
+
+impl<A: Buffer<Word>> Debug for GCode<A> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        // we manually implement Debug because the the derive will constrain
+        // the buffer type to be Debug, which isn't necessary and actually makes
+        // it impossible to print something like ArrayVec<[T; 128]>
+        let GCode {
+            mnemonic,
+            number,
+            arguments,
+            span,
+        } = self;
+
+        f.debug_struct("GCode")
+            .field("mnemonic", mnemonic)
+            .field("number", number)
+            .field("arguments", &crate::buffers::debug(arguments))
+            .field("span", span)
+            .finish()
     }
 }
 
@@ -185,7 +220,7 @@ mod tests {
     use arrayvec::ArrayVec;
     use std::prelude::v1::*;
 
-    type BigBuffer = ArrayVec<[Word; 128]>;
+    type BigBuffer = ArrayVec<[Word; 32]>;
 
     #[test]
     fn correct_major_number() {
@@ -208,7 +243,6 @@ mod tests {
                 arguments: BigBuffer::default(),
                 span: Span::default(),
             };
-            println!("{:?}", code);
 
             assert_eq!(code.minor_number(), i);
         }
@@ -230,14 +264,14 @@ mod tests {
         .unwrap();
         code.push_argument(Word {
             letter: 'y',
-            value: -3.14,
+            value: -3.5,
             span: Span::default(),
         })
         .unwrap();
 
         assert_eq!(code.value_for('X'), Some(10.0));
         assert_eq!(code.value_for('x'), Some(10.0));
-        assert_eq!(code.value_for('Y'), Some(-3.14));
+        assert_eq!(code.value_for('Y'), Some(-3.5));
         assert_eq!(code.value_for('Z'), None);
     }
 }
