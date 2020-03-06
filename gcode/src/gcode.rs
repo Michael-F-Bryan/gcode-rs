@@ -2,7 +2,7 @@ use crate::{
     buffers::{Buffer, CapacityError, DefaultArguments},
     Span, Word,
 };
-use core::fmt::{self, Display, Formatter};
+use core::fmt::{self, Debug, Display, Formatter};
 
 /// The general category for a [`GCode`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -57,12 +57,12 @@ impl Display for Mnemonic {
 
 /// The in-memory representation of a single command in the G-code language
 /// (e.g. `"G01 X50.0 Y-20.0"`).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde-1",
     derive(serde_derive::Serialize, serde_derive::Deserialize)
 )]
-pub struct GCode<A=DefaultArguments> {
+pub struct GCode<A = DefaultArguments> {
     mnemonic: Mnemonic,
     number: f32,
     arguments: A,
@@ -174,6 +174,27 @@ impl<A: Buffer<Word>> Extend<Word> for GCode<A> {
                 return;
             }
         }
+    }
+}
+
+impl<A: Buffer<Word>> Debug for GCode<A> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        // we manually implement Debug because the the derive will constrain
+        // the buffer type to be Debug, which isn't necessary and actually makes
+        // it impossible to print something like ArrayVec<[T; 128]>
+        let GCode {
+            mnemonic,
+            number,
+            arguments,
+            span,
+        } = self;
+
+        f.debug_struct("GCode")
+            .field("mnemonic", mnemonic)
+            .field("number", number)
+            .field("arguments", &crate::buffers::debug(arguments))
+            .field("span", span)
+            .finish()
     }
 }
 

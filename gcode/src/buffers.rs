@@ -3,13 +3,16 @@
 //! This module is mainly intended for use cases when the amount of space that
 //! can be consumed by buffers needs to be defined at compile time. For most
 //! users, the [`DefaultBuffers`] alias should be suitable.
-//! 
-//! For most end users it is probably simpler to determine a "good enough" 
+//!
+//! For most end users it is probably simpler to determine a "good enough"
 //! buffer size and create type aliases of [`GCode`] and [`Line`] for that size.
 
 use crate::{Comment, GCode, Word};
 use arrayvec::{Array, ArrayVec};
-use core::fmt::{self, Debug, Display, Formatter};
+use core::{
+    fmt::{self, Debug, Display, Formatter},
+    marker::PhantomData,
+};
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "std")] {
@@ -20,7 +23,7 @@ cfg_if::cfg_if! {
         pub type DefaultBuffers = VecBuffers;
 
         /// The default [`Buffer`] to use for a [`GCode`]'s arguments.
-        /// 
+        ///
         /// This is a type alias for [`Vec<Word>`] because the crate is compiled
         /// with the *"std"* feature.
         pub type DefaultArguments = Vec<Word>;
@@ -32,7 +35,7 @@ cfg_if::cfg_if! {
         pub type DefaultBuffers = SmallFixedBuffers;
 
         /// The default [`Buffer`] to use for a [`GCode`]'s arguments.
-        /// 
+        ///
         /// This is a type alias for [`ArrayVec`] because the crate is compiled
         /// without the *"std"* feature.
         pub type DefaultArguments = ArrayVec<[Word; 5]>;
@@ -130,4 +133,40 @@ impl<T: Debug> Display for CapacityError<T> {
 
 with_std! {
     impl<T: Debug> std::error::Error for CapacityError<T> {}
+}
+
+/// Debug *any* [`Buffer`] when the item is [`Debug`].
+pub(crate) fn debug<'a, T, B>(buffer: &'a B) -> impl Debug + 'a
+where
+    B: Buffer<T> + 'a,
+    T: Debug + 'a,
+{
+    DebugBuffer::new(buffer)
+}
+
+struct DebugBuffer<'a, B, T> {
+    buffer: &'a B,
+    _item: PhantomData<&'a T>,
+}
+
+impl<'a, T, B: Buffer<T>> DebugBuffer<'a, B, T> {
+    fn new(buffer: &'a B) -> Self {
+        DebugBuffer {
+            buffer,
+            _item: PhantomData,
+        }
+    }
+}
+
+impl<'a, B, T> Debug for DebugBuffer<'a, B, T>
+where
+    B: Buffer<T>,
+    T: Debug,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let entries =
+            self.buffer.as_slice().iter().map(|item| item as &dyn Debug);
+
+        f.debug_list().entries(entries).finish()
+    }
 }

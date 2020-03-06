@@ -171,6 +171,10 @@
 #[macro_use]
 extern crate std;
 
+#[cfg(test)]
+#[macro_use]
+extern crate pretty_assertions;
+
 #[macro_use]
 mod macros;
 
