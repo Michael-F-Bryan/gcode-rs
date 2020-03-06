@@ -23,8 +23,8 @@
 //! use gcode::Mnemonic;
 //!
 //! let src = r#"
-//!     G90 
-//!     G00 X50.0 Y-10
+//!     G90              (absolute coordinates)
+//!     G00 X50.0 Y-10   (move somewhere)
 //! "#;
 //!
 //! let got: Vec<_> = gcode::parse(src).collect();
