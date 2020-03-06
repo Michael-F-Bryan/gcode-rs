@@ -43,7 +43,7 @@ script:
 after_script: set +e
 
 before_deploy:
-  - echo '<meta http-equiv="refresh" content="0; url=gcode/index.html" /> ' > target/doc/index.html
+  - echo '<meta http-equiv="refresh" content="0; url=gcode/index.html" /> ' > $TRAVIS_BUILD_DIR/target/doc/index.html
 
 deploy:
   - provider: pages
