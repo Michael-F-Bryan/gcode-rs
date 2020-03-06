@@ -42,8 +42,8 @@ script:
 
 after_script: set +e
 
-before_cache:
-  - chmod -R a+r $HOME/.cargo
+before_deploy:
+  - echo '<meta http-equiv="refresh" content="0; url=gcode/index.html" /> ' > target/doc/index.html
 
 deploy:
   - provider: pages
@@ -54,6 +54,9 @@ deploy:
     on:
       branch: master
       rust: nightly
+
+before_cache:
+  - chmod -R a+r $HOME/.cargo
 
 branches:
   only:
