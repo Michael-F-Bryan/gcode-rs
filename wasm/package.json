@@ -2,7 +2,7 @@
   "name": "@michael-f-bryan/gcode",
   "version": "1.0.0",
   "description": "An interface to the Rust gcode parser library",
-  "main": "js/index.ts",
+  "main": "ts/index.ts",
   "repository": "https://github.com/Michael-F-Bryan/gcode-rs",
   "author": "Michael-F-Bryan <michaelfbryan@gmail.com>",
   "license": "MIT OR Apache-2.0",
