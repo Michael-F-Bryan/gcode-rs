@@ -92,7 +92,18 @@ impl Word {
 
 #[wasm_bindgen]
 pub struct Parser {
+    /// A pinned heap allocation containing the text that `inner` has references
+    /// to.
+    /// 
+    /// # Safety
+    /// 
+    /// This field **must** be destroyed after `inner`. The `&str` it contains
+    /// should also never change, otherwise we may invalidate references inside
+    /// `inner`.
     _text: Pin<Box<str>>,
+    /// The actual `gcode::Parser`. We've told the compiler that it has a
+    /// `'static` lifetime because we'll be using `unsafe` code to manually
+    /// manage memory.
     inner: ManuallyDrop<gcode::Parser<'static, JavaScriptCallbacks>>,
 }
 
@@ -100,6 +111,7 @@ pub struct Parser {
 impl Parser {
     #[wasm_bindgen(constructor)]
     pub fn new(text: String, callbacks: JavaScriptCallbacks) -> Parser {
+        // make sure our text is allocated on the heap and will never move
         let text: Pin<Box<str>> = text.into_boxed_str().into();
 
         // SAFETY: Because gcode::Parser contains a reference to the text string
@@ -116,9 +128,12 @@ impl Parser {
         // destroyed first. That way we don't get the situation where `text` is
         // destroyed and our `inner` parser is left with dangling references.
         unsafe {
+            // get a pointer to the underlying text
             let text_ptr: *const str = &*text;
+            // then convert it to a reference with a 'static lifetime
             let static_str: &'static str = &*text_ptr;
 
+            // now make a gcode::Parser which uses the 'static text as input
             let inner =
                 ManuallyDrop::new(gcode::Parser::new(static_str, callbacks));
 
