@@ -6,7 +6,8 @@
     "outDir": "dist",
     "sourceMap": true,
     "lib": [
-      "ES6"
+      "ES6",
+      "DOM",
     ]
   }
 }

@@ -1,7 +1,24 @@
-import * as wasm from "../pkg/index";
+import * as wasm from "../pkg/index.js";
+
+const { Parser } = wasm;
 
 export function* parseLines(text: string, callbacks?: Callbacks): Iterable<Line> {
-    throw new Error("Not Implemented");
+    const parser = new Parser(text, callbacks);
+
+    try {
+        while (true) {
+            const line = parser.next_line();
+
+            if (line) {
+                yield toLine(line);
+            } else {
+                break;
+            }
+        }
+
+    } finally {
+        parser.free();
+    }
 }
 
 export function* parse(text: string, callbacks?: Callbacks): Iterator<GCode, void, void> {
@@ -37,3 +54,11 @@ export type Span = {
 }
 
 export interface Callbacks { }
+
+function toLine(line: wasm.Line): Line {
+    try {
+        throw new Error();
+    } finally {
+        line.free();
+    }
+}

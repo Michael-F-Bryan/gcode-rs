@@ -1,9 +1,10 @@
 [package]
-name = "wasm"
+name = "gcode-wasm"
 version = "0.1.0"
 authors = ["Michael-F-Bryan <michaelfbryan@gmail.com>"]
 edition = "2018"
 publish = false
+description = "WebAssembly bindings for the gcode crate"
 
 [dependencies]
 wasm-bindgen = "0.2.59"
