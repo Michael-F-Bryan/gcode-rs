@@ -32,6 +32,9 @@ impl Word {
     pub fn letter(&self) -> char { self.0.letter }
 
     #[wasm_bindgen(getter)]
+    pub fn value(&self) -> f32 { self.0.value }
+
+    #[wasm_bindgen(getter)]
     pub fn span(&self) -> Span { Span(self.0.span) }
 }
 
@@ -61,6 +64,11 @@ impl Line {
             span: Span(c.span),
         })
     }
+
+    #[wasm_bindgen(getter)]
+    pub fn span(&self) -> Span {
+        self.0.span().into()
+    }
 }
 
 impl From<gcode::Line<'static>> for Line {
@@ -75,7 +83,26 @@ pub struct GCode(gcode::GCode);
 
 #[wasm_bindgen]
 impl GCode {
+    #[wasm_bindgen(getter)]
     pub fn mnemonic(&self) -> char { crate::mnemonic_letter(self.0.mnemonic()) }
+
+    #[wasm_bindgen(getter)]
+    pub fn number(&self) -> f32 {
+        self.0.major_number() as f32 + (self.0.minor_number() as f32) / 10.0
+    }
+
+    #[wasm_bindgen(getter)]
+    pub fn span(&self) -> Span {
+        self.0.span().into()
+    }
+
+    pub fn num_arguments(&self) -> usize {
+        self.0.arguments().len()
+    }
+
+    pub fn get_argument(&self, index: usize) -> Option<Word> {
+        self.0.arguments().get(index).copied().map(|w| Word::from(w))
+    }
 }
 
 impl From<gcode::GCode> for GCode {

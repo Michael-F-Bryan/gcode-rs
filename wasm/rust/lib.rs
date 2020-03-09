@@ -1,3 +1,6 @@
+//! Internals for the `@michael-f-bryan/gcode` package. Not intended for public
+//! use.
+
 mod callbacks;
 mod parser;
 mod simple_wrappers;

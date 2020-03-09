@@ -13,8 +13,7 @@ extern "C" {
     fn gcode_buffer_overflowed(
         this: &JavaScriptCallbacks,
         mnemonic: char,
-        major_number: u32,
-        minor_number: u32,
+        number: f32,
         span: Span,
     );
 
@@ -22,8 +21,7 @@ extern "C" {
     fn gcode_argument_buffer_overflowed(
         this: &JavaScriptCallbacks,
         mnemonic: char,
-        major_number: u32,
-        minor_number: u32,
+        number: f32,
         argument: Word,
     );
 
@@ -80,8 +78,7 @@ impl Callbacks for JavaScriptCallbacks {
         JavaScriptCallbacks::gcode_buffer_overflowed(
             self,
             crate::mnemonic_letter(mnemonic),
-            major_number,
-            minor_number,
+            (major_number as f32) + (minor_number as f32)/10.0,
             span.into(),
         );
     }
@@ -96,8 +93,7 @@ impl Callbacks for JavaScriptCallbacks {
         JavaScriptCallbacks::gcode_argument_buffer_overflowed(
             self,
             crate::mnemonic_letter(mnemonic),
-            major_number,
-            minor_number,
+            (major_number as f32) + (minor_number as f32)/10.0,
             argument.into(),
         );
     }
