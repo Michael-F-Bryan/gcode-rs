@@ -87,7 +87,7 @@ export function* parseLines(text: string, callbacks?: Callbacks): Iterable<Line>
     }
 }
 
-export function* parse(text: string, callbacks?: Callbacks): Iterator<GCode, void, void> {
+export function* parse(text: string, callbacks?: Callbacks): Iterable<GCode> {
     for (const line of parseLines(text, callbacks)) {
         for (const gcode of line.gcodes) {
             yield gcode;
