@@ -370,27 +370,26 @@ mod tests {
     #[test]
     fn parse_command_with_arguments() {
         let src = "G01X5 Y-20";
+        let should_be =
+            GCode::new(Mnemonic::General, 1.0, Span::new(0, src.len(), 0))
+                .with_argument(Word {
+                    letter: 'X',
+                    value: 5.0,
+                    span: Span::new(3, 5, 0),
+                })
+                .with_argument(Word {
+                    letter: 'Y',
+                    value: -20.0,
+                    span: Span::new(6, 10, 0),
+                });
+
         let got: Vec<_> = parse(src).collect();
 
         assert_eq!(got.len(), 1);
         let line = &got[0];
         assert_eq!(line.gcodes().len(), 1);
         let g01 = &line.gcodes()[0];
-        assert_eq!(g01.major_number(), 1);
-        assert_eq!(g01.minor_number(), 0);
-        let should_be = vec![
-            Word {
-                letter: 'X',
-                value: 5.0,
-                span: Span::new(3, 5, 0),
-            },
-            Word {
-                letter: 'Y',
-                value: -20.0,
-                span: Span::new(6, 10, 0),
-            },
-        ];
-        assert_eq!(g01.arguments(), should_be.as_slice());
+        assert_eq!(g01, &should_be);
     }
 
     #[test]

@@ -57,7 +57,7 @@ impl Display for Mnemonic {
 
 /// The in-memory representation of a single command in the G-code language
 /// (e.g. `"G01 X50.0 Y-20.0"`).
-#[derive(Clone, PartialEq)]
+#[derive(Clone)]
 #[cfg_attr(
     feature = "serde-1",
     derive(serde_derive::Serialize, serde_derive::Deserialize)
@@ -211,6 +211,26 @@ impl<A: Buffer<Word>> Display for GCode<A> {
         }
 
         Ok(())
+    }
+}
+
+impl<A, B> PartialEq<GCode<B>> for GCode<A>
+where
+    A: Buffer<Word>,
+    B: Buffer<Word>,
+{
+    fn eq(&self, other: &GCode<B>) -> bool {
+        let GCode {
+            mnemonic,
+            number,
+            arguments,
+            span,
+        } = self;
+
+        *span == other.span()
+            && *mnemonic == other.mnemonic
+            && *number == other.number
+            && arguments.as_slice() == other.arguments.as_slice()
     }
 }
 
