@@ -6,7 +6,9 @@ edition = "2018"
 publish = false
 description = "WebAssembly bindings for use in the @michael-f-bryan/gcode package. Not intended for public use."
 repository = "https://github.com/Michael-F-Bryan/gcode-rs"
+homepage = "https://github.com/Michael-F-Bryan/gcode-rs"
 license = "MIT OR Apache-2.0"
+keywords = ["gcode", "wasm", "rust"]
 
 [dependencies]
 wasm-bindgen = "0.2.59"
