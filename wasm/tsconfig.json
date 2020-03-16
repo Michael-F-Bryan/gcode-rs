@@ -6,6 +6,7 @@
     "outDir": "dist",
     "sourceMap": true,
     "esModuleInterop": true,
+    "declaration": true,
     "lib": [
       "ES6",
       "DOM",

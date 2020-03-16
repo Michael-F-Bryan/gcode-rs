@@ -2,15 +2,15 @@
   "name": "@michael-f-bryan/gcode",
   "version": "1.0.0",
   "description": "An interface to the Rust gcode parser library",
-  "main": "ts/index.ts",
+  "main": "main/index.js",
+  "types": "dist/index.d.ts",
   "repository": "https://github.com/Michael-F-Bryan/gcode-rs",
   "author": "Michael-F-Bryan <michaelfbryan@gmail.com>",
   "license": "MIT OR Apache-2.0",
   "scripts": {
-    "build": "webpack --mode=production",
-    "watch": "webpack --watch --mode=development",
     "test": "jest",
-    "coverage": "jest --coverage"
+    "coverage": "jest --coverage",
+    "prepublish": "tsc"
   },
   "devDependencies": {
     "@types/jest": "^25.1.4",
