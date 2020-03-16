@@ -125,6 +125,7 @@ impl<A: Buffer<Word>> GCode<A> {
         &mut self,
         arg: Word,
     ) -> Result<(), CapacityError<Word>> {
+        self.span = self.span.merge(arg.span);
         self.arguments.try_push(arg)
     }
 
