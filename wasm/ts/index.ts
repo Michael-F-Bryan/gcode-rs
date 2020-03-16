@@ -1,4 +1,4 @@
-import * as wasm from "../pkg/index";
+import * as wasm from "@michael-f-bryan/gcode-wasm";
 
 export type Line = {
     gcodes: GCode[],
@@ -149,7 +149,6 @@ function translateSpan(span: wasm.Span): Span {
         end: span.end,
         line: span.line,
     };
-    span.free();
     return translated;
 }
 

@@ -325,6 +325,11 @@
     "@types/yargs" "^15.0.0"
     chalk "^3.0.0"
 
+"@michael-f-bryan/gcode-wasm@0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@michael-f-bryan/gcode-wasm/-/gcode-wasm-0.1.0.tgz#19fad1bfa47e80adfc23f3a7713ea6d5442c1f7f"
+  integrity sha512-S5mIdbYzPYvbUez4MKKScasB17NkDZQA1fbfAwdkl99zXxni732Q/DoAaCbs67+RRR/V5KWsAhHB8WTZ23bPCA==
+
 "@sinonjs/commons@^1.7.0":
   version "1.7.1"
   resolved "https://registry.yarnpkg.com/@sinonjs/commons/-/commons-1.7.1.tgz#da5fd19a5f71177a53778073978873964f49acf1"
