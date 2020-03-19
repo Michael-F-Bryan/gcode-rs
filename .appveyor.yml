@@ -16,4 +16,6 @@ install:
 build: false
 
 test_script:
-  - cd %APPVEYOR_BUILD_FOLDER%\gcode; cargo test --verbose %cargoflags%
+  - dir
+  - pwd
+  - cargo test --verbose %cargoflags% --manifest-path %APPVEYOR_BUILD_FOLDER%\gcode\Cargo.toml
