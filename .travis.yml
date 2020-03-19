@@ -12,17 +12,17 @@ matrix:
     - env: FEATURES="--no-default-features --features serde-1"
     - env: FEATURES="--no-default-features --features std"
     # Make sure it compiles without std by targeting an embedded platform
-    - env: 
-      - TARGET=thumbv7em-none-eabihf
-      - FEATURES=--no-default-features
+    - env:
+        - TARGET=thumbv7em-none-eabihf
+        - FEATURES=--no-default-features
       script:
-      - cd gcode
-      - cargo build --verbose $FEATURES $TARGET
+        - cd gcode
+        - cargo build --verbose $FEATURES $TARGET
 
     # Use nightly for better docs
-    - env: 
-      - FEATURES=--all-features 
-      - RUSTDOCFLAGS="--cfg docsrs"
+    - env:
+        - FEATURES=--all-features
+        - RUSTDOCFLAGS="--cfg docsrs"
       rust: nightly
 
 before_script:
@@ -67,4 +67,3 @@ branches:
 notifications:
   email:
     on_success: never
-
