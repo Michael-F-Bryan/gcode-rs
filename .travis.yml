@@ -43,14 +43,14 @@ script:
 after_script: set +e
 
 before_deploy:
-  - echo '<meta http-equiv="refresh" content="0; url=gcode/index.html" /> ' > $TRAVIS_BUILD_DIR/target/doc/index.html
+  - echo '<meta http-equiv="refresh" content="0; url=gcode/index.html" /> ' > $TRAVIS_BUILD_DIR/gcode/target/doc/index.html
 
 deploy:
   - provider: pages
     skip-cleanup: true
     github-token: $GH_TOKEN
     keep-history: true
-    local-dir: target/doc
+    local-dir: $TRAVIS_BUILD_DIR/gcode/target/doc
     on:
       branch: master
       rust: nightly

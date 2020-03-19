@@ -16,4 +16,4 @@ install:
 build: false
 
 test_script:
-  - cargo test --verbose %cargoflags%
+  - cd gcode; cargo test --verbose %cargoflags%
