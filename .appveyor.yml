@@ -16,4 +16,4 @@ install:
 build: false
 
 test_script:
-  - cd gcode; cargo test --verbose %cargoflags%
+  - cd %APPVEYOR_BUILD_FOLDER%\gcode; cargo test --verbose %cargoflags%
