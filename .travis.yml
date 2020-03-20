@@ -25,6 +25,11 @@ matrix:
         - RUSTDOCFLAGS="--cfg docsrs"
       rust: nightly
 
+    # the webassembly bindings
+    - script:
+        - cd wasm && yarn install
+        - yarn test
+
 before_script:
   - |
     if [ ! -z "$TARGET" ]; then

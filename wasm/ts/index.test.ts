@@ -10,7 +10,7 @@ describe("gcode parsing", () => {
                 arguments: {},
                 span: {
                     start: 0,
-                    end: 2,
+                    end: src.length,
                     line: 0,
                 }
             },
@@ -40,7 +40,6 @@ describe("gcode parsing", () => {
         ];
 
         const got = Array.from(parse(src));
-        console.log(got);
 
         expect(got).toEqual(expected);
     });

@@ -1,6 +1,6 @@
 {
   "name": "@michael-f-bryan/gcode",
-  "version": "1.0.0",
+  "version": "0.6.1",
   "description": "An interface to the Rust gcode parser library",
   "main": "main/index.js",
   "types": "dist/index.d.ts",
@@ -13,7 +13,7 @@
     "prepublish": "tsc"
   },
   "dependencies": {
-    "@michael-f-bryan/gcode-wasm": "0.1.0"
+    "@michael-f-bryan/gcode-wasm": "0.6.1"
   },
   "devDependencies": {
     "@babel/parser": "^7.8.7",
