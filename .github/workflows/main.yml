@@ -56,9 +56,9 @@ jobs:
         run: "echo '<meta http-equiv=\"refresh\" content=\"0; url=gcode/index.html\" />' > gcode/target/doc/index.html"
         shell: bash
       - name: GitHub Pages
-        uses: crazy-max/ghaction-github-pages@v1
-        with:
-          build_dir: gcode/target/doc
-        env:
-          GITHUB_PAT: ${{ secrets.GH_PAGES_ACCESS_TOKEN  }}
-
+        uses: crazy-max/ghaction-github-pages@v2
+          with:
+            target_branch: gh-pages
+            build_dir: gcode/target/doc
+          env:
+            GITHUB_TOKEN: ${{ secrets.GH_PAGES_ACCESS_TOKEN }}
