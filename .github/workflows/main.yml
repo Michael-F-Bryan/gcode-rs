@@ -14,9 +14,6 @@ jobs:
           - stable
           # MSRV - Relatively recent compiler version
           - 1.46.0
-    defaults:
-      run:
-        working-directory: gcode
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -27,15 +24,15 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: check
-          args: --all --verbose
+          args: --verbose --manifest-path gcode/Cargo.toml
       - uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --all --verbose
+          args: --verbose --manifest-path gcode/Cargo.toml
       - uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all --verbose
+          args: --verbose --manifest-path gcode/Cargo.toml
 
   api-docs:
     name: Publish API Docs to GitHub Pages
@@ -44,9 +41,6 @@ jobs:
       matrix:
         rust:
           - nightly
-    defaults:
-      run:
-        working-directory: gcode
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -57,7 +51,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: doc
-          args: --all --verbose
+          args: --verbose --manifest-path gcode/Cargo.toml
       - name: Redirect top-level GitHub Pages
         run: "echo '<meta http-equiv=\"refresh\" content=\"0; url=gcode/index.html\" />' > target/doc/index.html"
         shell: bash
