@@ -23,6 +23,8 @@ default = ["std"]
 std = []
 
 [dependencies]
+num-derive = "0.3.3"
+num-traits = "0.2.14"
 
 [dev-dependencies]
 arrayvec = "0.5.2"
