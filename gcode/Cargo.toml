@@ -19,8 +19,11 @@ travis-ci = { repository = "Michael-F-Bryan/gcode-rs" }
 maintenance = { status = "actively-developed" }
 
 [features]
+default = ["std"]
+std = []
 
 [dependencies]
 
 [dev-dependencies]
+arrayvec = "0.5.2"
 pretty_assertions = "0.6.1"
