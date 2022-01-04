@@ -65,6 +65,66 @@ fn expected_program_2_output() {
     pretty_assertions::assert_eq!(gcodes, expected);
 }
 
+#[test]
+#[ignore]
+fn expected_program_4_output() {
+    // G0 G90 G94 G17
+    // G21
+    // (HSC-KONTUR1)
+    // M5
+    // T4 M6
+    // M3 S10000
+    // G54
+    // M7
+    // G0 X4.942 Y7.644
+    // Z15.
+    // G1 Z0.401 F1000.
+    // Z-1.751
+    // X4.945 Y7.637 Z-1.829
+
+    let src = include_str!("data/program_4.gcode");
+
+    let got: Vec<_> =
+        gcode::full_parse_with_callbacks(src, PanicOnError).collect();
+
+    // total lines
+    assert_eq!(got.len(), 13);
+    // check lines without any comments
+    assert_eq!(got.iter().filter(|l| l.comments().is_empty()).count(), 12);
+
+    let gcodes: Vec<_> = got.iter().flat_map(|l| l.gcodes()).cloned().collect();
+    let expected = vec![
+        GCode::new(Mnemonic::General, 0.0, Span::PLACEHOLDER),
+        GCode::new(Mnemonic::General, 90.0, Span::PLACEHOLDER),
+        GCode::new(Mnemonic::General, 94.0, Span::PLACEHOLDER),
+        GCode::new(Mnemonic::General, 17.0, Span::PLACEHOLDER),
+        GCode::new(Mnemonic::General, 21.0, Span::PLACEHOLDER),
+        GCode::new(Mnemonic::Miscellaneous, 5.0, Span::PLACEHOLDER),
+        GCode::new(Mnemonic::ToolChange, 4.0, Span::PLACEHOLDER),
+        GCode::new(Mnemonic::Miscellaneous, 6.0, Span::PLACEHOLDER),
+        GCode::new(Mnemonic::Miscellaneous, 3.0, Span::PLACEHOLDER)
+            .with_argument(Word::new('S', 10000.0, Span::PLACEHOLDER)),
+        GCode::new(Mnemonic::General, 54.0, Span::PLACEHOLDER),
+        GCode::new(Mnemonic::Miscellaneous, 7.0, Span::PLACEHOLDER),
+        GCode::new(Mnemonic::General, 0.0, Span::PLACEHOLDER)
+            .with_argument(Word::new('X', 4.942, Span::PLACEHOLDER))
+            .with_argument(Word::new('Y', 7.644, Span::PLACEHOLDER)),
+        GCode::new(Mnemonic::General, 0.0, Span::PLACEHOLDER)
+            .with_argument(Word::new('Z', 15.0, Span::PLACEHOLDER)),
+        GCode::new(Mnemonic::General, 1.0, Span::PLACEHOLDER)
+            .with_argument(Word::new('Z', 0.401, Span::PLACEHOLDER))
+            .with_argument(Word::new('F', 1000.0, Span::PLACEHOLDER)),
+        GCode::new(Mnemonic::General, 1.0, Span::PLACEHOLDER)
+            .with_argument(Word::new('Z', -1.751, Span::PLACEHOLDER)),
+        GCode::new(Mnemonic::General, 1.0, Span::PLACEHOLDER)
+            .with_argument(Word::new('X', 4.945, Span::PLACEHOLDER))
+            .with_argument(Word::new('Y', 7.637, Span::PLACEHOLDER))
+            .with_argument(Word::new('Z', -1.829, Span::PLACEHOLDER)),
+
+    ];
+    pretty_assertions::assert_eq!(gcodes, expected);
+}
+
 struct PanicOnError;
 
 impl gcode::Callbacks for PanicOnError {

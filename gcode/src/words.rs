@@ -204,4 +204,59 @@ mod tests {
         });
         assert_eq!(got, expected);
     }
+
+    #[test]
+    fn multi_words() {
+        let text = "G0 X1\nG1 Y2";
+        let mut words = WordsOrComments::new(Lexer::new(text));
+
+        let got = words.next().unwrap();
+        let expected = Atom::Word(Word {
+            letter: 'G',
+            value: 0.0,
+            span: Span {
+                start: 0,
+                end: 2,
+                line: 0,
+            },
+
+        });
+        assert_eq!(got, expected);
+
+        let got = words.next().unwrap();
+        let expected = Atom::Word(Word {
+            letter: 'X',
+            value: 1.0,
+            span: Span {
+                start: 3,
+                end: 5,
+                line: 0,
+             },
+        });
+        assert_eq!(got, expected);
+
+        let got = words.next().unwrap();
+        let expected = Atom::Word(Word {
+            letter: 'G',
+            value: 1.0,
+            span: Span {
+                start: 6,
+                end: 8,
+                line: 1,
+            },
+        });
+        assert_eq!(got, expected);
+
+        let got = words.next().unwrap();
+        let expected = Atom::Word(Word {
+            letter: 'Y',
+            value: 2.0,
+            span: Span {
+                start: 9,
+                end: 11,
+                line: 1,
+            },
+        });
+        assert_eq!(got, expected);
+    }
 }

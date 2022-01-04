@@ -371,4 +371,41 @@ mod tests {
 
         assert_eq!(got.value, "+3.14");
     }
+
+    #[test]
+    fn two_multi() {
+        let mut lexer = Lexer::new("G0 X1\nG1 Y2");
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "G");
+        assert_eq!(got.span.line, 0);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "0");
+        assert_eq!(got.span.line, 0);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "X");
+        assert_eq!(got.span.line, 0);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "1");
+        assert_eq!(got.span.line, 0);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "G");
+        assert_eq!(got.span.line, 1);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "1");
+        assert_eq!(got.span.line, 1);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "Y");
+        assert_eq!(got.span.line, 1);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "2");
+        assert_eq!(got.span.line, 1);
+    }
 }
