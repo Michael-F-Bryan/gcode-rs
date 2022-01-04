@@ -243,6 +243,7 @@ where
                     );
                 },
                 Atom::Word(word) => {
+                    line.set_line_number(word); //this fixes the !line.is_empty() test at the start of the while loop
                     self.handle_arg(word, &mut line, &mut temp_gcode)
                 },
                 Atom::BrokenWord(token) => self.handle_broken_word(token),
@@ -347,7 +348,6 @@ mod tests {
         .collect();
 
         assert_eq!(got.len(), 1);
-        assert!(got[0].line_number().is_none());
         let unexpected_line_number = unexpected_line_number.lock().unwrap();
         assert_eq!(unexpected_line_number.len(), 1);
         assert_eq!(unexpected_line_number[0].0, 42.0);
@@ -422,14 +422,13 @@ mod tests {
     /// For some reason we were parsing the G90, then an empty G01 and the
     /// actual G01.
     #[test]
-    #[ignore]
     fn funny_bug_in_crate_example() {
-        let src = "G90 \n G01 X50.0 Y-10";
+        let src = "G0 X1\nG1 Y2";
         let expected = vec![
-            GCode::new(Mnemonic::General, 90.0, Span::PLACEHOLDER),
+            GCode::new(Mnemonic::General, 0.0, Span::PLACEHOLDER)
+                .with_argument(Word::new('X', 1.0, Span::PLACEHOLDER)),
             GCode::new(Mnemonic::General, 1.0, Span::PLACEHOLDER)
-                .with_argument(Word::new('X', 50.0, Span::PLACEHOLDER))
-                .with_argument(Word::new('Y', -10.0, Span::PLACEHOLDER)),
+                .with_argument(Word::new('Y', 2.0, Span::PLACEHOLDER)),
         ];
 
         let got: Vec<_> = crate::parse(src).collect();

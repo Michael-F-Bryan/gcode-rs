@@ -83,11 +83,11 @@
 //!     let lines: Vec<_> = gcode::full_parse_with_callbacks(src, &mut errors)
 //!         .collect();
 //!     
-//!     assert_eq!(lines.len(), 3);
+//!     assert_eq!(lines.len(), 4);
 //!     let total_gcodes: usize = lines.iter()
 //!         .map(|line| line.gcodes().len())
 //!         .sum();
-//!     assert_eq!(total_gcodes, 2);
+//!     assert_eq!(total_gcodes, 3);
 //! }
 //!
 //! assert_eq!(errors.unexpected_line_number, 1);
@@ -164,7 +164,7 @@
     unused_qualifications,
     unused_results,
     variant_size_differences,
-    intra_doc_link_resolution_failure,
+    rustdoc::broken_intra_doc_links,
     missing_docs
 )]
 #![cfg_attr(not(feature = "std"), no_std)]
