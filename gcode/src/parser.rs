@@ -130,6 +130,7 @@ where
                 word.span,
                 B::Arguments::default(),
             ));
+            
             return;
         }
 
@@ -413,23 +414,6 @@ mod tests {
         assert_eq!(got[1].gcodes().len(), 1);
     }
 
-    /// I wasn't sure if the `#[derive(Serialize)]` would work given we use
-    /// `B::Comments`, which would borrow from the original source.
-    #[test]
-    #[cfg(feature = "serde-1")]
-    fn you_can_actually_serialize_lines() {
-        let src = "G01 X5 G90 (comment) G91 M10\nG01\n";
-        let line = parse(src).next().unwrap();
-
-        fn assert_serializable<S: serde::Serialize>(_: &S) {}
-        fn assert_deserializable<'de, D: serde::Deserialize<'de>>() {}
-
-        assert_serializable(&line);
-        assert_deserializable::<Line<'_>>();
-    }
-
-    /// For some reason we were parsing the G90, then an empty G01 and the
-    /// actual G01.
     #[test]
     fn funny_bug_in_crate_example() {
         let src = "G90 \n G01 X50.0 Y-10";
@@ -441,7 +425,43 @@ mod tests {
         ];
 
         let got: Vec<_> = crate::parse(src).collect();
+        assert_eq!(got, expected);
+    }
 
+    #[test]
+    #[ignore]
+    fn implicit_command_after_newline() {
+        let src = "G01 X1.0 Y2.0\n X3.0 Y4.0";
+        let expected = vec![
+            GCode::new(Mnemonic::General, 1.0, Span::PLACEHOLDER)
+                .with_argument(Word::new('X', 1.0, Span::PLACEHOLDER))
+                .with_argument(Word::new('Y', 2.0, Span::PLACEHOLDER)),
+            GCode::new(Mnemonic::General, 1.0, Span::PLACEHOLDER)
+                .with_argument(Word::new('X', 3.0, Span::PLACEHOLDER))
+                .with_argument(Word::new('Y', 4.0, Span::PLACEHOLDER)),
+        ];
+
+        let got: Vec<_> = crate::parse(src).collect();
+        assert_eq!(got, expected);
+    }
+
+    #[test]
+    #[ignore]
+    // This test focuses on the G90 and M7 on the same line.
+    fn two_commands_in_a_row() {
+        let src = "G90 M7\nG01 X1.0 Y2.0\nX3.0 Y4.0";
+        let expected = vec![
+            GCode::new(Mnemonic::General, 90.0, Span::PLACEHOLDER),
+            GCode::new(Mnemonic::Miscellaneous, 7.0, Span::PLACEHOLDER),
+            GCode::new(Mnemonic::General, 1.0, Span::PLACEHOLDER)
+                .with_argument(Word::new('X', 1.0, Span::PLACEHOLDER))
+                .with_argument(Word::new('Y', 2.0, Span::PLACEHOLDER)),
+            GCode::new(Mnemonic::General, 1.0, Span::PLACEHOLDER)
+                .with_argument(Word::new('X', 3.0, Span::PLACEHOLDER))
+                .with_argument(Word::new('Y', 4.0, Span::PLACEHOLDER)),
+        ];
+
+        let got: Vec<_> = crate::parse(src).collect();
         assert_eq!(got, expected);
     }
 }
