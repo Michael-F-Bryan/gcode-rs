@@ -269,7 +269,7 @@ where
         // IS M2 or M30: see 3.6.1.
         // return None;
 
-        return Some(line);
+        Some(line)
     }
 }
 
