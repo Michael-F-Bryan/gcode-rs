@@ -287,9 +287,9 @@ mod tests {
     fn respect_newlines() {
         let mut lexer = Lexer::new("\n\rM30garbage");
 
-        let token = lexer.tokenize_newline();
-        assert_eq!(token.expect("Failed.").kind, TokenType::Newline);
-
+        let token = lexer.tokenize_newline().unwrap();
+        
+        assert_eq!(token.kind, TokenType::Newline);
         assert_eq!(lexer.current_position, 1);
         assert_eq!(lexer.current_line, 1);
     }
