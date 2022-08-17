@@ -219,11 +219,13 @@ where
         // constructing
         let mut temp_gcode = None;
 
-        while let Some(next_line) = self.next_line_number() {
-            if !line.is_empty() && next_line != line.span().line {
-                // we've started the next line
-                break;
-            }
+        if let None = self.atoms.peek() {
+            // There is nothing left in the file. :sad-face:
+            // This ends the parser's work.
+            return None;
+        }
+
+        while let Some(_next_line) = self.next_line_number() {
 
             match self.atoms.next().expect("unreachable") {
                 Atom::Unknown(token) => {
@@ -232,6 +234,13 @@ where
                 Atom::Comment(comment) => {
                     if let Err(e) = line.push_comment(comment) {
                         self.on_comment_push_error(e.0);
+                    }
+                },
+                Atom::Newline(_) => {
+                    if !line.is_empty() {
+                        // Newline ends the current command
+                        // if there was something to parse.
+                        break;
                     }
                 },
                 // line numbers are annoying, so handle them separately
@@ -255,11 +264,11 @@ where
             }
         }
 
-        if line.is_empty() {
-            None
-        } else {
-            Some(line)
-        }
+        // TODO: This should exit the parser under some conditions.
+        // IS M2 or M30: see 3.6.1.
+        // return None;
+
+        return Some(line);
     }
 }
 
@@ -422,7 +431,6 @@ mod tests {
     /// For some reason we were parsing the G90, then an empty G01 and the
     /// actual G01.
     #[test]
-    #[ignore]
     fn funny_bug_in_crate_example() {
         let src = "G90 \n G01 X50.0 Y-10";
         let expected = vec![
