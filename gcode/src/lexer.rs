@@ -5,6 +5,7 @@ pub(crate) enum TokenType {
     Letter,
     Number,
     Comment,
+    Newline,
     Unknown,
 }
 
@@ -16,6 +17,8 @@ impl From<char> for TokenType {
             TokenType::Number
         } else if c == '(' || c == ';' || c == ')' {
             TokenType::Comment
+        } else if c == '\n' {
+            TokenType::Newline
         } else {
             TokenType::Unknown
         }
@@ -53,14 +56,14 @@ impl<'input> Lexer<'input> {
     {
         let start = self.current_position;
         let mut end = start;
-        let mut line_endings = 0;
 
         for letter in self.rest().chars() {
             if !predicate(letter) {
                 break;
             }
             if letter == '\n' {
-                line_endings += 1;
+                // Newline defines the command to be complete.
+                break;
             }
             end += letter.len_utf8();
         }
@@ -69,7 +72,6 @@ impl<'input> Lexer<'input> {
             None
         } else {
             self.current_position = end;
-            self.current_line += line_endings;
             Some(&self.src[start..end])
         }
     }
@@ -175,6 +177,23 @@ impl<'input> Lexer<'input> {
             },
         })
     }
+    
+    fn tokenize_newline(&mut self) -> Option<Token<'input>> {
+        let start = self.current_position;
+        let line = self.current_line;
+        let value = "\n";
+        self.current_position += 1;
+        self.current_line += 1;
+        Some(Token {
+            kind: TokenType::Newline,
+            value,
+            span: Span {
+                start,
+                line,
+                end: start + 1,
+            },
+        })
+    }
 
     fn finished(&self) -> bool { self.current_position >= self.src.len() }
 
@@ -219,6 +238,9 @@ impl<'input> Iterator for Lexer<'input> {
                 TokenType::Number => {
                     return Some(self.tokenize_number().expect(MSG))
                 },
+                TokenType::Newline => {
+                    return Some(self.tokenize_newline().expect(MSG))
+                },
                 TokenType::Unknown => self.current_position += 1,
             }
         }
@@ -253,11 +275,22 @@ mod tests {
 
     #[test]
     fn skip_whitespace() {
-        let mut lexer = Lexer::new("  \n\r\t  ");
+        let mut lexer = Lexer::new("  \r\t  ");
 
         lexer.skip_whitespace();
 
         assert_eq!(lexer.current_position, lexer.src.len());
+        assert_eq!(lexer.current_line, 0);
+    }
+
+    #[test]
+    fn respect_newlines() {
+        let mut lexer = Lexer::new("\n\rM30garbage");
+
+        let token = lexer.tokenize_newline().unwrap();
+        
+        assert_eq!(token.kind, TokenType::Newline);
+        assert_eq!(lexer.current_position, 1);
         assert_eq!(lexer.current_line, 1);
     }
 
@@ -370,5 +403,45 @@ mod tests {
         let got = lexer.next().unwrap();
 
         assert_eq!(got.value, "+3.14");
+    }
+
+    #[test]
+    fn two_multi() {
+        let mut lexer = Lexer::new("G0 X1\nG1 Y2");
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "G");
+        assert_eq!(got.span.line, 0);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "0");
+        assert_eq!(got.span.line, 0);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "X");
+        assert_eq!(got.span.line, 0);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "1");
+        assert_eq!(got.span.line, 0);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "\n");
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "G");
+        assert_eq!(got.span.line, 1);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "1");
+        assert_eq!(got.span.line, 1);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "Y");
+        assert_eq!(got.span.line, 1);
+
+        let got = lexer.next().unwrap();
+        assert_eq!(got.value, "2");
+        assert_eq!(got.span.line, 1);
     }
 }

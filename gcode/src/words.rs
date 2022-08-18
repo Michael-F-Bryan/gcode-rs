@@ -42,20 +42,11 @@ impl Display for Word {
 pub(crate) enum Atom<'input> {
     Word(Word),
     Comment(Comment<'input>),
+    Newline(Token<'input>),
     /// Incomplete parts of a [`Word`].
     BrokenWord(Token<'input>),
     /// Garbage from the tokenizer (see [`TokenType::Unknown`]).
     Unknown(Token<'input>),
-}
-
-impl<'input> Atom<'input> {
-    pub(crate) fn span(&self) -> Span {
-        match self {
-            Atom::Word(word) => word.span,
-            Atom::Comment(comment) => comment.span,
-            Atom::Unknown(token) | Atom::BrokenWord(token) => token.span,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -90,6 +81,7 @@ where
 
             match kind {
                 TokenType::Unknown => return Some(Atom::Unknown(token)),
+                TokenType::Newline => return Some(Atom::Newline(token)),
                 TokenType::Comment => {
                     return Some(Atom::Comment(Comment { value, span }))
                 },
