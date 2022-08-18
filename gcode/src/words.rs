@@ -49,17 +49,6 @@ pub(crate) enum Atom<'input> {
     Unknown(Token<'input>),
 }
 
-impl<'input> Atom<'input> {
-    pub(crate) fn span(&self) -> Span {
-        match self {
-            Atom::Word(word) => word.span,
-            Atom::Comment(comment) => comment.span,
-            Atom::Newline(newline) => newline.span,
-            Atom::Unknown(token) | Atom::BrokenWord(token) => token.span,
-        }
-    }
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) struct WordsOrComments<'input, I> {
     tokens: I,

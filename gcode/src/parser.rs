@@ -208,9 +208,6 @@ where
         );
     }
 
-    fn next_line_number(&mut self) -> Option<usize> {
-        self.atoms.peek().map(|a| a.span().line)
-    }
 }
 
 impl<'input, I, C, B> Iterator for Lines<'input, I, C, B>
