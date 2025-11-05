@@ -98,7 +98,9 @@ impl<A: Buffer<Word>> GCode<A> {
     }
 
     /// The overall category this [`GCode`] belongs to.
-    pub fn mnemonic(&self) -> Mnemonic { self.mnemonic }
+    pub fn mnemonic(&self) -> Mnemonic {
+        self.mnemonic
+    }
 
     /// The integral part of a command number (i.e. the `12` in `G12.3`).
     pub fn major_number(&self) -> u32 {
@@ -115,10 +117,14 @@ impl<A: Buffer<Word>> GCode<A> {
     }
 
     /// The arguments attached to this [`GCode`].
-    pub fn arguments(&self) -> &[Word] { self.arguments.as_slice() }
+    pub fn arguments(&self) -> &[Word] {
+        self.arguments.as_slice()
+    }
 
     /// Where the [`GCode`] was found in its source text.
-    pub fn span(&self) -> Span { self.span }
+    pub fn span(&self) -> Span {
+        self.span
+    }
 
     /// Add an argument to the list of arguments attached to this [`GCode`].
     pub fn push_argument(
@@ -252,7 +258,7 @@ mod tests {
             span: Span::default(),
         };
 
-        assert_eq!(code.major_number(), 90);
+        pretty_assertions::assert_eq!(code.major_number(), 90);
     }
 
     #[test]
@@ -265,7 +271,7 @@ mod tests {
                 span: Span::default(),
             };
 
-            assert_eq!(code.minor_number(), i);
+            pretty_assertions::assert_eq!(code.minor_number(), i);
         }
     }
 
@@ -290,9 +296,9 @@ mod tests {
         })
         .unwrap();
 
-        assert_eq!(code.value_for('X'), Some(10.0));
-        assert_eq!(code.value_for('x'), Some(10.0));
-        assert_eq!(code.value_for('Y'), Some(-3.5));
-        assert_eq!(code.value_for('Z'), None);
+        pretty_assertions::assert_eq!(code.value_for('X'), Some(10.0));
+        pretty_assertions::assert_eq!(code.value_for('x'), Some(10.0));
+        pretty_assertions::assert_eq!(code.value_for('Y'), Some(-3.5));
+        pretty_assertions::assert_eq!(code.value_for('Z'), None);
     }
 }

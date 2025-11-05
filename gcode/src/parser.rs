@@ -51,7 +51,9 @@ impl<'input, C, B> Parser<'input, C, B> {
 }
 
 impl<'input, B> From<&'input str> for Parser<'input, Nop, B> {
-    fn from(src: &'input str) -> Self { Parser::new(src, Nop) }
+    fn from(src: &'input str) -> Self {
+        Parser::new(src, Nop)
+    }
 }
 
 impl<'input, C: Callbacks, B: Buffers<'input>> Iterator
@@ -59,7 +61,9 @@ impl<'input, C: Callbacks, B: Buffers<'input>> Iterator
 {
     type Item = Line<'input, B>;
 
-    fn next(&mut self) -> Option<Self::Item> { self.lines.next() }
+    fn next(&mut self) -> Option<Self::Item> {
+        self.lines.next()
+    }
 }
 
 #[derive(Debug)]
@@ -306,11 +310,11 @@ mod tests {
         let src = "(this is a comment)";
         let got: Vec<_> = parse(src).collect();
 
-        assert_eq!(got.len(), 1);
+        pretty_assertions::assert_eq!(got.len(), 1);
         let line = &got[0];
-        assert_eq!(line.comments().len(), 1);
-        assert_eq!(line.gcodes().len(), 0);
-        assert_eq!(line.span(), Span::new(0, src.len(), 0));
+        pretty_assertions::assert_eq!(line.comments().len(), 1);
+        pretty_assertions::assert_eq!(line.gcodes().len(), 0);
+        pretty_assertions::assert_eq!(line.span(), Span::new(0, src.len(), 0));
     }
 
     #[test]
@@ -318,12 +322,12 @@ mod tests {
         let src = "N42";
         let got: Vec<_> = parse(src).collect();
 
-        assert_eq!(got.len(), 1);
+        pretty_assertions::assert_eq!(got.len(), 1);
         let line = &got[0];
-        assert_eq!(line.comments().len(), 0);
-        assert_eq!(line.gcodes().len(), 0);
+        pretty_assertions::assert_eq!(line.comments().len(), 0);
+        pretty_assertions::assert_eq!(line.gcodes().len(), 0);
         let span = Span::new(0, src.len(), 0);
-        assert_eq!(
+        pretty_assertions::assert_eq!(
             line.line_number(),
             Some(Word {
                 letter: 'N',
@@ -331,7 +335,7 @@ mod tests {
                 span
             })
         );
-        assert_eq!(line.span(), span);
+        pretty_assertions::assert_eq!(line.span(), span);
     }
 
     #[test]
@@ -346,11 +350,11 @@ mod tests {
         )
         .collect();
 
-        assert_eq!(got.len(), 1);
+        pretty_assertions::assert_eq!(got.len(), 1);
         assert!(got[0].line_number().is_none());
         let unexpected_line_number = unexpected_line_number.lock().unwrap();
-        assert_eq!(unexpected_line_number.len(), 1);
-        assert_eq!(unexpected_line_number[0].0, 42.0);
+        pretty_assertions::assert_eq!(unexpected_line_number.len(), 1);
+        pretty_assertions::assert_eq!(unexpected_line_number[0].0, 42.0);
     }
 
     #[test]
@@ -358,13 +362,13 @@ mod tests {
         let src = "G90";
         let got: Vec<_> = parse(src).collect();
 
-        assert_eq!(got.len(), 1);
+        pretty_assertions::assert_eq!(got.len(), 1);
         let line = &got[0];
-        assert_eq!(line.gcodes().len(), 1);
+        pretty_assertions::assert_eq!(line.gcodes().len(), 1);
         let g90 = &line.gcodes()[0];
-        assert_eq!(g90.major_number(), 90);
-        assert_eq!(g90.minor_number(), 0);
-        assert_eq!(g90.arguments().len(), 0);
+        pretty_assertions::assert_eq!(g90.major_number(), 90);
+        pretty_assertions::assert_eq!(g90.minor_number(), 0);
+        pretty_assertions::assert_eq!(g90.arguments().len(), 0);
     }
 
     #[test]
@@ -385,11 +389,11 @@ mod tests {
 
         let got: Vec<_> = parse(src).collect();
 
-        assert_eq!(got.len(), 1);
+        pretty_assertions::assert_eq!(got.len(), 1);
         let line = &got[0];
-        assert_eq!(line.gcodes().len(), 1);
+        pretty_assertions::assert_eq!(line.gcodes().len(), 1);
         let g01 = &line.gcodes()[0];
-        assert_eq!(g01, &should_be);
+        pretty_assertions::assert_eq!(g01, &should_be);
     }
 
     #[test]
@@ -398,10 +402,10 @@ mod tests {
 
         let got: Vec<_> = parse(src).collect();
 
-        assert_eq!(got.len(), 2);
-        assert_eq!(got[0].gcodes().len(), 4);
-        assert_eq!(got[0].comments().len(), 1);
-        assert_eq!(got[1].gcodes().len(), 1);
+        pretty_assertions::assert_eq!(got.len(), 2);
+        pretty_assertions::assert_eq!(got[0].gcodes().len(), 4);
+        pretty_assertions::assert_eq!(got[0].comments().len(), 1);
+        pretty_assertions::assert_eq!(got[1].gcodes().len(), 1);
     }
 
     /// I wasn't sure if the `#[derive(Serialize)]` would work given we use
@@ -434,6 +438,6 @@ mod tests {
 
         let got: Vec<_> = crate::parse(src).collect();
 
-        assert_eq!(got, expected);
+        pretty_assertions::assert_eq!(got, expected);
     }
 }
