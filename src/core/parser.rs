@@ -38,6 +38,9 @@ pub fn resume(
 
     {
         let mut tokens = tokens.by_ref().peekable();
+        while let Some(_token) = tokens.next() {
+            todo!();
+        }
     }
 
     tokens.state()

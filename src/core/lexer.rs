@@ -50,13 +50,157 @@ impl<'src> Tokens<'src> {
         } = self;
         ParserState::new(current_index, current_line)
     }
+
+    /// Returns the next character without advancing. Uses UTF-8 decoding.
+    fn peek(&self) -> Option<char> {
+        self.src[self.current_index..].chars().next()
+    }
+
+    /// Consumes the next character, bumping `current_index` and `current_line` (when the char is `\n`).
+    /// Returns the character consumed, or `None` if at end. This is the only place that updates
+    /// `current_index` and `current_line`.
+    fn advance_char(&mut self) -> Option<char> {
+        let c = self.peek()?;
+        self.current_index += c.len_utf8();
+        if c == '\n' {
+            self.current_line += 1;
+        }
+        Some(c)
+    }
+
+    /// Consumes characters while `pred(c)` returns true, then returns the slice and span.
+    /// Uses `advance_char()` internally, so line is updated for newlines.
+    fn take_while<P>(&mut self, mut pred: P) -> (&'src str, Span)
+    where
+        P: FnMut(char) -> bool,
+    {
+        let start = self.current_index;
+        let line = self.current_line;
+        while let Some(c) = self.peek() {
+            if !pred(c) {
+                break;
+            }
+            let _ = self.advance_char();
+        }
+        let value = &self.src[start..self.current_index];
+        let span = Span::new(start, value.len(), line);
+        (value, span)
+    }
+
+    fn skip_whitespace(&mut self) {
+        let _ = self.take_while(|c| c == ' ' || c == '\t');
+    }
+
+    fn scan_newline(&mut self) -> Token<'src> {
+        let start = self.current_index;
+        let line = self.current_line;
+        let c = self.advance_char();
+        assert_eq!(c, Some('\n'), "invariant: peek was newline");
+        Token {
+            kind: TokenType::Newline,
+            value: &self.src[start..self.current_index],
+            span: Span::new(start, self.current_index - start, line),
+        }
+    }
+
+    fn scan_letter(&mut self) -> Token<'src> {
+        let start = self.current_index;
+        let line = self.current_line;
+        let _ = self.advance_char();
+        Token {
+            kind: TokenType::Letter,
+            value: &self.src[start..self.current_index],
+            span: Span::new(start, self.current_index - start, line),
+        }
+    }
+
+    fn scan_single_char(&mut self, kind: TokenType) -> Token<'src> {
+        let start = self.current_index;
+        let line = self.current_line;
+        let _ = self.advance_char();
+        Token {
+            kind,
+            value: &self.src[start..self.current_index],
+            span: Span::new(start, self.current_index - start, line),
+        }
+    }
+
+    fn scan_semicolon_comment(&mut self) -> Token<'src> {
+        let (value, span) = self.take_while(|c| c != '\n');
+        Token {
+            kind: TokenType::Comment,
+            value,
+            span,
+        }
+    }
+
+    fn scan_paren_comment(&mut self) -> Token<'src> {
+        let start = self.current_index;
+        let line = self.current_line;
+        let mut depth = 1u32;
+        let _ = self.advance_char(); // consume '('
+        while depth > 0 {
+            match self.advance_char() {
+                Some('(') => depth += 1,
+                Some(')') => depth -= 1,
+                Some(_) => {},
+                None => break,
+            }
+        }
+        Token {
+            kind: TokenType::Comment,
+            value: &self.src[start..self.current_index],
+            span: Span::new(start, self.current_index - start, line),
+        }
+    }
+
+    fn scan_number(&mut self) -> Token<'src> {
+        let start = self.current_index;
+        let line = self.current_line;
+        if self.peek() == Some('.') {
+            let _ = self.advance_char();
+        }
+        let _ = self.take_while(|c| c.is_ascii_digit());
+        if self.peek() == Some('.') {
+            let _ = self.advance_char();
+            let _ = self.take_while(|c| c.is_ascii_digit());
+        }
+        Token {
+            kind: TokenType::Number,
+            value: &self.src[start..self.current_index],
+            span: Span::new(start, self.current_index - start, line),
+        }
+    }
+
+    fn scan_unknown(&mut self) -> Token<'src> {
+        let (value, span) = self.take_while(|c| {
+            !matches!(c, ' ' | '\t' | '\n' | ';' | '(' | '-' | '+')
+                && !c.is_ascii_alphanumeric()
+        });
+        Token {
+            kind: TokenType::Unknown,
+            value,
+            span,
+        }
+    }
 }
 
 impl<'src> Iterator for Tokens<'src> {
     type Item = Token<'src>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        todo!()
+        self.skip_whitespace();
+        let token = match self.peek()? {
+            '\n' => self.scan_newline(),
+            c if c.is_ascii_alphabetic() => self.scan_letter(),
+            '-' => self.scan_single_char(TokenType::MinusSign),
+            '+' => self.scan_single_char(TokenType::PlusSign),
+            ';' => self.scan_semicolon_comment(),
+            '(' => self.scan_paren_comment(),
+            c if c.is_ascii_digit() || c == '.' => self.scan_number(),
+            _ => self.scan_unknown(),
+        };
+        Some(token)
     }
 }
 
@@ -142,12 +286,12 @@ mod tests {
             [
                 Token {
                     kind: TokenType::Letter,
-                    value: &src[0..1],
+                    value: "G",
                     span: Span::new(0, 1, 0),
                 },
                 Token {
                     kind: TokenType::Number,
-                    value: &src[1..3],
+                    value: "90",
                     span: Span::new(1, 2, 0),
                 },
             ]
@@ -231,7 +375,7 @@ mod tests {
                 },
                 Token {
                     kind: TokenType::Number,
-                    value: "+1",
+                    value: "1",
                     span: Span::new(1, 1, 0),
                 }
             ]
@@ -247,13 +391,13 @@ mod tests {
             [
                 Token {
                     kind: TokenType::Number,
-                    value: &src[0..4],
+                    value: "3.14",
                     span: Span::new(0, 4, 0),
                 },
                 Token {
                     kind: TokenType::Number,
-                    value: &src[4..8],
-                    span: Span::new(4, 4, 0),
+                    value: ".56",
+                    span: Span::new(4, 3, 0),
                 },
             ]
         );
@@ -262,15 +406,21 @@ mod tests {
     #[test]
     fn semicolon_comment_includes_semicolon_and_rest_of_line() {
         let src = "; this is a comment\n";
-        let newline_pos = src.find('\n').unwrap();
         let tokens: Vec<_> = Tokens::from_start(src).collect();
         assert_eq!(
             tokens,
-            [Token {
-                kind: TokenType::Comment,
-                value: &src[0..newline_pos],
-                span: Span::new(0, newline_pos, 0),
-            }]
+            [
+                Token {
+                    kind: TokenType::Comment,
+                    value: "; this is a comment",
+                    span: Span::new(0, 19, 0),
+                },
+                Token {
+                    kind: TokenType::Newline,
+                    value: "\n",
+                    span: Span::new(19, 1, 0),
+                },
+            ]
         );
     }
 
@@ -282,8 +432,8 @@ mod tests {
             tokens,
             [Token {
                 kind: TokenType::Comment,
-                value: &src[0..src.len()],
-                span: Span::new(0, src.len(), 0),
+                value: "( block )",
+                span: Span::new(0, 9, 0),
             }]
         );
     }
@@ -294,13 +444,13 @@ mod tests {
         let tokens: Vec<_> = Tokens::from_start(src).collect();
         let expected_comment = [Token {
             kind: TokenType::Comment,
-            value: &src[..],
-            span: Span::new(0, src.len(), 0),
+            value: "( no close",
+            span: Span::new(0, 10, 0),
         }];
         let expected_unknown = [Token {
             kind: TokenType::Unknown,
-            value: &src[..],
-            span: Span::new(0, src.len(), 0),
+            value: "( no close",
+            span: Span::new(0, 10, 0),
         }];
         assert!(
             tokens == expected_comment.as_slice()
@@ -332,12 +482,12 @@ mod tests {
             [
                 Token {
                     kind: TokenType::Unknown,
-                    value: &src[0..1],
+                    value: "$",
                     span: Span::new(0, 1, 0),
                 },
                 Token {
                     kind: TokenType::Letter,
-                    value: &src[2..3],
+                    value: "X",
                     span: Span::new(2, 1, 0),
                 },
             ]
@@ -346,29 +496,29 @@ mod tests {
 
     #[test]
     fn mixed_g1_x100() {
-        let src = "G1 X100";
+        let src = "G1  X100"; // two spaces so X at 4, "100" at 5..8
         let tokens: Vec<_> = Tokens::from_start(src).collect();
         assert_eq!(
             tokens,
             [
                 Token {
                     kind: TokenType::Letter,
-                    value: &src[0..1],
+                    value: "G",
                     span: Span::new(0, 1, 0),
                 },
                 Token {
                     kind: TokenType::Number,
-                    value: &src[1..2],
+                    value: "1",
                     span: Span::new(1, 1, 0),
                 },
                 Token {
                     kind: TokenType::Letter,
-                    value: &src[4..5],
+                    value: "X",
                     span: Span::new(4, 1, 0),
                 },
                 Token {
                     kind: TokenType::Number,
-                    value: &src[5..8],
+                    value: "100",
                     span: Span::new(5, 3, 0),
                 },
             ]
@@ -384,22 +534,22 @@ mod tests {
             [
                 Token {
                     kind: TokenType::Letter,
-                    value: &src[0..1],
+                    value: "N",
                     span: Span::new(0, 1, 0),
                 },
                 Token {
                     kind: TokenType::Number,
-                    value: &src[1..3],
+                    value: "10",
                     span: Span::new(1, 2, 0),
                 },
                 Token {
                     kind: TokenType::Letter,
-                    value: &src[4..5],
+                    value: "G",
                     span: Span::new(4, 1, 0),
                 },
                 Token {
                     kind: TokenType::Number,
-                    value: &src[5..6],
+                    value: "0",
                     span: Span::new(5, 1, 0),
                 },
                 Token {
@@ -433,17 +583,17 @@ mod tests {
             vec![
                 Token {
                     kind: TokenType::Letter,
-                    value: &src[0..1],
+                    value: "G",
                     span: Span::new(0, 1, 0),
                 },
                 Token {
                     kind: TokenType::Letter,
-                    value: &src[1..2],
+                    value: "T",
                     span: Span::new(1, 1, 0),
                 },
                 Token {
                     kind: TokenType::Letter,
-                    value: &src[2..3],
+                    value: "M",
                     span: Span::new(2, 1, 0),
                 },
             ],
