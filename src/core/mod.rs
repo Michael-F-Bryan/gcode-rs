@@ -690,4 +690,71 @@ mod tests {
             _ => panic!("expected GeneralCode(90), got {:?}", events[2]),
         }
     }
+
+    #[test]
+    fn program_number_o_code() {
+        let events = parse_and_record("O1000");
+        assert_eq!(events.len(), 2);
+        assert!(matches!(events[0], Event::LineStarted(_)));
+        match &events[1] {
+            Event::ProgramNumber(n, _) => {
+                assert_eq!(n.major, 1000);
+                assert_eq!(n.minor, None);
+            }
+            _ => panic!("expected ProgramNumber(1000), got {:?}", events[1]),
+        }
+    }
+
+    #[test]
+    fn miscellaneous_code_with_arg() {
+        let events = parse_and_record("M3 S1000");
+        assert_eq!(events.len(), 3); // LineStarted, MiscCode(3), Argument(S, 1000)
+        assert!(matches!(events[0], Event::LineStarted(_)));
+        match &events[1] {
+            Event::MiscCode(n, _) => assert_eq!(n.major, 3),
+            _ => panic!("expected MiscCode(3), got {:?}", events[1]),
+        }
+        match &events[2] {
+            Event::Argument('S', v, _) => assert!((*v - 1000.0).abs() < 1e-6),
+            _ => panic!("expected Argument(S, 1000), got {:?}", events[2]),
+        }
+    }
+
+    #[test]
+    fn tool_change_code() {
+        let events = parse_and_record("T2");
+        assert_eq!(events.len(), 2);
+        assert!(matches!(events[0], Event::LineStarted(_)));
+        match &events[1] {
+            Event::ToolChangeCode(n, _) => assert_eq!(n.major, 2),
+            _ => panic!("expected ToolChangeCode(2), got {:?}", events[1]),
+        }
+    }
+
+    #[test]
+    fn multiple_codes_same_line() {
+        let events = parse_and_record("G0 G90 G40 G21");
+        assert_eq!(events.len(), 5); // LineStarted + 4 GeneralCode
+        assert!(matches!(events[0], Event::LineStarted(_)));
+        for (i, expected_major) in [0u16, 90, 40, 21].iter().enumerate() {
+            match &events[1 + i] {
+                Event::GeneralCode(n, _) => assert_eq!(n.major, *expected_major),
+                _ => panic!("expected GeneralCode({}), got {:?}", expected_major, events[1 + i]),
+            }
+        }
+    }
+
+    #[test]
+    fn two_lines() {
+        let events = parse_and_record("G90\nG01 X1");
+        assert_eq!(events.len(), 5); // LineStarted, GeneralCode(90), LineStarted, GeneralCode(1), Argument(X,1)
+        assert!(matches!(events[0], Event::LineStarted(_)));
+        assert!(matches!(events[1], Event::GeneralCode(Number { major: 90, .. }, _)));
+        assert!(matches!(events[2], Event::LineStarted(_)));
+        assert!(matches!(events[3], Event::GeneralCode(Number { major: 1, .. }, _)));
+        match &events[4] {
+            Event::Argument('X', v, _) => assert!((*v - 1.0).abs() < 1e-6),
+            _ => panic!("expected Argument(X, 1), got {:?}", events[4]),
+        }
+    }
 }
