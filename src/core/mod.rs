@@ -628,4 +628,66 @@ mod tests {
             _ => panic!("expected GeneralCode(90), got {:?}", events[1]),
         }
     }
+
+    #[test]
+    fn g_code_with_arguments() {
+        let events = parse_and_record("G01 X10 Y-20");
+        assert_eq!(events.len(), 4); // LineStarted, GeneralCode(1), Argument(X,10), Argument(Y,-20)
+        assert!(matches!(events[0], Event::LineStarted(_)));
+        match &events[1] {
+            Event::GeneralCode(n, _) => {
+                assert_eq!(n.major, 1);
+                assert_eq!(n.minor, None);
+            }
+            _ => panic!("expected GeneralCode(1), got {:?}", events[1]),
+        }
+        match &events[2] {
+            Event::Argument('X', v, _) => assert!((*v - 10.0).abs() < 1e-6),
+            _ => panic!("expected Argument(X, 10), got {:?}", events[2]),
+        }
+        match &events[3] {
+            Event::Argument('Y', v, _) => assert!((*v - (-20.0)).abs() < 1e-6),
+            _ => panic!("expected Argument(Y, -20), got {:?}", events[3]),
+        }
+    }
+
+    #[test]
+    fn comment_semicolon() {
+        let events = parse_and_record("; hello world");
+        assert_eq!(events.len(), 2);
+        assert!(matches!(events[0], Event::LineStarted(_)));
+        match &events[1] {
+            Event::Comment(s, _) => assert_eq!(s, " hello world"),
+            _ => panic!("expected Comment, got {:?}", events[1]),
+        }
+    }
+
+    #[test]
+    fn comment_parens() {
+        let events = parse_and_record("(Linear / Feed - Absolute)");
+        assert_eq!(events.len(), 2);
+        assert!(matches!(events[0], Event::LineStarted(_)));
+        match &events[1] {
+            Event::Comment(s, _) => assert_eq!(s, "(Linear / Feed - Absolute)"),
+            _ => panic!("expected Comment, got {:?}", events[1]),
+        }
+    }
+
+    #[test]
+    fn line_number_then_g_code() {
+        let events = parse_and_record("N42 G90");
+        assert_eq!(events.len(), 3); // LineStarted, LineNumber(42), GeneralCode(90)
+        assert!(matches!(events[0], Event::LineStarted(_)));
+        match &events[1] {
+            Event::LineNumber(n, _) => assert_eq!(*n, 42.0),
+            _ => panic!("expected LineNumber(42), got {:?}", events[1]),
+        }
+        match &events[2] {
+            Event::GeneralCode(n, _) => {
+                assert_eq!(n.major, 90);
+                assert_eq!(n.minor, None);
+            }
+            _ => panic!("expected GeneralCode(90), got {:?}", events[2]),
+        }
+    }
 }
