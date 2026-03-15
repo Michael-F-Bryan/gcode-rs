@@ -8,7 +8,8 @@ readme = "../README.md"
 license = "MIT OR Apache-2.0"
 keywords = ["gcode", "parser"]
 categories = ["no-std", "parser-implementations", "embedded"]
-edition = "2018"
+edition = "2024"
+rust-version = "1.85"
 
 [package.metadata.docs.rs]
 all-features = true

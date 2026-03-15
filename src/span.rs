@@ -24,8 +24,7 @@ pub struct Span {
 impl Span {
     /// A placeholder [`Span`] which will be ignored by [`Span::merge()`] and
     /// equality checks.
-    pub const PLACEHOLDER: Span =
-        Span::new(usize::max_value(), usize::max_value(), usize::max_value());
+    pub const PLACEHOLDER: Span = Span::new(usize::MAX, usize::MAX, usize::MAX);
 
     /// Create a new [`Span`].
     pub const fn new(start: usize, end: usize, line: usize) -> Self {
@@ -74,7 +73,9 @@ impl PartialEq for Span {
 }
 
 impl From<Span> for Range<usize> {
-    fn from(other: Span) -> Range<usize> { other.start..other.end }
+    fn from(other: Span) -> Range<usize> {
+        other.start..other.end
+    }
 }
 
 impl Debug for Span {
@@ -94,7 +95,9 @@ impl Debug for Span {
 }
 
 impl Default for Span {
-    fn default() -> Span { Span::PLACEHOLDER }
+    fn default() -> Span {
+        Span::PLACEHOLDER
+    }
 }
 
 #[cfg(test)]

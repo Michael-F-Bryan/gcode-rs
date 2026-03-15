@@ -1,6 +1,6 @@
 use crate::{
-    lexer::{Lexer, Token, TokenType},
     Comment, Span,
+    lexer::{Lexer, Token, TokenType},
 };
 use core::fmt::{self, Display, Formatter};
 
@@ -85,13 +85,13 @@ where
     type Item = Atom<'input>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(token) = self.tokens.next() {
+        for token in self.tokens.by_ref() {
             let Token { kind, value, span } = token;
 
             match kind {
                 TokenType::Unknown => return Some(Atom::Unknown(token)),
                 TokenType::Comment => {
-                    return Some(Atom::Comment(Comment { value, span }))
+                    return Some(Atom::Comment(Comment { value, span }));
                 },
                 TokenType::Letter if self.last_letter.is_none() => {
                     self.last_letter = Some(token);

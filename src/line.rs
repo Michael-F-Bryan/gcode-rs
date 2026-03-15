@@ -1,6 +1,6 @@
 use crate::{
-    buffers::{self, Buffer, Buffers, CapacityError, DefaultBuffers},
     Comment, GCode, Span, Word,
+    buffers::{self, Buffer, Buffers, CapacityError, DefaultBuffers},
 };
 use core::fmt::{self, Debug, Formatter};
 
@@ -57,10 +57,14 @@ where
 
 impl<'input, B: Buffers<'input>> Line<'input, B> {
     /// All [`GCode`]s in this line.
-    pub fn gcodes(&self) -> &[GCode<B::Arguments>] { self.gcodes.as_slice() }
+    pub fn gcodes(&self) -> &[GCode<B::Arguments>] {
+        self.gcodes.as_slice()
+    }
 
     /// All [`Comment`]s in this line.
-    pub fn comments(&self) -> &[Comment<'input>] { self.comments.as_slice() }
+    pub fn comments(&self) -> &[Comment<'input>] {
+        self.comments.as_slice()
+    }
 
     /// Try to add another [`GCode`] to the line.
     pub fn push_gcode(
@@ -94,7 +98,9 @@ impl<'input, B: Buffers<'input>> Line<'input, B> {
     }
 
     /// Try to get the line number, if there was one.
-    pub fn line_number(&self) -> Option<Word> { self.line_number }
+    pub fn line_number(&self) -> Option<Word> {
+        self.line_number
+    }
 
     /// Set the [`Line::line_number()`].
     pub fn set_line_number<W: Into<Option<Word>>>(&mut self, line_number: W) {
@@ -108,7 +114,11 @@ impl<'input, B: Buffers<'input>> Line<'input, B> {
     }
 
     /// Get the [`Line`]'s position in its source text.
-    pub fn span(&self) -> Span { self.span }
+    pub fn span(&self) -> Span {
+        self.span
+    }
 
-    pub(crate) fn into_gcodes(self) -> B::Commands { self.gcodes }
+    pub(crate) fn into_gcodes(self) -> B::Commands {
+        self.gcodes
+    }
 }

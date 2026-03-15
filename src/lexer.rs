@@ -82,7 +82,9 @@ impl<'input> Lexer<'input> {
         }
     }
 
-    fn skip_whitespace(&mut self) { let _ = self.chomp(char::is_whitespace); }
+    fn skip_whitespace(&mut self) {
+        let _ = self.chomp(char::is_whitespace);
+    }
 
     fn tokenize_comment(&mut self) -> Option<Token<'input>> {
         let start = self.current_position;
@@ -176,7 +178,9 @@ impl<'input> Lexer<'input> {
         })
     }
 
-    fn finished(&self) -> bool { self.current_position >= self.src.len() }
+    fn finished(&self) -> bool {
+        self.current_position >= self.src.len()
+    }
 
     fn peek(&self) -> Option<TokenType> {
         self.rest().chars().next().map(TokenType::from)
@@ -184,7 +188,9 @@ impl<'input> Lexer<'input> {
 }
 
 impl<'input> From<&'input str> for Lexer<'input> {
-    fn from(other: &'input str) -> Lexer<'input> { Lexer::new(other) }
+    fn from(other: &'input str) -> Lexer<'input> {
+        Lexer::new(other)
+    }
 }
 
 impl<'input> Iterator for Lexer<'input> {
@@ -211,13 +217,13 @@ impl<'input> Iterator for Lexer<'input> {
 
             match kind {
                 TokenType::Comment => {
-                    return Some(self.tokenize_comment().expect(MSG))
+                    return Some(self.tokenize_comment().expect(MSG));
                 },
                 TokenType::Letter => {
-                    return Some(self.tokenize_letter().expect(MSG))
+                    return Some(self.tokenize_letter().expect(MSG));
                 },
                 TokenType::Number => {
-                    return Some(self.tokenize_number().expect(MSG))
+                    return Some(self.tokenize_number().expect(MSG));
                 },
                 TokenType::Unknown => self.current_position += 1,
             }

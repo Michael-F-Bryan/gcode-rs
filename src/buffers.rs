@@ -71,7 +71,9 @@ impl<T, A: Array<Item = T>> Buffer<T> for ArrayVec<A> {
         ArrayVec::try_push(self, item).map_err(|e| CapacityError(e.element()))
     }
 
-    fn as_slice(&self) -> &[T] { &self }
+    fn as_slice(&self) -> &[T] {
+        self
+    }
 }
 
 /// The smallest usable set of [`Buffers`].
@@ -117,7 +119,9 @@ with_std! {
             Ok(())
         }
 
-        fn as_slice(&self) -> &[T] { &self }
+        fn as_slice(&self) -> &[T] {
+            self
+        }
     }
 }
 

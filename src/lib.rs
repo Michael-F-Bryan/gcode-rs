@@ -164,7 +164,7 @@
     unused_qualifications,
     unused_results,
     variant_size_differences,
-    intra_doc_link_resolution_failure,
+    rustdoc::broken_intra_doc_links,
     missing_docs
 )]
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -196,7 +196,7 @@ pub use crate::{
     comment::Comment,
     gcode::{GCode, Mnemonic},
     line::Line,
-    parser::{full_parse_with_callbacks, parse, Parser},
+    parser::{Parser, full_parse_with_callbacks, parse},
     span::Span,
     words::Word,
 };
