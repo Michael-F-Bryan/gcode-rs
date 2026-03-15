@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["SmallFixedBuffers","VecBuffers"],"struct":["CapacityError"],"trait":["Buffer","Buffers"],"type":["DefaultArguments","DefaultBuffers"]};

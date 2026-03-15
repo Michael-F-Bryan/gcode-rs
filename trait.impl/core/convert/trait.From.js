@@ -1,0 +1,9 @@
+(function() {
+    var implementors = Object.fromEntries([["arrayvec",[["impl&lt;A: <a class=\"trait\" href=\"arrayvec/trait.Array.html\" title=\"trait arrayvec::Array\">Array</a>&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.85.1/core/convert/trait.From.html\" title=\"trait core::convert::From\">From</a>&lt;A&gt; for <a class=\"struct\" href=\"arrayvec/struct.ArrayVec.html\" title=\"struct arrayvec::ArrayVec\">ArrayVec</a>&lt;A&gt;"]]],["gcode",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.85.1/core/convert/trait.From.html\" title=\"trait core::convert::From\">From</a>&lt;<a class=\"struct\" href=\"gcode/struct.Span.html\" title=\"struct gcode::Span\">Span</a>&gt; for <a class=\"struct\" href=\"https://doc.rust-lang.org/1.85.1/core/ops/range/struct.Range.html\" title=\"struct core::ops::range::Range\">Range</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.85.1/std/primitive.usize.html\">usize</a>&gt;"],["impl&lt;'input, B&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.85.1/core/convert/trait.From.html\" title=\"trait core::convert::From\">From</a>&lt;&amp;'input <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.85.1/std/primitive.str.html\">str</a>&gt; for <a class=\"struct\" href=\"gcode/struct.Parser.html\" title=\"struct gcode::Parser\">Parser</a>&lt;'input, <a class=\"struct\" href=\"gcode/struct.Nop.html\" title=\"struct gcode::Nop\">Nop</a>, B&gt;"]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":57,"fragment_lengths":[394,991]}

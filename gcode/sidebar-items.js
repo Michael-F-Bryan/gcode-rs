@@ -1,1 +1,1 @@
-initSidebarItems({});
+window.SIDEBAR_ITEMS = {"enum":["Mnemonic"],"fn":["full_parse_with_callbacks","parse"],"mod":["buffers"],"struct":["Comment","GCode","Line","Nop","Parser","Span","Word"],"trait":["Callbacks"]};

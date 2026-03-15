@@ -1,4 +1,145 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `gcode` crate."><meta name="keywords" content="rust, rustlang, rust-lang, gcode"><title>gcode - Rust</title><link rel="stylesheet" type="text/css" href="../normalize.css"><link rel="stylesheet" type="text/css" href="../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../ayu.css" disabled ><script id="default-settings"></script><script src="../storage.js"></script><noscript><link rel="stylesheet" href="../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../favicon.svg">
-<link rel="alternate icon" type="image/png" href="../favicon-16x16.png">
-<link rel="alternate icon" type="image/png" href="../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../down-arrow.svg");}</style></head><body class="rustdoc mod"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../gcode/index.html'><div class='logo-container rust-logo'><img src='../rust-logo.png' alt='logo'></div></a><p class="location">Crate gcode</p><div class="block version"><p>Version 0.6.2-alpha.0</p></div><div class="sidebar-elems"><a id="all-types" href="all.html"><p>See all gcode's items</p></a><p class="location"></p><script>window.sidebarCurrent = {name: "gcode", ty: "mod", relpath: "../"};</script></div></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
-                <a id="settings-menu" href="../settings.html"><img src="../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><h1 class="fqn"><span class="out-of-band"><span id="render-detail"><a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">[<span class="inner">&#x2212;</span>]</a></span></span><span class="in-band">Crate <a class="mod" href="">gcode</a></span></h1></section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../";window.currentCrate = "gcode";</script><script src="../main.js"></script><script defer src="../search-index.js"></script></body></html>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A crate for parsing g-code programs, designed with embedded environments in mind."><title>gcode - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="gcode" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.1 (4eb161250 2025-03-15)" data-channel="1.85.1" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../static.files/storage-59e33391.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../gcode/index.html">gcode</a><span class="version">0.6.2-alpha.0</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#getting-started" title="Getting Started">Getting Started</a></li><li><a href="#customising-memory-usage" title="Customising Memory Usage">Customising Memory Usage</a></li><li><a href="#spans" title="Spans">Spans</a></li><li><a href="#cargo-features" title="Cargo Features">Cargo Features</a></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>gcode</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/gcode/lib.rs.html#1-202">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A crate for parsing g-code programs, designed with embedded environments in
+mind.</p>
+<p>Some explicit design goals of this crate are:</p>
+<ul>
+<li><strong>embedded-friendly:</strong> users should be able to use this crate without
+requiring access to an operating system (e.g. <code>#[no_std]</code> environments or
+WebAssembly)</li>
+<li><strong>deterministic memory usage:</strong> the library can be tweaked to use no
+dynamic allocation (see <a href="buffers/trait.Buffers.html" title="trait gcode::buffers::Buffers"><code>buffers::Buffers</code></a>)</li>
+<li><strong>error-resistant:</strong> erroneous input won’t abort parsing, instead
+notifying the caller and continuing on (see <a href="trait.Callbacks.html" title="trait gcode::Callbacks"><code>Callbacks</code></a>)</li>
+<li><strong>performance:</strong> parsing should be reasonably fast, guaranteeing <code>O(n)</code>
+time complexity with no backtracking</li>
+</ul>
+<h2 id="getting-started"><a class="doc-anchor" href="#getting-started">§</a>Getting Started</h2>
+<p>The typical entry point to this crate is via the <a href="fn.parse.html" title="fn gcode::parse"><code>parse()</code></a> function. This
+gives you an iterator over the <a href="struct.GCode.html" title="struct gcode::GCode"><code>GCode</code></a>s in a string of text, ignoring any
+errors or comments that may appear along the way.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>gcode::Mnemonic;
+
+<span class="kw">let </span>src = <span class="string">r#"
+    G90              (absolute coordinates)
+    G00 X50.0 Y-10   (move somewhere)
+"#</span>;
+
+<span class="kw">let </span>got: Vec&lt;<span class="kw">_</span>&gt; = gcode::parse(src).collect();
+
+<span class="macro">assert_eq!</span>(got.len(), <span class="number">2</span>);
+
+<span class="kw">let </span>g90 = <span class="kw-2">&amp;</span>got[<span class="number">0</span>];
+<span class="macro">assert_eq!</span>(g90.mnemonic(), Mnemonic::General);
+<span class="macro">assert_eq!</span>(g90.major_number(), <span class="number">90</span>);
+<span class="macro">assert_eq!</span>(g90.minor_number(), <span class="number">0</span>);
+
+<span class="kw">let </span>rapid_move = <span class="kw-2">&amp;</span>got[<span class="number">1</span>];
+<span class="macro">assert_eq!</span>(rapid_move.mnemonic(), Mnemonic::General);
+<span class="macro">assert_eq!</span>(rapid_move.major_number(), <span class="number">0</span>);
+<span class="macro">assert_eq!</span>(rapid_move.value_for(<span class="string">'X'</span>), <span class="prelude-val">Some</span>(<span class="number">50.0</span>));
+<span class="macro">assert_eq!</span>(rapid_move.value_for(<span class="string">'y'</span>), <span class="prelude-val">Some</span>(-<span class="number">10.0</span>));</code></pre></div>
+<p>The <a href="fn.full_parse_with_callbacks.html" title="fn gcode::full_parse_with_callbacks"><code>full_parse_with_callbacks()</code></a> function can be used if you want access
+to <a href="struct.Line.html" title="struct gcode::Line"><code>Line</code></a> information and to be notified on any parse errors.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>gcode::{Callbacks, Span};
+
+<span class="doccomment">/// A custom set of [`Callbacks`] we'll use to keep track of errors.
+</span><span class="attr">#[derive(Debug, Default)]
+</span><span class="kw">struct </span>Errors {
+    unexpected_line_number : usize,
+    letter_without_number: usize,
+    garbage: Vec&lt;String&gt;,
+}
+
+<span class="kw">impl </span>Callbacks <span class="kw">for </span>Errors {
+    <span class="kw">fn </span>unknown_content(<span class="kw-2">&amp;mut </span><span class="self">self</span>, text: <span class="kw-2">&amp;</span>str, _span: Span) {
+        <span class="self">self</span>.garbage.push(text.to_string());
+    }
+
+    <span class="kw">fn </span>unexpected_line_number(<span class="kw-2">&amp;mut </span><span class="self">self</span>, _line_number: f32, _span: Span) {
+        <span class="self">self</span>.unexpected_line_number += <span class="number">1</span>;
+    }
+
+    <span class="kw">fn </span>letter_without_a_number(<span class="kw-2">&amp;mut </span><span class="self">self</span>, _value: <span class="kw-2">&amp;</span>str, _span: Span) {
+        <span class="self">self</span>.letter_without_number += <span class="number">1</span>;
+    }
+}
+
+<span class="kw">let </span>src = <span class="string">r"
+    G90 N1           ; Line numbers (N) should be at the start of a line
+    G                ; there was a G, but no number
+    G01 X50 $$%# Y20 ; invalid characters are ignored
+"</span>;
+
+<span class="kw">let </span><span class="kw-2">mut </span>errors = Errors::default();
+
+{
+    <span class="kw">let </span>lines: Vec&lt;<span class="kw">_</span>&gt; = gcode::full_parse_with_callbacks(src, <span class="kw-2">&amp;mut </span>errors)
+        .collect();
+     
+    <span class="macro">assert_eq!</span>(lines.len(), <span class="number">3</span>);
+    <span class="kw">let </span>total_gcodes: usize = lines.iter()
+        .map(|line| line.gcodes().len())
+        .sum();
+    <span class="macro">assert_eq!</span>(total_gcodes, <span class="number">2</span>);
+}
+
+<span class="macro">assert_eq!</span>(errors.unexpected_line_number, <span class="number">1</span>);
+<span class="macro">assert_eq!</span>(errors.letter_without_number, <span class="number">1</span>);
+<span class="macro">assert_eq!</span>(errors.garbage.len(), <span class="number">1</span>);
+<span class="macro">assert_eq!</span>(errors.garbage[<span class="number">0</span>], <span class="string">"$$%# "</span>);</code></pre></div>
+<h2 id="customising-memory-usage"><a class="doc-anchor" href="#customising-memory-usage">§</a>Customising Memory Usage</h2>
+<p>You’ll need to manually create a <a href="struct.Parser.html" title="struct gcode::Parser"><code>Parser</code></a> if you want control over buffer
+sizes instead of relying on <a href="buffers/type.DefaultBuffers.html" title="type gcode::buffers::DefaultBuffers"><code>buffers::DefaultBuffers</code></a>.</p>
+<p>You shouldn’t normally need to do this unless you are on an embedded device
+and know your expected input will be bigger than
+<a href="buffers/enum.SmallFixedBuffers.html" title="enum gcode::buffers::SmallFixedBuffers"><code>buffers::SmallFixedBuffers</code></a> will allow.</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>gcode::{Word, Comment, GCode, Nop, Parser, buffers::Buffers};
+<span class="kw">use </span>arrayvec::ArrayVec;
+
+<span class="doccomment">/// A type-level variable which contains definitions for each of our buffer
+/// types.
+</span><span class="kw">enum </span>MyBuffers {}
+
+<span class="kw">impl</span>&lt;<span class="lifetime">'input</span>&gt; Buffers&lt;<span class="lifetime">'input</span>&gt; <span class="kw">for </span>MyBuffers {
+    <span class="kw">type </span>Arguments = ArrayVec&lt;[Word; <span class="number">10</span>]&gt;;
+    <span class="kw">type </span>Commands = ArrayVec&lt;[GCode&lt;<span class="self">Self</span>::Arguments&gt;; <span class="number">2</span>]&gt;;
+    <span class="kw">type </span>Comments = ArrayVec&lt;[Comment&lt;<span class="lifetime">'input</span>&gt;; <span class="number">1</span>]&gt;;
+}
+
+<span class="kw">let </span>src = <span class="string">"G90 G01 X5.1"</span>;
+
+<span class="kw">let </span>parser: Parser&lt;Nop, MyBuffers&gt; = Parser::new(src, Nop);
+
+<span class="kw">let </span>lines = parser.count();
+<span class="macro">assert_eq!</span>(lines, <span class="number">1</span>);</code></pre></div>
+<h2 id="spans"><a class="doc-anchor" href="#spans">§</a>Spans</h2>
+<p>Something that distinguishes this crate from a lot of other g-code parsers
+is that each element’s original location, its <a href="struct.Span.html" title="struct gcode::Span"><code>Span</code></a>, is retained and
+passed to the caller.</p>
+<p>This is important for applications such as:</p>
+<ul>
+<li>Indicating where in the source text a parsing error or semantic error has
+occurred</li>
+<li>Visually highlighting the command currently being executed when stepping
+through a program in a simulator</li>
+<li>Reporting what point a CNC machine is up to when executing a job</li>
+</ul>
+<p>It’s pretty easy to check whether something contains its <a href="struct.Span.html" title="struct gcode::Span"><code>Span</code></a>, just look
+for a <code>span()</code> method (e.g. <a href="struct.GCode.html#method.span" title="method gcode::GCode::span"><code>GCode::span()</code></a>) or a <code>span</code> field (e.g.
+<a href="struct.Comment.html#structfield.span" title="field gcode::Comment::span"><code>Comment::span</code></a>).</p>
+<h2 id="cargo-features"><a class="doc-anchor" href="#cargo-features">§</a>Cargo Features</h2>
+<p>Additional functionality can be enabled by adding feature flags to your
+<code>Cargo.toml</code> file:</p>
+<ul>
+<li><strong>std:</strong> adds <code>std::error::Error</code> impls to any errors and switches to
+<code>Vec</code> for the default backing buffers</li>
+<li><strong>serde-1:</strong> allows serializing and deserializing most types with <code>serde</code></li>
+</ul>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="buffers/index.html" title="mod gcode::buffers">buffers</a></div><div class="desc docblock-short">Buffer Management.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Comment.html" title="struct gcode::Comment">Comment</a></div><div class="desc docblock-short">A comment.</div></li><li><div class="item-name"><a class="struct" href="struct.GCode.html" title="struct gcode::GCode">GCode</a></div><div class="desc docblock-short">The in-memory representation of a single command in the G-code language
+(e.g. <code>"G01 X50.0 Y-20.0"</code>).</div></li><li><div class="item-name"><a class="struct" href="struct.Line.html" title="struct gcode::Line">Line</a></div><div class="desc docblock-short">A single line, possibly containing some <a href="struct.Comment.html" title="struct gcode::Comment"><code>Comment</code></a>s or <a href="struct.GCode.html" title="struct gcode::GCode"><code>GCode</code></a>s.</div></li><li><div class="item-name"><a class="struct" href="struct.Nop.html" title="struct gcode::Nop">Nop</a></div><div class="desc docblock-short">A set of callbacks that ignore any errors that occur.</div></li><li><div class="item-name"><a class="struct" href="struct.Parser.html" title="struct gcode::Parser">Parser</a></div><div class="desc docblock-short">A parser for parsing g-code programs.</div></li><li><div class="item-name"><a class="struct" href="struct.Span.html" title="struct gcode::Span">Span</a></div><div class="desc docblock-short">A half-open range which indicates the location of something in a body of
+text.</div></li><li><div class="item-name"><a class="struct" href="struct.Word.html" title="struct gcode::Word">Word</a></div><div class="desc docblock-short">A <a href="https://doc.rust-lang.org/1.85.1/std/primitive.char.html" title="primitive char"><code>char</code></a>-<a href="https://doc.rust-lang.org/1.85.1/std/primitive.f32.html" title="primitive f32"><code>f32</code></a> pair, used for things like arguments (<code>X3.14</code>), command
+numbers (<code>G90</code>) and line numbers (<code>N10</code>).</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.Mnemonic.html" title="enum gcode::Mnemonic">Mnemonic</a></div><div class="desc docblock-short">The general category for a <a href="struct.GCode.html" title="struct gcode::GCode"><code>GCode</code></a>.</div></li></ul><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="trait" href="trait.Callbacks.html" title="trait gcode::Callbacks">Callbacks</a></div><div class="desc docblock-short">Callbacks used during the parsing process to indicate possible errors.</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.full_parse_with_callbacks.html" title="fn gcode::full_parse_with_callbacks">full_<wbr>parse_<wbr>with_<wbr>callbacks</a></div><div class="desc docblock-short">Parse each <a href="struct.Line.html" title="struct gcode::Line"><code>Line</code></a> in some text, using the provided <a href="trait.Callbacks.html" title="trait gcode::Callbacks"><code>Callbacks</code></a> when a
+parse error occurs that we can recover from.</div></li><li><div class="item-name"><a class="fn" href="fn.parse.html" title="fn gcode::parse">parse</a></div><div class="desc docblock-short">Parse each <a href="struct.GCode.html" title="struct gcode::GCode"><code>GCode</code></a> in some text, ignoring any errors that may occur or
+<a href="struct.Comment.html" title="struct gcode::Comment"><code>Comment</code></a>s that are found.</div></li></ul><script type="text/json" id="notable-traits-data">{"&<Vec<T, A> as Index<I>>::Output":"<h3>Notable traits for <code><a class=\"struct\" href=\"https://doc.rust-lang.org/1.85.1/alloc/vec/struct.Vec.html\" title=\"struct alloc::vec::Vec\">Vec</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.85.1/std/primitive.u8.html\">u8</a>, A&gt;</code></h3><pre><code><div class=\"where\">impl&lt;A&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.85.1/std/io/trait.Write.html\" title=\"trait std::io::Write\">Write</a> for <a class=\"struct\" href=\"https://doc.rust-lang.org/1.85.1/alloc/vec/struct.Vec.html\" title=\"struct alloc::vec::Vec\">Vec</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.85.1/std/primitive.u8.html\">u8</a>, A&gt;<div class=\"where\">where\n    A: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.85.1/core/alloc/trait.Allocator.html\" title=\"trait core::alloc::Allocator\">Allocator</a>,</div></div>","&mut <Vec<T, A> as Index<I>>::Output":"<h3>Notable traits for <code><a class=\"struct\" href=\"https://doc.rust-lang.org/1.85.1/alloc/vec/struct.Vec.html\" title=\"struct alloc::vec::Vec\">Vec</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.85.1/std/primitive.u8.html\">u8</a>, A&gt;</code></h3><pre><code><div class=\"where\">impl&lt;A&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.85.1/std/io/trait.Write.html\" title=\"trait std::io::Write\">Write</a> for <a class=\"struct\" href=\"https://doc.rust-lang.org/1.85.1/alloc/vec/struct.Vec.html\" title=\"struct alloc::vec::Vec\">Vec</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.85.1/std/primitive.u8.html\">u8</a>, A&gt;<div class=\"where\">where\n    A: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.85.1/core/alloc/trait.Allocator.html\" title=\"trait core::alloc::Allocator\">Allocator</a>,</div></div>","<Vec<T, A> as IntoIterator>::IntoIter":"<h3>Notable traits for <code><a class=\"struct\" href=\"https://doc.rust-lang.org/1.85.1/alloc/vec/struct.Vec.html\" title=\"struct alloc::vec::Vec\">Vec</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.85.1/std/primitive.u8.html\">u8</a>, A&gt;</code></h3><pre><code><div class=\"where\">impl&lt;A&gt; <a class=\"trait\" href=\"https://doc.rust-lang.org/1.85.1/std/io/trait.Write.html\" title=\"trait std::io::Write\">Write</a> for <a class=\"struct\" href=\"https://doc.rust-lang.org/1.85.1/alloc/vec/struct.Vec.html\" title=\"struct alloc::vec::Vec\">Vec</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/1.85.1/std/primitive.u8.html\">u8</a>, A&gt;<div class=\"where\">where\n    A: <a class=\"trait\" href=\"https://doc.rust-lang.org/1.85.1/core/alloc/trait.Allocator.html\" title=\"trait core::alloc::Allocator\">Allocator</a>,</div></div>"}</script></section></div></main></body></html>
