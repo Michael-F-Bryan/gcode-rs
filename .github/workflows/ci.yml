@@ -11,7 +11,7 @@ jobs:
     name: Compile and Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup Rust
         uses: dsherret/rust-toolchain-file@v1
       - name: Rust Cache
@@ -29,7 +29,7 @@ jobs:
     name: Linting and Formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
       - name: Setup Rust
@@ -43,7 +43,7 @@ jobs:
     name: Publish API Docs to GitHub Pages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@nightly
       - name: Rust Cache
