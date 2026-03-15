@@ -82,7 +82,7 @@
 //! {
 //!     let lines: Vec<_> = gcode::full_parse_with_callbacks(src, &mut errors)
 //!         .collect();
-//!     
+//!
 //!     assert_eq!(lines.len(), 3);
 //!     let total_gcodes: usize = lines.iter()
 //!         .map(|line| line.gcodes().len())
@@ -190,6 +190,8 @@ mod line;
 mod parser;
 mod span;
 mod words;
+
+pub mod core;
 
 pub use crate::{
     callbacks::{Callbacks, Nop},
