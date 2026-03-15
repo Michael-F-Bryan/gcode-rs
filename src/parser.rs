@@ -1,8 +1,8 @@
 use crate::{
+    Callbacks, Comment, GCode, Line, Mnemonic, Nop,
     buffers::{Buffers, DefaultBuffers},
     lexer::{Lexer, Token, TokenType},
     words::{Atom, Word, WordsOrComments},
-    Callbacks, Comment, GCode, Line, Mnemonic, Nop,
 };
 use core::{iter::Peekable, marker::PhantomData};
 
@@ -51,7 +51,9 @@ impl<'input, C, B> Parser<'input, C, B> {
 }
 
 impl<'input, B> From<&'input str> for Parser<'input, Nop, B> {
-    fn from(src: &'input str) -> Self { Parser::new(src, Nop) }
+    fn from(src: &'input str) -> Self {
+        Parser::new(src, Nop)
+    }
 }
 
 impl<'input, C: Callbacks, B: Buffers<'input>> Iterator
@@ -59,7 +61,9 @@ impl<'input, C: Callbacks, B: Buffers<'input>> Iterator
 {
     type Item = Line<'input, B>;
 
-    fn next(&mut self) -> Option<Self::Item> { self.lines.next() }
+    fn next(&mut self) -> Option<Self::Item> {
+        self.lines.next()
+    }
 }
 
 #[derive(Debug)]
@@ -136,7 +140,7 @@ where
         // we've got an argument, try adding it to the gcode we're building
         if let Some(temp) = temp_gcode {
             if let Err(e) = temp.push_argument(word) {
-                self.on_arg_push_error(&temp, e.0);
+                self.on_arg_push_error(temp, e.0);
             }
             return;
         }
@@ -235,7 +239,7 @@ where
                     }
                 },
                 // line numbers are annoying, so handle them separately
-                Atom::Word(word) if word.letter.to_ascii_lowercase() == 'n' => {
+                Atom::Word(word) if word.letter.eq_ignore_ascii_case(&'n') => {
                     self.handle_line_number(
                         word,
                         &mut line,
@@ -255,11 +259,7 @@ where
             }
         }
 
-        if line.is_empty() {
-            None
-        } else {
-            Some(line)
-        }
+        if line.is_empty() { None } else { Some(line) }
     }
 }
 
@@ -268,7 +268,7 @@ mod tests {
     use super::*;
     use crate::Span;
     use arrayvec::ArrayVec;
-    use std::{prelude::v1::*, sync::Mutex};
+    use std::sync::Mutex;
 
     #[derive(Debug)]
     struct MockCallbacks<'a> {

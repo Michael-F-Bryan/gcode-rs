@@ -1,6 +1,6 @@
 use crate::{
-    buffers::{Buffer, CapacityError, DefaultArguments},
     Span, Word,
+    buffers::{Buffer, CapacityError, DefaultArguments},
 };
 use core::fmt::{self, Debug, Display, Formatter};
 
@@ -98,7 +98,9 @@ impl<A: Buffer<Word>> GCode<A> {
     }
 
     /// The overall category this [`GCode`] belongs to.
-    pub fn mnemonic(&self) -> Mnemonic { self.mnemonic }
+    pub fn mnemonic(&self) -> Mnemonic {
+        self.mnemonic
+    }
 
     /// The integral part of a command number (i.e. the `12` in `G12.3`).
     pub fn major_number(&self) -> u32 {
@@ -115,10 +117,14 @@ impl<A: Buffer<Word>> GCode<A> {
     }
 
     /// The arguments attached to this [`GCode`].
-    pub fn arguments(&self) -> &[Word] { self.arguments.as_slice() }
+    pub fn arguments(&self) -> &[Word] {
+        self.arguments.as_slice()
+    }
 
     /// Where the [`GCode`] was found in its source text.
-    pub fn span(&self) -> Span { self.span }
+    pub fn span(&self) -> Span {
+        self.span
+    }
 
     /// Add an argument to the list of arguments attached to this [`GCode`].
     pub fn push_argument(
@@ -239,7 +245,6 @@ where
 mod tests {
     use super::*;
     use arrayvec::ArrayVec;
-    use std::prelude::v1::*;
 
     type BigBuffer = ArrayVec<[Word; 32]>;
 

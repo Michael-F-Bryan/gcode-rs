@@ -2,11 +2,11 @@
 
 [![Crates.io version](https://img.shields.io/crates/v/gcode.svg)](https://crates.io/crates/gcode)
 [![Docs](https://docs.rs/gcode/badge.svg)](https://docs.rs/gcode/)
-[![Build Status](https://travis-ci.org/Michael-F-Bryan/gcode-rs.svg?branch=master)](https://travis-ci.org/Michael-F-Bryan/gcode-rs)
+[![CI](https://github.com/Michael-F-Bryan/gcode-rs/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Michael-F-Bryan/gcode-rs/actions/workflows/ci.yml)
 
 A gcode parser designed for use in `#[no_std]` environments.
 
-For an example of the `gcode` crate in use, see 
+For an example of the `gcode` crate in use, see
 [@etrombly][etrombly]'s [`gcode-yew`][gc-y].
 
 ## Useful Links
@@ -41,7 +41,7 @@ conditions.
 
 [thread]:https://users.rust-lang.org/t/g-code-interpreter/10930
 [docs]: https://michael-f-bryan.github.io/gcode-rs/
-[p3]: https://github.com/Michael-F-Bryan/gcode-rs/blob/master/tests/data/program_3.gcode
+[p3]: https://github.com/Michael-F-Bryan/gcode-rs/blob/main/tests/data/program_3.gcode
 [nist]: http://ws680.nist.gov/publication/get_pdf.cfm?pub_id=823374
 [cargo-c]: https://github.com/lu-zero/cargo-c
 [etrombly]: https://github.com/etrombly

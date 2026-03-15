@@ -1,7 +1,7 @@
 use crate::{Comment, Mnemonic, Span, Word};
 
 #[allow(unused_imports)] // rustdoc links
-use crate::{buffers::Buffers, GCode};
+use crate::{GCode, buffers::Buffers};
 
 /// Callbacks used during the parsing process to indicate possible errors.
 pub trait Callbacks {
@@ -58,7 +58,7 @@ pub trait Callbacks {
     fn letter_without_a_number(&mut self, _value: &str, _span: Span) {}
 }
 
-impl<'a, C: Callbacks + ?Sized> Callbacks for &'a mut C {
+impl<C: Callbacks + ?Sized> Callbacks for &mut C {
     fn unknown_content(&mut self, text: &str, span: Span) {
         (*self).unknown_content(text, span);
     }
