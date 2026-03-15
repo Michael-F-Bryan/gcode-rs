@@ -31,6 +31,312 @@
 
 use core::fmt::{self, Display, Formatter};
 
+fn f32_to_number(v: f32) -> Number {
+    let major = v.trunc();
+    let minor = (v.fract() * 10.0).round();
+    Number {
+        major: major as u16,
+        minor: if minor == 0.0 {
+            None
+        } else {
+            Some(minor as u16)
+        },
+    }
+}
+
+#[derive(Debug)]
+enum LineItem<'a> {
+    Word(char, f32, usize, usize),
+    Comment(&'a str, usize, usize),
+    Unknown(&'a str, usize, usize),
+    LetterOnly(char, usize, usize),
+    NumberOnly(&'a str, usize, usize),
+}
+
+fn parse_line_items(line: &str, line_start: usize) -> Vec<LineItem<'_>> {
+    let mut items = Vec::new();
+    let mut i = 0;
+    let bytes = line.as_bytes();
+    while i < bytes.len() {
+        while i < bytes.len() && (bytes[i] == b' ' || bytes[i] == b'\t') {
+            i += 1;
+        }
+        if i >= bytes.len() {
+            break;
+        }
+        let start = i;
+        if bytes[i] == b';' {
+            i += 1;
+            let comment_start = i;
+            while i < bytes.len() {
+                i += 1;
+            }
+            items.push(LineItem::Comment(
+                &line[comment_start..i],
+                line_start + start,
+                line_start + i,
+            ));
+            continue;
+        }
+        if bytes[i] == b'(' {
+            let comment_start = start;
+            i += 1;
+            while i < bytes.len() && bytes[i] != b')' {
+                i += 1;
+            }
+            if i < bytes.len() {
+                i += 1;
+            }
+            let value = &line[comment_start..i];
+            items.push(LineItem::Comment(
+                value,
+                line_start + comment_start,
+                line_start + i,
+            ));
+            continue;
+        }
+        if (bytes[i] >= b'A' && bytes[i] <= b'Z') || (bytes[i] >= b'a' && bytes[i] <= b'z') {
+            let letter = line[i..].chars().next().unwrap();
+            i += letter.len_utf8();
+            let num_start = i;
+            if i < bytes.len() && (bytes[i] == b'-' || bytes[i] == b'+') {
+                i += 1;
+            }
+            let mut has_digit = false;
+            while i < bytes.len() && (bytes[i] >= b'0' && bytes[i] <= b'9') {
+                has_digit = true;
+                i += 1;
+            }
+            if i < bytes.len() && bytes[i] == b'.' {
+                i += 1;
+                while i < bytes.len() && (bytes[i] >= b'0' && bytes[i] <= b'9') {
+                    has_digit = true;
+                    i += 1;
+                }
+            }
+            if has_digit {
+                let num_str = &line[num_start..i];
+                if let Ok(v) = num_str.parse::<f32>() {
+                    items.push(LineItem::Word(
+                        letter,
+                        v,
+                        line_start + start,
+                        line_start + i,
+                    ));
+                } else {
+                    items.push(LineItem::LetterOnly(
+                        letter,
+                        line_start + start,
+                        line_start + i,
+                    ));
+                }
+            } else {
+                items.push(LineItem::LetterOnly(
+                    letter,
+                    line_start + start,
+                    line_start + num_start,
+                ));
+            }
+            continue;
+        }
+        if bytes[i] >= b'0' && bytes[i] <= b'9' || bytes[i] == b'.' || bytes[i] == b'-' || bytes[i] == b'+' {
+            let num_start = i;
+            if i < bytes.len() && (bytes[i] == b'-' || bytes[i] == b'+') {
+                i += 1;
+            }
+            while i < bytes.len() && (bytes[i] >= b'0' && bytes[i] <= b'9' || bytes[i] == b'.') {
+                i += 1;
+            }
+            items.push(LineItem::NumberOnly(
+                &line[num_start..i],
+                line_start + num_start,
+                line_start + i,
+            ));
+            continue;
+        }
+        let unknown_start = i;
+        i += 1;
+        while i < bytes.len()
+            && bytes[i] != b' '
+            && bytes[i] != b'\t'
+            && bytes[i] != b';'
+            && bytes[i] != b'('
+            && (bytes[i] < b'A' || bytes[i] > b'Z')
+            && (bytes[i] < b'a' || bytes[i] > b'z')
+            && (bytes[i] < b'0' || bytes[i] > b'9')
+        {
+            i += 1;
+        }
+        items.push(LineItem::Unknown(
+            &line[unknown_start..i],
+            line_start + unknown_start,
+            line_start + i,
+        ));
+    }
+    items
+}
+
+struct CommandVisitorProxy<'a>(Option<Box<dyn CommandVisitor + 'a>>);
+
+impl CommandVisitor for CommandVisitorProxy<'_> {
+    fn argument(&mut self, letter: char, value: f32, span: Span) {
+        if let Some(b) = &mut self.0 {
+            b.argument(letter, value, span);
+        }
+    }
+    fn argument_buffer_overflow_error(&mut self, letter: char, value: f32, span: Span) {
+        if let Some(b) = &mut self.0 {
+            b.argument_buffer_overflow_error(letter, value, span);
+        }
+    }
+}
+
+struct BoxingLineVisitor<'a, LV: LineVisitor + ?Sized> {
+    inner: &'a mut LV,
+}
+
+#[allow(refining_impl_trait)]
+impl<LV: LineVisitor> LineVisitor for BoxingLineVisitor<'_, LV> {
+    fn line_number(&mut self, n: f32, span: Span) {
+        self.inner.line_number(n, span);
+    }
+    fn comment(&mut self, value: &str, span: Span) {
+        self.inner.comment(value, span);
+    }
+    fn program_number(&mut self, number: Number, span: Span) {
+        self.inner.program_number(number, span);
+    }
+    fn start_general_code(
+        &mut self,
+        number: Number,
+        span: Span,
+    ) -> ControlFlow<CommandVisitorProxy<'_>> {
+        match self.inner.start_general_code(number, span) {
+            ControlFlow::Continue(c) => {
+                ControlFlow::Continue(CommandVisitorProxy(Some(Box::new(c))))
+            }
+            ControlFlow::Break => ControlFlow::Break,
+        }
+    }
+    fn start_miscellaneous_code(
+        &mut self,
+        number: Number,
+        span: Span,
+    ) -> ControlFlow<CommandVisitorProxy<'_>> {
+        match self.inner.start_miscellaneous_code(number, span) {
+            ControlFlow::Continue(c) => {
+                ControlFlow::Continue(CommandVisitorProxy(Some(Box::new(c))))
+            }
+            ControlFlow::Break => ControlFlow::Break,
+        }
+    }
+    fn start_tool_change_code(
+        &mut self,
+        number: Number,
+        span: Span,
+    ) -> ControlFlow<CommandVisitorProxy<'_>> {
+        match self.inner.start_tool_change_code(number, span) {
+            ControlFlow::Continue(c) => {
+                ControlFlow::Continue(CommandVisitorProxy(Some(Box::new(c))))
+            }
+            ControlFlow::Break => ControlFlow::Break,
+        }
+    }
+    fn unknown_content_error(&mut self, text: &str, span: Span) {
+        self.inner.unknown_content_error(text, span);
+    }
+    fn unexpected_line_number_error(&mut self, n: f32, span: Span) {
+        self.inner.unexpected_line_number_error(n, span);
+    }
+    fn letter_without_number_error(&mut self, value: &str, span: Span) {
+        self.inner.letter_without_number_error(value, span);
+    }
+    fn number_without_letter_error(&mut self, value: &str, span: Span) {
+        self.inner.number_without_letter_error(value, span);
+    }
+}
+
+fn feed_line(
+    line: &str,
+    line_start: usize,
+    line_index: usize,
+    line_visitor: &mut impl LineVisitor,
+) {
+    let mut boxing = BoxingLineVisitor {
+        inner: line_visitor,
+    };
+    let items = parse_line_items(line, line_start);
+    let mut cmd_visitor: Option<CommandVisitorProxy<'_>> = None;
+    for item in items {
+        match item {
+            LineItem::Word(letter, value, start, end) => {
+                let span = Span::new(start, end, line_index);
+                let num = f32_to_number(value);
+                match letter {
+                    'G' | 'g' => {
+                        cmd_visitor = None;
+                        cmd_visitor = Some(match boxing.start_general_code(num, span) {
+                            ControlFlow::Continue(c) => c,
+                            ControlFlow::Break => return,
+                        });
+                    }
+                    'M' | 'm' => {
+                        cmd_visitor = None;
+                        cmd_visitor = Some(match boxing.start_miscellaneous_code(num, span) {
+                            ControlFlow::Continue(c) => c,
+                            ControlFlow::Break => return,
+                        });
+                    }
+                    'O' | 'o' => {
+                        cmd_visitor = None;
+                        boxing.program_number(num, span);
+                    }
+                    'T' | 't' => {
+                        cmd_visitor = None;
+                        cmd_visitor = Some(match boxing.start_tool_change_code(num, span) {
+                            ControlFlow::Continue(c) => c,
+                            ControlFlow::Break => return,
+                        });
+                    }
+                    'N' | 'n' => {
+                        cmd_visitor = None;
+                        boxing.line_number(value, span);
+                    }
+                    _ => {
+                        if let Some(ref mut cv) = cmd_visitor {
+                            cv.argument(letter, value, span);
+                        }
+                    }
+                }
+            }
+            LineItem::Comment(value, start, end) => {
+                cmd_visitor = None;
+                boxing.comment(value, Span::new(start, end, line_index));
+            }
+            LineItem::Unknown(text, start, end) => {
+                cmd_visitor = None;
+                boxing.unknown_content_error(
+                    text,
+                    Span::new(start, end, line_index),
+                );
+            }
+            LineItem::LetterOnly(_value, start, end) => {
+                cmd_visitor = None;
+                let span = Span::new(start, end, line_index);
+                let s = &line[(start - line_start)..(end - line_start)];
+                boxing.letter_without_number_error(s, span);
+            }
+            LineItem::NumberOnly(value, start, end) => {
+                cmd_visitor = None;
+                boxing.number_without_letter_error(
+                    value,
+                    Span::new(start, end, line_index),
+                );
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Number {
     pub major: u16,
@@ -48,7 +354,7 @@ impl Display for Number {
     }
 }
 
-pub fn parse(src: &str, visitor: impl ProgramVisitor) {
+pub fn parse(src: &str, visitor: &mut impl ProgramVisitor) {
     let mut parser = Parser::new(src);
     parser.parse(visitor);
 }
@@ -128,12 +434,32 @@ impl<'src> Parser<'src> {
         }
     }
 
-    pub const fn finished(&self) -> bool {
-        self.src.is_empty()
+    pub fn finished(&self) -> bool {
+        self.current_index >= self.src.len()
     }
 
-    pub fn parse(&mut self, mut _visitor: impl ProgramVisitor) {
-        todo!();
+    pub fn parse(&mut self, visitor: &mut impl ProgramVisitor) {
+        let rest = self.src.get(self.current_index..).unwrap_or("");
+        let mut line_start = self.current_index;
+        let mut line_index: usize = 0;
+        for line in rest.lines() {
+            let line_end = line_start + line.len();
+            let trimmed = line.trim();
+            if !trimmed.is_empty() {
+                let span = Span::new(line_start, line_end, line_index);
+                let mut line_visitor = match visitor.start_line(span) {
+                    ControlFlow::Continue(lv) => lv,
+                    ControlFlow::Break => return,
+                };
+                feed_line(trimmed, line_start, line_index, &mut line_visitor);
+            }
+            line_index += 1;
+            line_start = line_end + 1;
+            if line_start > self.src.len() {
+                line_start = self.src.len();
+            }
+        }
+        self.current_index = line_start;
     }
 }
 
@@ -158,5 +484,148 @@ impl Span {
     pub const fn new(start: usize, end: usize, line: usize) -> Self {
         assert!(start <= end);
         Self { start, end, line }
+    }
+}
+
+#[cfg(test)]
+#[allow(refining_impl_trait)]
+mod tests {
+    use super::*;
+
+    #[derive(Debug, Clone, PartialEq)]
+    enum Event {
+        LineStarted(Span),
+        LineNumber(f32, Span),
+        Comment(String, Span),
+        GeneralCode(Number, Span),
+        MiscCode(Number, Span),
+        ToolChangeCode(Number, Span),
+        ProgramNumber(Number, Span),
+        Argument(char, f32, Span),
+        UnknownContentError(String, Span),
+        UnexpectedLineNumberError(f32, Span),
+        LetterWithoutNumberError(String, Span),
+        NumberWithoutLetterError(String, Span),
+    }
+
+    struct RecordingProgramVisitor {
+        events: Vec<Event>,
+    }
+
+    impl RecordingProgramVisitor {
+        fn new() -> Self {
+            Self {
+                events: Vec::new(),
+            }
+        }
+    }
+
+    pub(super) struct RecordingLineVisitor<'a> {
+        events: &'a mut Vec<Event>,
+        _line_span: Span,
+    }
+
+    pub(super) struct RecordingCommandVisitor<'a> {
+        events: &'a mut Vec<Event>,
+    }
+
+    impl ProgramVisitor for RecordingProgramVisitor {
+        fn start_line(&mut self, span: Span) -> ControlFlow<RecordingLineVisitor<'_>> {
+            self.events.push(Event::LineStarted(span));
+            ControlFlow::Continue(RecordingLineVisitor {
+                events: &mut self.events,
+                _line_span: span,
+            })
+        }
+    }
+
+    impl LineVisitor for RecordingLineVisitor<'_> {
+        fn line_number(&mut self, n: f32, span: Span) {
+            self.events.push(Event::LineNumber(n, span));
+        }
+        fn comment(&mut self, value: &str, span: Span) {
+            self.events
+                .push(Event::Comment(value.to_string(), span));
+        }
+        fn program_number(&mut self, number: Number, span: Span) {
+            self.events.push(Event::ProgramNumber(number, span));
+        }
+        fn start_general_code(
+            &mut self,
+            number: Number,
+            span: Span,
+        ) -> ControlFlow<RecordingCommandVisitor<'_>> {
+            self.events.push(Event::GeneralCode(number, span));
+            ControlFlow::Continue(RecordingCommandVisitor {
+                events: self.events,
+            })
+        }
+        fn start_miscellaneous_code(
+            &mut self,
+            number: Number,
+            span: Span,
+        ) -> ControlFlow<RecordingCommandVisitor<'_>> {
+            self.events.push(Event::MiscCode(number, span));
+            ControlFlow::Continue(RecordingCommandVisitor {
+                events: self.events,
+            })
+        }
+        fn start_tool_change_code(
+            &mut self,
+            number: Number,
+            span: Span,
+        ) -> ControlFlow<RecordingCommandVisitor<'_>> {
+            self.events.push(Event::ToolChangeCode(number, span));
+            ControlFlow::Continue(RecordingCommandVisitor {
+                events: self.events,
+            })
+        }
+        fn unknown_content_error(&mut self, text: &str, span: Span) {
+            self.events
+                .push(Event::UnknownContentError(text.to_string(), span));
+        }
+        fn unexpected_line_number_error(&mut self, n: f32, span: Span) {
+            self.events.push(Event::UnexpectedLineNumberError(n, span));
+        }
+        fn letter_without_number_error(&mut self, value: &str, span: Span) {
+            self.events
+                .push(Event::LetterWithoutNumberError(value.to_string(), span));
+        }
+        fn number_without_letter_error(&mut self, value: &str, span: Span) {
+            self.events
+                .push(Event::NumberWithoutLetterError(value.to_string(), span));
+        }
+    }
+
+    impl CommandVisitor for RecordingCommandVisitor<'_> {
+        fn argument(&mut self, letter: char, value: f32, span: Span) {
+            self.events.push(Event::Argument(letter, value, span));
+        }
+    }
+
+    fn parse_and_record(src: &str) -> Vec<Event> {
+        let mut visitor = RecordingProgramVisitor::new();
+        parse(src, &mut visitor);
+        visitor.events
+    }
+
+    #[test]
+    fn empty_input_produces_no_events() {
+        let events = parse_and_record("");
+        assert!(events.is_empty(), "expected no events, got {:?}", events);
+    }
+
+    #[test]
+    fn single_g_code_no_args() {
+        let events = parse_and_record("G90");
+        assert_eq!(events.len(), 2);
+        assert!(matches!(events[0], Event::LineStarted(_)));
+        match &events[1] {
+            Event::GeneralCode(n, _) => {
+                assert_eq!(n.major, 90);
+                assert_eq!(n.minor, None);
+            }
+            _ => panic!("expected GeneralCode(90), got {:?}", events[1]),
+        }
     }
 }
