@@ -267,6 +267,7 @@ fn feed_line(
     };
     let items = parse_line_items(line, line_start);
     let mut cmd_visitor: Option<CommandVisitorProxy<'_>> = None;
+    let mut seen_command_on_line = false;
     for item in items {
         match item {
             LineItem::Word(letter, value, start, end) => {
@@ -275,6 +276,7 @@ fn feed_line(
                 match letter {
                     'G' | 'g' => {
                         cmd_visitor = None;
+                        seen_command_on_line = true;
                         cmd_visitor = Some(match boxing.start_general_code(num, span) {
                             ControlFlow::Continue(c) => c,
                             ControlFlow::Break => return,
@@ -282,6 +284,7 @@ fn feed_line(
                     }
                     'M' | 'm' => {
                         cmd_visitor = None;
+                        seen_command_on_line = true;
                         cmd_visitor = Some(match boxing.start_miscellaneous_code(num, span) {
                             ControlFlow::Continue(c) => c,
                             ControlFlow::Break => return,
@@ -289,10 +292,12 @@ fn feed_line(
                     }
                     'O' | 'o' => {
                         cmd_visitor = None;
+                        seen_command_on_line = true;
                         boxing.program_number(num, span);
                     }
                     'T' | 't' => {
                         cmd_visitor = None;
+                        seen_command_on_line = true;
                         cmd_visitor = Some(match boxing.start_tool_change_code(num, span) {
                             ControlFlow::Continue(c) => c,
                             ControlFlow::Break => return,
@@ -300,7 +305,11 @@ fn feed_line(
                     }
                     'N' | 'n' => {
                         cmd_visitor = None;
-                        boxing.line_number(value, span);
+                        if seen_command_on_line {
+                            boxing.unexpected_line_number_error(value, span);
+                        } else {
+                            boxing.line_number(value, span);
+                        }
                     }
                     _ => {
                         if let Some(ref mut cv) = cmd_visitor {
@@ -756,5 +765,107 @@ mod tests {
             Event::Argument('X', v, _) => assert!((*v - 1.0).abs() < 1e-6),
             _ => panic!("expected Argument(X, 1), got {:?}", events[4]),
         }
+    }
+
+    #[test]
+    fn decimal_argument() {
+        let events = parse_and_record("G01 X1.5 Y-0.25");
+        assert!(events.len() >= 4);
+        let args: Vec<_> = events
+            .iter()
+            .filter_map(|e| match e {
+                Event::Argument(l, v, _) => Some((*l, *v)),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(args.len(), 2);
+        assert!((args[0].1 - 1.5).abs() < 1e-6);
+        assert!((args[1].1 - (-0.25)).abs() < 1e-6);
+    }
+
+    #[test]
+    fn minor_subcode_g91_1() {
+        let events = parse_and_record("G91.1");
+        assert_eq!(events.len(), 2);
+        match &events[1] {
+            Event::GeneralCode(n, _) => {
+                assert_eq!(n.major, 91);
+                assert_eq!(n.minor, Some(1));
+            }
+            _ => panic!("expected GeneralCode(91.1), got {:?}", events[1]),
+        }
+    }
+
+    #[test]
+    fn whitespace_only_input() {
+        let events = parse_and_record("   \n\t  ");
+        assert!(events.is_empty());
+    }
+
+    #[test]
+    fn no_space_between_words() {
+        let events = parse_and_record("G00G21G17G90");
+        assert_eq!(events.len(), 5); // LineStarted + 4 GeneralCode
+        for (i, expected) in [0u16, 21, 17, 90].iter().enumerate() {
+            match &events[1 + i] {
+                Event::GeneralCode(n, _) => assert_eq!(n.major, *expected),
+                _ => panic!("expected GeneralCode({}), got {:?}", expected, events[1 + i]),
+            }
+        }
+    }
+
+    #[test]
+    fn unknown_content_error() {
+        let events = parse_and_record("G90 $$%# X10");
+        let errors: Vec<_> = events
+            .iter()
+            .filter_map(|e| match e {
+                Event::UnknownContentError(t, _) => Some(t.as_str()),
+                _ => None,
+            })
+            .collect();
+        assert!(!errors.is_empty(), "expected at least one UnknownContentError, got {:?}", events);
+    }
+
+    #[test]
+    fn unexpected_line_number_error() {
+        let events = parse_and_record("G90 N42");
+        let errors: Vec<_> = events
+            .iter()
+            .filter_map(|e| match e {
+                Event::UnexpectedLineNumberError(n, _) => Some(*n),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0], 42.0);
+    }
+
+    #[test]
+    fn letter_without_number_error() {
+        let events = parse_and_record("G");
+        let errors: Vec<_> = events
+            .iter()
+            .filter_map(|e| match e {
+                Event::LetterWithoutNumberError(t, _) => Some(t.clone()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0], "G");
+    }
+
+    #[test]
+    fn number_without_letter_error() {
+        let events = parse_and_record("42");
+        let errors: Vec<_> = events
+            .iter()
+            .filter_map(|e| match e {
+                Event::NumberWithoutLetterError(t, _) => Some(t.to_string()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(errors.len(), 1);
+        assert_eq!(errors[0], "42");
     }
 }
