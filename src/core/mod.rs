@@ -256,6 +256,7 @@ impl<LV: LineVisitor> LineVisitor for BoxingLineVisitor<'_, LV> {
     }
 }
 
+#[allow(unused_assignments)] // cmd_visitor = None drops previous proxy before reassigning
 fn feed_line(
     line: &str,
     line_start: usize,
@@ -867,5 +868,37 @@ mod tests {
             .collect();
         assert_eq!(errors.len(), 1);
         assert_eq!(errors[0], "42");
+    }
+
+    #[test]
+    fn code_then_comment_same_line() {
+        let events = parse_and_record("G90 ; absolute mode");
+        assert_eq!(events.len(), 3); // LineStarted, GeneralCode(90), Comment
+        assert!(matches!(events[0], Event::LineStarted(_)));
+        assert!(matches!(events[1], Event::GeneralCode(Number { major: 90, .. }, _)));
+        match &events[2] {
+            Event::Comment(s, _) => assert!(s.contains("absolute")),
+            _ => panic!("expected Comment, got {:?}", events[2]),
+        }
+    }
+
+    #[test]
+    fn regression_fixed_snippet_event_sequence() {
+        let events = parse_and_record("N10 G0 X1 Y2");
+        let expected: Vec<&str> = events
+            .iter()
+            .map(|e| match e {
+                Event::LineStarted(_) => "LineStarted",
+                Event::LineNumber(..) => "LineNumber",
+                Event::GeneralCode(..) => "GeneralCode",
+                Event::Argument(..) => "Argument",
+                _ => "Other",
+            })
+            .collect();
+        assert_eq!(
+            expected,
+            ["LineStarted", "LineNumber", "GeneralCode", "Argument", "Argument"],
+            "event sequence should be stable for N10 G0 X1 Y2"
+        );
     }
 }
