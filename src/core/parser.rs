@@ -96,6 +96,23 @@ fn is_block_item_start(tokens: &mut Tokens<'_>) -> bool {
     }
 }
 
+/// Letters that start a command or line/program number; argument list ends before these.
+const COMMAND_LETTERS: [char; 5] = ['G', 'M', 'T', 'N', 'O'];
+
+fn is_command_letter(c: char) -> bool {
+    COMMAND_LETTERS.contains(&c)
+}
+
+/// True if the next token is a single letter in COMMAND_LETTERS (used for argument-list recovery).
+fn at_command_letter(tokens: &mut Tokens<'_>) -> bool {
+    match tokens.peek_token() {
+        Some(t) if t.kind == TokenType::Letter && t.value.len() == 1 => {
+            t.value.chars().next().is_some_and(is_command_letter)
+        },
+        _ => false,
+    }
+}
+
 /// First set for an argument: single letter that is not N, O, G, M, T.
 fn is_argument_start(tokens: &mut Tokens<'_>) -> Option<char> {
     let t = tokens.peek_token()?;
@@ -103,10 +120,17 @@ fn is_argument_start(tokens: &mut Tokens<'_>) -> Option<char> {
         return None;
     }
     let c = t.value.chars().next()?;
-    if matches!(c, 'N' | 'O' | 'G' | 'M' | 'T') {
+    if is_command_letter(c) {
         return None;
     }
     Some(c)
+}
+
+// ---------- Span helper ----------
+
+/// Span from `start.start` through `end.end()` on the same line as `start`.
+fn span_from_to(start: Span, end: Span) -> Span {
+    Span::new(start.start, end.end() - start.start, start.line)
 }
 
 // ---------- Number / value helpers ----------
@@ -194,11 +218,7 @@ fn parse_argument<C: CommandVisitor>(
         },
     };
 
-    let arg_span = Span::new(
-        letter_span.start,
-        num_span.end() - letter_span.start,
-        letter_span.line,
-    );
+    let arg_span = span_from_to(letter_span, num_span);
     cmd.argument(letter_c, value, arg_span);
     Some(arg_span)
 }
@@ -211,25 +231,13 @@ fn parse_command_arguments<C: CommandVisitor>(
 ) -> Span {
     let mut last_span = command_start_span;
     while !at_block_follow(tokens) {
-        // Recovery: next command letter ends this command's arguments.
-        if matches!(tokens.peek_token(), Some(t) if t.kind == TokenType::Letter)
-        {
-            if let Some(t) = tokens.peek_token() {
-                if t.value.len() == 1 {
-                    let c = t.value.chars().next().unwrap_or('\0');
-                    if matches!(c, 'G' | 'M' | 'T' | 'N' | 'O') {
-                        break;
-                    }
-                }
-            }
+        // Recovery: next command letter ends this command's arguments (G/M/T/N/O).
+        if at_command_letter(tokens) {
+            break;
         }
         if let Some(arg_span) = parse_argument(tokens, cmd, command_start_span)
         {
-            last_span = Span::new(
-                command_start_span.start,
-                arg_span.end() - command_start_span.start,
-                command_start_span.line,
-            );
+            last_span = span_from_to(command_start_span, arg_span);
         } else {
             break;
         }
@@ -282,11 +290,7 @@ fn parse_command<B: BlockVisitor>(
         },
     };
 
-    let cmd_span = Span::new(
-        letter_tok.span.start,
-        num_span.end() - letter_tok.span.start,
-        letter_tok.span.line,
-    );
+    let cmd_span = span_from_to(letter_tok.span, num_span);
 
     match cmd_letter {
         'G' => match block.start_general_code(number) {
@@ -322,6 +326,24 @@ fn parse_command<B: BlockVisitor>(
 
 // ---------- Grammar: block-level items ----------
 
+/// Emit "unexpected N/O after command" and return. Used when N or O appears after a G/M/T.
+fn emit_unexpected_n_or_o_after_command<B: BlockVisitor>(
+    block: &mut B,
+    letter: &str,
+    letter_tok: Token<'_>,
+    num_tok: Option<Token<'_>>,
+) {
+    let span = num_tok
+        .as_ref()
+        .map(|t| span_from_to(letter_tok.span, t.span))
+        .unwrap_or(letter_tok.span);
+    block.diagnostics().emit_unexpected(
+        letter,
+        &[TokenType::Letter, TokenType::Number],
+        span,
+    );
+}
+
 /// Line number: N number. Caller has already consumed the N; we only consume the number.
 fn parse_line_number<B: BlockVisitor>(
     tokens: &mut Tokens<'_>,
@@ -330,21 +352,11 @@ fn parse_line_number<B: BlockVisitor>(
     seen_command: bool,
 ) {
     if seen_command {
-        let num_tok = tokens.next_token();
-        let span = num_tok
-            .as_ref()
-            .map(|t| {
-                Span::new(
-                    n_tok.span.start,
-                    t.span.end() - n_tok.span.start,
-                    n_tok.span.line,
-                )
-            })
-            .unwrap_or(n_tok.span);
-        block.diagnostics().emit_unexpected(
+        emit_unexpected_n_or_o_after_command(
+            block,
             "N",
-            &[TokenType::Letter, TokenType::Number],
-            span,
+            n_tok,
+            tokens.next_token(),
         );
         return;
     }
@@ -355,12 +367,7 @@ fn parse_line_number<B: BlockVisitor>(
             span,
         }) => {
             if let Some(n) = parse_number(value) {
-                let n_span = Span::new(
-                    n_tok.span.start,
-                    span.end() - n_tok.span.start,
-                    n_tok.span.line,
-                );
-                block.line_number(n, n_span);
+                block.line_number(n, span_from_to(n_tok.span, span));
             }
         },
         _ => {
@@ -381,21 +388,11 @@ fn parse_program_number<B: BlockVisitor>(
     seen_command: bool,
 ) {
     if seen_command {
-        let num_tok = tokens.next_token();
-        let span = num_tok
-            .as_ref()
-            .map(|t| {
-                Span::new(
-                    o_tok.span.start,
-                    t.span.end() - o_tok.span.start,
-                    o_tok.span.line,
-                )
-            })
-            .unwrap_or(o_tok.span);
-        block.diagnostics().emit_unexpected(
+        emit_unexpected_n_or_o_after_command(
+            block,
             "O",
-            &[TokenType::Letter, TokenType::Number],
-            span,
+            o_tok,
+            tokens.next_token(),
         );
         return;
     }
@@ -406,12 +403,7 @@ fn parse_program_number<B: BlockVisitor>(
             span,
         }) => {
             if let Some(n) = parse_number(value) {
-                let o_span = Span::new(
-                    o_tok.span.start,
-                    span.end() - o_tok.span.start,
-                    o_tok.span.line,
-                );
-                block.program_number(n, o_span);
+                block.program_number(n, span_from_to(o_tok.span, span));
             }
         },
         _ => {
@@ -450,11 +442,7 @@ fn parse_block_body<'src, B: BlockVisitor>(
     let mut seen_command = false;
 
     loop {
-        line_span = Span::new(
-            line_start_span.start,
-            current.span.end() - line_start_span.start,
-            line_start_span.line,
-        );
+        line_span = span_from_to(line_start_span, current.span);
 
         // Follow set: end of line.
         if current.kind == TokenType::Newline {
@@ -595,10 +583,7 @@ pub fn resume(
             None => break,
             Some(t) => t,
         };
-        if first.kind == TokenType::Newline {
-            continue;
-        }
-
+        // first is never Newline here: the loop above consumed all leading newlines.
         let line_start_span = first.span;
 
         match visitor.start_block() {
