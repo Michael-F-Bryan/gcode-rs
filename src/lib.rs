@@ -47,12 +47,15 @@
 //! # }
 //! ```
 //!
-//! Parse errors are collected as [`Diagnostic`]s; if [`Diagnostics::is_empty`]
-//! is false, [`parse`] returns `Err(diagnostics)`.
+//! Parse errors are collected as [`Diagnostic`]s. The [`parse`] function fails
+//! if any parse errors were emitted.
 //!
 //! ## Push-based / zero-allocation parsing
 //!
-//! For no-heap use or full control, use the [`core`] module. Implement
+//! The [`core`] module is designed guaranteed to parse without requiring any
+//! heap allocations.
+//!
+//! Implement
 //! [`ProgramVisitor`](crate::core::ProgramVisitor): the parser calls
 //! [`ProgramVisitor::start_block`](crate::core::ProgramVisitor::start_block) and
 //! you return a [`ControlFlow::Continue`](crate::core::ControlFlow) with a
@@ -101,12 +104,9 @@
 //! (with `alloc`) have a `span` field (e.g. [`Block::span`], [`Comment::span`],
 //! [`GeneralCode::span`], [`Argument::span`]).
 //!
-//! # Cargo Features
+//! ## Feature Flags
 //!
-//! - **alloc** (default): enables the [`ast`] module and [`parse`], producing
-//!   a [`Program`] and collecting [`Diagnostics`].
-//! - **serde** (default): enables serialisation and deserialisation of core and
-//!   AST types via `serde`.
+#![doc = document_features::document_features!()]
 #![deny(
     bare_trait_objects,
     elided_lifetimes_in_paths,

@@ -20,14 +20,22 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["alloc", "serde"]
+## Enables the [`ast`] module and [`parse`], producing a [`Program`] and collecting [`Diagnostics`].
 alloc = []
+## Enables serialisation and deserialisation of core and AST types via `serde`.
 serde = ["dep:serde"]
+
+#! ### Internal Features
+#! The following features are not intended for public use.
+
+## Enables rustdoc labels for items gated by features (for docs.rs - requires nightly).
 unstable-doc-cfg = []
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"], optional = true }
 libm = "0.2"
 doc-cfg = "0.1.0"
+document-features = "0.2"
 
 [dev-dependencies]
 insta = "1.46.3"
