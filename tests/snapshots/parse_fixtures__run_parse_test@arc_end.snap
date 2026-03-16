@@ -319,7 +319,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 104,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 264,
+                            length: 7,
+                            line: 7,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 269,
+                                    length: 2,
+                                    line: 7,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 264,
@@ -340,7 +367,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 140,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 291,
+                            length: 7,
+                            line: 8,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 296,
+                                    length: 2,
+                                    line: 8,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 291,
@@ -431,7 +485,22 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 84,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 358,
+                            length: 3,
+                            line: 10,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 358,
@@ -452,7 +521,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 106,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 379,
+                            length: 7,
+                            line: 11,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 384,
+                                    length: 2,
+                                    line: 11,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 379,

@@ -222,7 +222,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 300,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 615,
+                            length: 8,
+                            line: 7,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    30.0,
+                                ),
+                                span: Span {
+                                    start: 620,
+                                    length: 3,
+                                    line: 7,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 615,
@@ -291,7 +318,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 300,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 656,
+                            length: 8,
+                            line: 9,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    50.0,
+                                ),
+                                span: Span {
+                                    start: 661,
+                                    length: 3,
+                                    line: 9,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 656,
@@ -360,7 +414,22 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 18,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 695,
+                            length: 3,
+                            line: 11,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 695,
@@ -381,7 +450,22 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 718,
+                            length: 3,
+                            line: 12,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 718,
@@ -402,7 +486,22 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 17,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 758,
+                            length: 3,
+                            line: 13,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 758,
@@ -504,7 +603,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 300,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 862,
+                            length: 11,
+                            line: 17,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    30.0,
+                                ),
+                                span: Span {
+                                    start: 867,
+                                    length: 6,
+                                    line: 17,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 862,
@@ -1293,7 +1419,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 300,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 1206,
+                            length: 11,
+                            line: 31,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    50.0,
+                                ),
+                                span: Span {
+                                    start: 1211,
+                                    length: 6,
+                                    line: 31,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 1206,
@@ -1443,7 +1596,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 300,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 1311,
+                            length: 11,
+                            line: 36,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    30.0,
+                                ),
+                                span: Span {
+                                    start: 1316,
+                                    length: 6,
+                                    line: 36,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 1311,
@@ -2232,7 +2412,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 300,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 1655,
+                            length: 11,
+                            line: 50,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    50.0,
+                                ),
+                                span: Span {
+                                    start: 1660,
+                                    length: 6,
+                                    line: 50,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 1655,
@@ -2382,7 +2589,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 300,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 1760,
+                            length: 11,
+                            line: 55,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    30.0,
+                                ),
+                                span: Span {
+                                    start: 1765,
+                                    length: 6,
+                                    line: 55,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 1760,
@@ -3171,7 +3405,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 300,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 2104,
+                            length: 11,
+                            line: 69,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    50.0,
+                                ),
+                                span: Span {
+                                    start: 2109,
+                                    length: 6,
+                                    line: 69,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 2104,
@@ -3321,7 +3582,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 300,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 2209,
+                            length: 11,
+                            line: 74,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    30.0,
+                                ),
+                                span: Span {
+                                    start: 2214,
+                                    length: 6,
+                                    line: 74,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 2209,
@@ -4110,7 +4398,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 300,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 2553,
+                            length: 11,
+                            line: 88,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    50.0,
+                                ),
+                                span: Span {
+                                    start: 2558,
+                                    length: 6,
+                                    line: 88,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 2553,
@@ -4260,7 +4575,34 @@ Program {
                     },
                 },
             ],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 300,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 2658,
+                            length: 11,
+                            line: 93,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    30.0,
+                                ),
+                                span: Span {
+                                    start: 2663,
+                                    length: 6,
+                                    line: 93,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 2658,

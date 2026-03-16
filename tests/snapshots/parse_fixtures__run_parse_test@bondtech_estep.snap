@@ -28,7 +28,34 @@ Program {
         Block {
             line_number: None,
             comments: [],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 92,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 83,
+                            length: 8,
+                            line: 1,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'E',
+                                value: Literal(
+                                    415.0,
+                                ),
+                                span: Span {
+                                    start: 87,
+                                    length: 4,
+                                    line: 1,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 83,
@@ -39,7 +66,22 @@ Program {
         Block {
             line_number: None,
             comments: [],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 500,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 93,
+                            length: 4,
+                            line: 2,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 93,

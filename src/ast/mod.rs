@@ -37,4 +37,28 @@ mod tests {
             crate::ast::Value::Literal(n) if (n - (-3.0)).abs() < 1e-6
         ));
     }
+
+    #[test]
+    fn ast_parse_captures_m_and_t_codes() {
+        let program = crate::parse("G0 X0\nM3 S1000\nT1\n").unwrap();
+        assert_eq!(program.blocks.len(), 3);
+
+        assert_eq!(program.blocks[0].codes.len(), 1);
+        assert!(matches!(
+            &program.blocks[0].codes[0],
+            crate::ast::Code::General(_)
+        ));
+
+        assert_eq!(program.blocks[1].codes.len(), 1);
+        assert!(matches!(
+            &program.blocks[1].codes[0],
+            crate::ast::Code::Miscellaneous(m) if m.number.major == 3
+        ));
+
+        assert_eq!(program.blocks[2].codes.len(), 1);
+        assert!(matches!(
+            &program.blocks[2].codes[0],
+            crate::ast::Code::ToolChange(t) if t.number.major == 1
+        ));
+    }
 }

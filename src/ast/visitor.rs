@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 use crate::{
     ast::{
         Argument, Block, Code, Comment, CommentKind, Diagnostics, GeneralCode,
-        Program, WordAddress,
+        MiscellaneousCode, Program, ToolChangeCode, WordAddress,
     },
     core::{
         ControlFlow, Diagnostics as _, HasDiagnostics, Number, ProgramVisitor,
@@ -132,6 +132,38 @@ impl crate::core::BlockVisitor for BlockBuilder<'_> {
             codes: &mut self.codes,
             constructor: |number, args, span| {
                 Code::General(GeneralCode { number, span, args })
+            },
+            args: Vec::new(),
+        };
+        core::ops::ControlFlow::Continue(v)
+    }
+
+    fn start_miscellaneous_code(
+        &mut self,
+        number: Number,
+    ) -> ControlFlow<impl crate::core::CommandVisitor + '_> {
+        let v = CodeBuilder {
+            diags: self.diags,
+            number,
+            codes: &mut self.codes,
+            constructor: |number, args, span| {
+                Code::Miscellaneous(MiscellaneousCode { number, span, args })
+            },
+            args: Vec::new(),
+        };
+        core::ops::ControlFlow::Continue(v)
+    }
+
+    fn start_tool_change_code(
+        &mut self,
+        number: Number,
+    ) -> ControlFlow<impl crate::core::CommandVisitor + '_> {
+        let v = CodeBuilder {
+            diags: self.diags,
+            number,
+            codes: &mut self.codes,
+            constructor: |number, args, span| {
+                Code::ToolChange(ToolChangeCode { number, span, args })
             },
             args: Vec::new(),
         };

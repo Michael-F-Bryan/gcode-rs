@@ -60,7 +60,36 @@ Program {
         Block {
             line_number: None,
             comments: [],
-            codes: [],
+            codes: [
+                ToolChange(
+                    ToolChangeCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 129,
+                            length: 2,
+                            line: 3,
+                        },
+                        args: [],
+                    },
+                ),
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 6,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 132,
+                            length: 2,
+                            line: 3,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 129,
@@ -259,6 +288,20 @@ Program {
                                 },
                             },
                         ],
+                    },
+                ),
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 3,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 208,
+                            length: 2,
+                            line: 6,
+                        },
+                        args: [],
                     },
                 ),
             ],
@@ -491,6 +534,20 @@ Program {
                                 },
                             },
                         ],
+                    },
+                ),
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 8,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 306,
+                            length: 2,
+                            line: 11,
+                        },
+                        args: [],
                     },
                 ),
             ],
@@ -734,7 +791,22 @@ Program {
         Block {
             line_number: None,
             comments: [],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 30,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 506,
+                            length: 3,
+                            line: 17,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 506,

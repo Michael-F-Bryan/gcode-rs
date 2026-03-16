@@ -117,7 +117,34 @@ Program {
         Block {
             line_number: None,
             comments: [],
-            codes: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 3,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 199,
+                            length: 10,
+                            line: 6,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    24000.0,
+                                ),
+                                span: Span {
+                                    start: 203,
+                                    length: 6,
+                                    line: 6,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
             word_addresses: [],
             span: Span {
                 start: 199,
