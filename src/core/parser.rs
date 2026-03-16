@@ -1087,6 +1087,31 @@ mod tests {
         );
     }
 
+    /// Regression test for #44: newline before G01 must not produce a phantom empty G01.
+    /// Input "G90 \n G01 X50.0 Y-10" must parse as exactly two blocks with two G-codes
+    /// (G90, then G01 with X50.0 Y-10).
+    #[test]
+    fn phantom_g01_regression() {
+        let events = parse_and_record("G90 \n G01 X50.0 Y-10");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 1,
+                    minor: None,
+                }),
+                Event::Argument('X', EventValue::Literal(50.0), sp(10, 5, 1)),
+                Event::Argument('Y', EventValue::Literal(-10.0), sp(16, 4, 1)),
+            ]
+        );
+    }
+
     #[test]
     fn decimal_argument() {
         let events = parse_and_record("G01 X1.5 Y-0.25");
