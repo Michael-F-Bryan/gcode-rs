@@ -1,6 +1,6 @@
 use crate::core::{
     ProgramVisitor,
-    lexer::{TokenType, Tokens},
+    lexer::{Token, TokenType, Tokens},
 };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -32,14 +32,19 @@ impl ParserState {
 pub fn resume(
     state: ParserState,
     src: &str,
-    visitor: impl ProgramVisitor,
+    _visitor: &mut impl ProgramVisitor,
 ) -> ParserState {
     let mut tokens = Tokens::new(src, state.current_index, state.current_line);
 
     {
         let mut tokens = tokens.by_ref().peekable();
-        while let Some(_token) = tokens.next() {
-            todo!();
+        while let Some(Token { kind, .. }) = tokens.next() {
+            match kind {
+                TokenType::Newline | TokenType::Unknown => {
+                    continue;
+                },
+                _ => todo!(),
+            }
         }
     }
 
@@ -57,39 +62,54 @@ impl Default for ParserState {
 mod tests {
     use super::*;
     use crate::core::{
-        CommandVisitor, ControlFlow, LineVisitor, Number, ProgramVisitor, Span,
+        BlockVisitor, CommandVisitor, ControlFlow, Diagnostics, Number,
+        ProgramVisitor, Span, Value,
     };
 
     #[derive(Debug, Clone, PartialEq)]
     enum Event {
-        LineStarted(Span),
-        LineNumber(f32, Span),
+        LineStarted,
+        LineNumber(Number, Span),
         Comment(String, Span),
-        GeneralCode(Number, Span),
-        MiscCode(Number, Span),
-        ToolChangeCode(Number, Span),
+        GeneralCode(Number),
+        MiscCode(Number),
+        ToolChangeCode(Number),
         ProgramNumber(Number, Span),
-        Argument(char, f32, Span),
+        Argument(char, crate::ast::Value, Span),
         UnknownContentError(String, Span),
-        UnexpectedLineNumberError(f32, Span),
-        LetterWithoutNumberError(String, Span),
-        NumberWithoutLetterError(String, Span),
+        Unexpected(String, String, Span),
     }
 
     struct Recorder<'a>(&'a mut Vec<Event>);
 
-    impl ProgramVisitor for Recorder<'_> {
-        fn start_line(
+    impl Diagnostics for Recorder<'_> {
+        fn emit_unknown_content(&mut self, text: &str, span: Span) {
+            self.0
+                .push(Event::UnknownContentError(text.to_string(), span));
+        }
+        fn emit_unexpected(
             &mut self,
+            actual: &str,
+            expected: &[&str],
             span: Span,
-        ) -> ControlFlow<impl LineVisitor + '_> {
-            self.0.push(Event::LineStarted(span));
+        ) {
+            self.0.push(Event::Unexpected(
+                actual.to_string(),
+                expected.join(", "),
+                span,
+            ));
+        }
+    }
+
+    impl ProgramVisitor for Recorder<'_> {
+        fn start_block(&mut self) -> ControlFlow<impl BlockVisitor + '_> {
+            self.0.push(Event::LineStarted);
             ControlFlow::Continue(Recorder(self.0))
         }
     }
 
-    impl LineVisitor for Recorder<'_> {
-        fn line_number(&mut self, n: f32, span: Span) {
+    impl BlockVisitor for Recorder<'_> {
+        fn line_number(&mut self, n: Number, span: Span) {
             self.0.push(Event::LineNumber(n, span));
         }
         fn comment(&mut self, value: &str, span: Span) {
@@ -101,53 +121,35 @@ mod tests {
         fn start_general_code(
             &mut self,
             number: Number,
-            span: Span,
         ) -> ControlFlow<impl CommandVisitor + '_> {
-            self.0.push(Event::GeneralCode(number, span));
+            self.0.push(Event::GeneralCode(number));
             ControlFlow::Continue(Recorder(self.0))
         }
         fn start_miscellaneous_code(
             &mut self,
             number: Number,
-            span: Span,
         ) -> ControlFlow<impl CommandVisitor + '_> {
-            self.0.push(Event::MiscCode(number, span));
+            self.0.push(Event::MiscCode(number));
             ControlFlow::Continue(Recorder(self.0))
         }
         fn start_tool_change_code(
             &mut self,
             number: Number,
-            span: Span,
         ) -> ControlFlow<impl CommandVisitor + '_> {
-            self.0.push(Event::ToolChangeCode(number, span));
+            self.0.push(Event::ToolChangeCode(number));
             ControlFlow::Continue(Recorder(self.0))
-        }
-        fn unknown_content_error(&mut self, text: &str, span: Span) {
-            self.0
-                .push(Event::UnknownContentError(text.to_string(), span));
-        }
-        fn unexpected_line_number_error(&mut self, n: f32, span: Span) {
-            self.0.push(Event::UnexpectedLineNumberError(n, span));
-        }
-        fn letter_without_number_error(&mut self, value: &str, span: Span) {
-            self.0
-                .push(Event::LetterWithoutNumberError(value.to_string(), span));
-        }
-        fn number_without_letter_error(&mut self, value: &str, span: Span) {
-            self.0
-                .push(Event::NumberWithoutLetterError(value.to_string(), span));
         }
     }
 
     impl CommandVisitor for Recorder<'_> {
-        fn argument(&mut self, letter: char, value: f32, span: Span) {
-            self.0.push(Event::Argument(letter, value, span));
+        fn argument(&mut self, letter: char, value: Value<'_>, span: Span) {
+            self.0.push(Event::Argument(letter, value.into(), span));
         }
     }
 
     fn parse_and_record(src: &str) -> Vec<Event> {
         let mut events = Vec::new();
-        let _ = resume(ParserState::empty(), src, Recorder(&mut events));
+        let _ = resume(ParserState::empty(), src, &mut Recorder(&mut events));
         events
     }
 
@@ -167,14 +169,11 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 3, 0)),
-                Event::GeneralCode(
-                    Number {
-                        major: 90,
-                        minor: None
-                    },
-                    sp(0, 3, 0)
-                ),
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
             ]
         );
     }
@@ -185,16 +184,21 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 12, 0)),
-                Event::GeneralCode(
-                    Number {
-                        major: 1,
-                        minor: None
-                    },
-                    sp(0, 3, 0)
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 1,
+                    minor: None,
+                }),
+                Event::Argument(
+                    'X',
+                    crate::ast::Value::Literal(10.0),
+                    sp(4, 3, 0)
                 ),
-                Event::Argument('X', 10.0, sp(4, 3, 0)),
-                Event::Argument('Y', -20.0, sp(8, 4, 0)),
+                Event::Argument(
+                    'Y',
+                    crate::ast::Value::Literal(-20.0),
+                    sp(8, 4, 0)
+                ),
             ]
         );
     }
@@ -205,7 +209,7 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 13, 0)),
+                Event::LineStarted,
                 Event::Comment(" hello world".into(), sp(0, 13, 0)),
             ]
         );
@@ -217,7 +221,7 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 26, 0)),
+                Event::LineStarted,
                 Event::Comment(
                     "(Linear / Feed - Absolute)".into(),
                     sp(0, 26, 0)
@@ -232,15 +236,18 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 7, 0)),
-                Event::LineNumber(42.0, sp(0, 3, 0)),
-                Event::GeneralCode(
+                Event::LineStarted,
+                Event::LineNumber(
                     Number {
-                        major: 90,
+                        major: 42,
                         minor: None
                     },
-                    sp(4, 3, 0)
+                    sp(0, 3, 0)
                 ),
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
             ]
         );
     }
@@ -251,11 +258,11 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 5, 0)),
+                Event::LineStarted,
                 Event::ProgramNumber(
                     Number {
                         major: 1000,
-                        minor: None
+                        minor: None,
                     },
                     sp(0, 5, 0)
                 ),
@@ -269,15 +276,16 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 8, 0)),
-                Event::MiscCode(
-                    Number {
-                        major: 3,
-                        minor: None
-                    },
-                    sp(0, 2, 0)
+                Event::LineStarted,
+                Event::MiscCode(Number {
+                    major: 3,
+                    minor: None,
+                }),
+                Event::Argument(
+                    'S',
+                    crate::ast::Value::Literal(1000.0),
+                    sp(3, 5, 0)
                 ),
-                Event::Argument('S', 1000.0, sp(3, 5, 0)),
             ]
         );
     }
@@ -288,14 +296,11 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 2, 0)),
-                Event::ToolChangeCode(
-                    Number {
-                        major: 2,
-                        minor: None
-                    },
-                    sp(0, 2, 0)
-                ),
+                Event::LineStarted,
+                Event::ToolChangeCode(Number {
+                    major: 2,
+                    minor: None,
+                }),
             ]
         );
     }
@@ -306,35 +311,23 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 14, 0)),
-                Event::GeneralCode(
-                    Number {
-                        major: 0,
-                        minor: None
-                    },
-                    sp(0, 2, 0)
-                ),
-                Event::GeneralCode(
-                    Number {
-                        major: 90,
-                        minor: None
-                    },
-                    sp(3, 3, 0)
-                ),
-                Event::GeneralCode(
-                    Number {
-                        major: 40,
-                        minor: None
-                    },
-                    sp(7, 3, 0)
-                ),
-                Event::GeneralCode(
-                    Number {
-                        major: 21,
-                        minor: None
-                    },
-                    sp(11, 3, 0)
-                ),
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 0,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 40,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 21,
+                    minor: None,
+                }),
             ]
         );
     }
@@ -345,23 +338,21 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 3, 0)),
-                Event::GeneralCode(
-                    Number {
-                        major: 90,
-                        minor: None
-                    },
-                    sp(0, 3, 0)
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 1,
+                    minor: None,
+                }),
+                Event::Argument(
+                    'X',
+                    crate::ast::Value::Literal(1.0),
+                    sp(8, 10, 1)
                 ),
-                Event::LineStarted(sp(4, 6, 1)),
-                Event::GeneralCode(
-                    Number {
-                        major: 1,
-                        minor: None
-                    },
-                    sp(4, 3, 1)
-                ),
-                Event::Argument('X', 1.0, sp(8, 10, 1)),
             ]
         );
     }
@@ -372,16 +363,21 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 15, 0)),
-                Event::GeneralCode(
-                    Number {
-                        major: 1,
-                        minor: None
-                    },
-                    sp(0, 3, 0)
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 1,
+                    minor: None,
+                }),
+                Event::Argument(
+                    'X',
+                    crate::ast::Value::Literal(1.5),
+                    sp(4, 4, 0)
                 ),
-                Event::Argument('X', 1.5, sp(4, 4, 0)),
-                Event::Argument('Y', -0.25, sp(9, 6, 0)),
+                Event::Argument(
+                    'Y',
+                    crate::ast::Value::Literal(-0.25),
+                    sp(9, 6, 0)
+                ),
             ]
         );
     }
@@ -392,14 +388,11 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 5, 0)),
-                Event::GeneralCode(
-                    Number {
-                        major: 91,
-                        minor: Some(1)
-                    },
-                    sp(0, 5, 0)
-                ),
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 91,
+                    minor: Some(1),
+                }),
             ]
         );
     }
@@ -416,35 +409,23 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 12, 0)),
-                Event::GeneralCode(
-                    Number {
-                        major: 0,
-                        minor: None
-                    },
-                    sp(0, 3, 0)
-                ),
-                Event::GeneralCode(
-                    Number {
-                        major: 21,
-                        minor: None
-                    },
-                    sp(3, 3, 0)
-                ),
-                Event::GeneralCode(
-                    Number {
-                        major: 17,
-                        minor: None
-                    },
-                    sp(6, 9, 0)
-                ),
-                Event::GeneralCode(
-                    Number {
-                        major: 90,
-                        minor: None
-                    },
-                    sp(9, 12, 0)
-                ),
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 0,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 21,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 17,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
             ]
         );
     }
@@ -455,14 +436,11 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 12, 0)),
-                Event::GeneralCode(
-                    Number {
-                        major: 90,
-                        minor: None
-                    },
-                    sp(0, 3, 0)
-                ),
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
                 Event::UnknownContentError("$$%#".into(), sp(4, 4, 0)),
             ]
         );
@@ -474,15 +452,16 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 7, 0)),
-                Event::GeneralCode(
-                    Number {
-                        major: 90,
-                        minor: None
-                    },
-                    sp(0, 3, 0)
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+                Event::Unexpected(
+                    "N".into(),
+                    "line number".into(),
+                    sp(4, 3, 0)
                 ),
-                Event::UnexpectedLineNumberError(42.0, sp(4, 3, 0)),
             ]
         );
     }
@@ -493,8 +472,8 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 1, 0)),
-                Event::LetterWithoutNumberError("G".into(), sp(0, 1, 0)),
+                Event::LineStarted,
+                Event::Unexpected("G".into(), "eof".into(), sp(0, 1, 0)),
             ]
         );
     }
@@ -505,26 +484,11 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 2, 0)),
-                Event::NumberWithoutLetterError("42".into(), sp(0, 2, 0)),
-            ]
-        );
-    }
-
-    #[test]
-    fn code_then_comment_same_line() {
-        let events = parse_and_record("G90 ; absolute mode");
-        assert_eq!(
-            events,
-            vec![
-                Event::LineStarted(sp(0, 19, 0)),
-                Event::GeneralCode(
-                    Number {
-                        major: 90,
-                        minor: None
-                    },
-                    sp(0, 3, 0)
-                ),
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
                 Event::Comment(" absolute mode".into(), sp(4, 19, 0)),
             ]
         );
@@ -536,17 +500,28 @@ mod tests {
         assert_eq!(
             events,
             vec![
-                Event::LineStarted(sp(0, 12, 0)),
-                Event::LineNumber(10.0, sp(0, 3, 0)),
-                Event::GeneralCode(
+                Event::LineStarted,
+                Event::LineNumber(
                     Number {
-                        major: 0,
+                        major: 10,
                         minor: None
                     },
-                    sp(4, 6, 0)
+                    sp(0, 3, 0)
                 ),
-                Event::Argument('X', 1.0, sp(7, 9, 0)),
-                Event::Argument('Y', 2.0, sp(10, 12, 0)),
+                Event::GeneralCode(Number {
+                    major: 0,
+                    minor: None,
+                }),
+                Event::Argument(
+                    'X',
+                    crate::ast::Value::Literal(1.0),
+                    sp(7, 9, 0)
+                ),
+                Event::Argument(
+                    'Y',
+                    crate::ast::Value::Literal(2.0),
+                    sp(10, 12, 0)
+                ),
             ]
         );
     }

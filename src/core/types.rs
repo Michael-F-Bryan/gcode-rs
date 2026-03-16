@@ -7,7 +7,7 @@ pub type ControlFlow<T> = core::ops::ControlFlow<(), T>;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "serde",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
+    derive(serde::Serialize, serde::Deserialize)
 )]
 #[repr(C)]
 pub struct Span {
@@ -37,6 +37,10 @@ impl Span {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize)
+)]
 pub struct Number {
     pub major: u16,
     pub minor: Option<u16>,
@@ -53,63 +57,87 @@ impl Display for Number {
     }
 }
 
-pub trait ProgramVisitor {
-    fn start_line(&mut self, span: Span) -> ControlFlow<impl LineVisitor + '_>;
+/// A set of callbacks used to report errors.
+#[allow(unused_variables)]
+pub trait Diagnostics {
+    fn emit_unknown_content(&mut self, text: &str, span: Span) {}
+
+    fn emit_unexpected(&mut self, actual: &str, expected: &[&str], span: Span) {
+    }
 }
 
-pub trait LineVisitor {
-    fn line_number(&mut self, _n: f32, _span: Span) {}
-    fn comment(&mut self, _value: &str, _span: Span) {}
-    fn program_number(&mut self, _number: Number, _span: Span) {}
+pub trait HasDiagnostics {
+    fn diagnostics(&mut self) -> &mut dyn Diagnostics;
+}
+
+impl<D: Diagnostics> HasDiagnostics for D {
+    fn diagnostics(&mut self) -> &mut dyn Diagnostics {
+        &mut *self
+    }
+}
+
+pub trait ProgramVisitor: HasDiagnostics {
+    fn start_block(&mut self) -> ControlFlow<impl BlockVisitor + '_>;
+}
+
+#[allow(unused_variables)]
+pub trait BlockVisitor: HasDiagnostics + Sized {
+    fn line_number(&mut self, n: Number, span: Span) {}
+    fn comment(&mut self, value: &str, span: Span) {}
+    fn program_number(&mut self, number: Number, span: Span) {}
 
     fn start_general_code(
         &mut self,
-        _number: Number,
-        _span: Span,
+        number: Number,
     ) -> ControlFlow<impl CommandVisitor + '_> {
         ControlFlow::Continue(Noop)
     }
     fn start_miscellaneous_code(
         &mut self,
-        _number: Number,
-        _span: Span,
+        number: Number,
     ) -> ControlFlow<impl CommandVisitor + '_> {
         ControlFlow::Continue(Noop)
     }
     fn start_tool_change_code(
         &mut self,
-        _number: Number,
-        _span: Span,
+        number: Number,
     ) -> ControlFlow<impl CommandVisitor + '_> {
         ControlFlow::Continue(Noop)
     }
 
-    fn unknown_content_error(&mut self, _text: &str, _span: Span) {}
-    fn unexpected_line_number_error(&mut self, _n: f32, _span: Span) {}
-    fn letter_without_number_error(&mut self, _value: &str, _span: Span) {}
-    fn number_without_letter_error(&mut self, _value: &str, _span: Span) {}
-
     /// Called at the end of the line to finalize the line visitor.
-    fn end_line(&mut self) {}
+    fn end_line(self, span: Span) {}
 }
 
-pub trait CommandVisitor {
-    fn argument(&mut self, _letter: char, _value: f32, _span: Span) {}
-
-    fn argument_buffer_overflow_error(
-        &mut self,
-        _letter: char,
-        _value: f32,
-        _span: Span,
-    ) {
-    }
+#[allow(unused_variables)]
+pub trait CommandVisitor: HasDiagnostics + Sized {
+    fn argument(&mut self, letter: char, value: Value<'_>, span: Span) {}
 
     /// Called at the end of the command scope to finalize the command visitor.
-    fn end_command(&mut self) {}
+    fn end_command(self, span: Span) {}
 }
 
-struct Noop;
+#[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Serialize, serde::Deserialize)
+)]
+pub enum Value<'src> {
+    Literal(f32),
+    Variable(&'src str),
+}
+
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct Noop;
+
+impl ProgramVisitor for Noop {
+    fn start_block(&mut self) -> ControlFlow<impl BlockVisitor + '_> {
+        ControlFlow::Continue(Noop)
+    }
+}
 
 impl CommandVisitor for Noop {}
 
-impl LineVisitor for Noop {}
+impl BlockVisitor for Noop {}
+
+impl Diagnostics for Noop {}

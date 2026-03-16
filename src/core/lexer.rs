@@ -5,6 +5,8 @@ pub(crate) enum TokenType {
     Letter,
     Number,
     Comment,
+    /// A `/` is used to indicate a deleted block.
+    Slash,
     MinusSign,
     PlusSign,
     Newline,
@@ -26,10 +28,6 @@ pub(crate) struct Tokens<'src> {
 }
 
 impl<'src> Tokens<'src> {
-    pub(crate) fn from_start(src: &'src str) -> Self {
-        Self::new(src, 0, 0)
-    }
-
     pub(crate) fn new(
         src: &'src str,
         current_index: usize,
@@ -195,6 +193,7 @@ impl<'src> Iterator for Tokens<'src> {
             c if c.is_ascii_alphabetic() => self.scan_letter(),
             '-' => self.scan_single_char(TokenType::MinusSign),
             '+' => self.scan_single_char(TokenType::PlusSign),
+            '/' => self.scan_single_char(TokenType::Slash),
             ';' => self.scan_semicolon_comment(),
             '(' => self.scan_paren_comment(),
             c if c.is_ascii_digit() || c == '.' => self.scan_number(),
@@ -209,6 +208,12 @@ mod tests {
     use crate::core::Span;
 
     use super::*;
+
+    impl<'src> Tokens<'src> {
+        pub(crate) fn from_start(src: &'src str) -> Self {
+            Self::new(src, 0, 0)
+        }
+    }
 
     #[test]
     fn empty_input_yields_no_tokens() {
@@ -606,5 +611,37 @@ mod tests {
         let mut tokens = Tokens::from_start(src);
         let _: Vec<_> = tokens.by_ref().collect();
         assert_eq!(tokens.current_index, src.len());
+    }
+
+    #[test]
+    fn slash_is_deleted_block() {
+        let src = "/G1\n";
+        let tokens: Vec<_> = Tokens::from_start(src).collect();
+        println!("{:?}", tokens);
+        assert_eq!(
+            tokens,
+            [
+                Token {
+                    kind: TokenType::Slash,
+                    value: "/",
+                    span: Span::new(0, 1, 0),
+                },
+                Token {
+                    kind: TokenType::Letter,
+                    value: "G",
+                    span: Span::new(1, 1, 0),
+                },
+                Token {
+                    kind: TokenType::Number,
+                    value: "1",
+                    span: Span::new(2, 1, 0),
+                },
+                Token {
+                    kind: TokenType::Newline,
+                    value: "\n",
+                    span: Span::new(3, 1, 0),
+                }
+            ],
+        );
     }
 }
