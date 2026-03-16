@@ -43,6 +43,10 @@ insta = "1.46.3"
 libtest-mimic = "0.7"
 pretty_assertions = "1.4"
 
+[[example]]
+name = "pretty_print_visitor"
+path = "examples/pretty_print_visitor.rs"
+
 [[test]]
 name = "parse_fixtures"
 path = "tests/parse_fixtures.rs"
