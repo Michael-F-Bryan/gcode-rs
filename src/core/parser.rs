@@ -1,7 +1,44 @@
 use crate::core::{
-    ProgramVisitor,
+    BlockVisitor, CommandVisitor, ControlFlow, Number, ProgramVisitor, Span, Value,
     lexer::{Token, TokenType, Tokens},
 };
+
+/// Peekable token stream that exposes the current parse position (for resume state).
+struct TokenStream<'a, 'src> {
+    peeked: Option<Token<'src>>,
+    tokens: &'a mut Tokens<'src>,
+}
+
+impl<'a, 'src> TokenStream<'a, 'src> {
+    fn new(tokens: &'a mut Tokens<'src>) -> Self {
+        Self {
+            peeked: None,
+            tokens,
+        }
+    }
+
+    fn peek(&mut self) -> Option<&Token<'src>> {
+        if self.peeked.is_none() {
+            self.peeked = self.tokens.next();
+        }
+        self.peeked.as_ref()
+    }
+
+    fn next(&mut self) -> Option<Token<'src>> {
+        if self.peeked.is_some() {
+            self.peeked.take()
+        } else {
+            self.tokens.next()
+        }
+    }
+
+    fn state_ref(&self) -> ParserState {
+        self.peeked
+            .as_ref()
+            .map(|t| ParserState::new(t.span.start, t.span.line))
+            .unwrap_or_else(|| self.tokens.state_ref())
+    }
+}
 
 /// Opaque state for pausing and resuming a parse.
 ///
@@ -30,6 +67,347 @@ impl ParserState {
     }
 }
 
+/// Parses a g-code number string (e.g. `"90"` or `"91.1"`) into [`Number`].
+fn parse_number(value: &str) -> Option<Number> {
+    let (major_str, minor_str) = match value.split_once('.') {
+        None => (value, None),
+        Some((maj, min)) => (maj, Some(min)),
+    };
+    let major = major_str.parse::<u16>().ok()?;
+    let minor = match minor_str {
+        Some(s) => Some(s.parse::<u16>().ok()?),
+        None => None,
+    };
+    Some(Number { major, minor })
+}
+
+/// Builds a literal argument value from an optional sign and number string.
+fn literal_value(sign: i8, number_value: &str) -> Option<Value<'_>> {
+    let n: f32 = number_value.parse().ok()?;
+    let n = match sign {
+        -1 => -n,
+        _ => n,
+    };
+    Some(Value::Literal(n))
+}
+
+/// Parses command arguments (Letter + optional sign + Number) until recovery set.
+/// Returns command span (from command start through last argument) for `end_command`.
+fn parse_command_arguments<'a, 'src>(
+    stream: &mut TokenStream<'a, 'src>,
+    cmd_visitor: &mut impl CommandVisitor,
+    command_start_span: Span,
+) -> Span {
+    let mut last_span = command_start_span;
+    loop {
+        let peek = stream.peek();
+        let letter_token = match peek {
+            Some(Token {
+                kind: TokenType::Letter,
+                value,
+                span,
+            }) if value.len() == 1 => {
+                let c = value.chars().next().unwrap();
+                if matches!(c, 'G' | 'M' | 'T' | 'N' | 'O') {
+                    break;
+                }
+                Some((*span, c))
+            }
+            Some(Token {
+                kind: TokenType::Letter,
+                ..
+            }) => break,
+            Some(_) => break,
+            None => break,
+        };
+        let (letter_span, letter_c) = match letter_token {
+            Some(s) => s,
+            None => break,
+        };
+        let _ = stream.next();
+        let (sign, number_token) = match stream.peek() {
+            Some(Token {
+                kind: TokenType::MinusSign,
+                ..
+            }) => {
+                let _ = stream.next();
+                (-1i8, stream.next())
+            }
+            Some(Token {
+                kind: TokenType::PlusSign,
+                ..
+            }) => {
+                let _ = stream.next();
+                (1i8, stream.next())
+            }
+            _ => (0i8, stream.next()),
+        };
+        let number_token = match number_token {
+            Some(Token {
+                kind: TokenType::Number,
+                value,
+                span,
+            }) => (value, span),
+            _ => {
+                let mut buf = [0u8; 4];
+                let s = letter_c.encode_utf8(&mut buf);
+                cmd_visitor.diagnostics().emit_unexpected(s, &["eof"], letter_span);
+                break;
+            }
+        };
+        let (num_val, num_span) = number_token;
+        let value = match literal_value(sign, num_val) {
+            Some(v) => v,
+            None => {
+                cmd_visitor
+                    .diagnostics()
+                    .emit_unexpected(num_val, &["number"], num_span);
+                break;
+            }
+        };
+        let arg_span = Span::new(
+            letter_span.start,
+            num_span.end() - letter_span.start,
+            letter_span.line,
+        );
+        last_span = Span::new(
+            command_start_span.start,
+            arg_span.end() - command_start_span.start,
+            command_start_span.line,
+        );
+        cmd_visitor.argument(letter_c, value, arg_span);
+    }
+    last_span
+}
+
+/// Parses one line (block): optional N/O/comment, then zero or more G/M/T commands.
+/// Consumes tokens up to and including the terminating Newline (or EOF).
+/// Returns Break if the visitor asked to pause; otherwise Continue and the line span.
+fn parse_line<'a, 'src, B: BlockVisitor>(
+    stream: &mut TokenStream<'a, 'src>,
+    block: &mut B,
+    mut current: Token<'src>,
+    line_start_span: Span,
+) -> (ControlFlow<()>, Span) {
+    let mut line_span;
+    let mut seen_command = false;
+    loop {
+        line_span = Span::new(
+            line_start_span.start,
+            current.span.end() - line_start_span.start,
+            line_start_span.line,
+        );
+        match current.kind {
+            TokenType::Newline => {
+                return (ControlFlow::Continue(()), line_span);
+            }
+            TokenType::Letter => {
+                let c = current.value.chars().next().unwrap_or('\0');
+                if current.value.len() != 1 {
+                    block.diagnostics().emit_unexpected(current.value, &["single letter"], current.span);
+                    match stream.next() {
+                        Some(t) => current = t,
+                        None => return (ControlFlow::Continue(()), line_span),
+                    }
+                    continue;
+                }
+                match c {
+                    'N' => {
+                        if seen_command {
+                            let num_tok = stream.next();
+                            let span = match &num_tok {
+                                Some(Token { span: s, .. }) => Span::new(
+                                    current.span.start,
+                                    s.end() - current.span.start,
+                                    current.span.line,
+                                ),
+                                None => current.span,
+                            };
+                            block.diagnostics().emit_unexpected("N", &["line number"], span);
+                        } else {
+                            let num_tok = stream.next();
+                            match num_tok {
+                                Some(Token {
+                                    kind: TokenType::Number,
+                                    value,
+                                    span,
+                                }) => {
+                                    if let Some(n) = parse_number(value) {
+                                        let n_span = Span::new(
+                                            current.span.start,
+                                            span.end() - current.span.start,
+                                            current.span.line,
+                                        );
+                                        block.line_number(n, n_span);
+                                    }
+                                }
+                                _ => {
+                                    block.diagnostics().emit_unexpected("N", &["eof"], current.span);
+                                }
+                            }
+                        }
+                    }
+                    'O' => {
+                        if seen_command {
+                            let num_tok = stream.next();
+                            let span = match &num_tok {
+                                Some(Token { span: s, .. }) => Span::new(
+                                    current.span.start,
+                                    s.end() - current.span.start,
+                                    current.span.line,
+                                ),
+                                None => current.span,
+                            };
+                            block.diagnostics().emit_unexpected("O", &["program number"], span);
+                        } else {
+                            let num_tok = stream.next();
+                            match num_tok {
+                                Some(Token {
+                                    kind: TokenType::Number,
+                                    value,
+                                    span,
+                                }) => {
+                                    if let Some(n) = parse_number(value) {
+                                        let o_span = Span::new(
+                                            current.span.start,
+                                            span.end() - current.span.start,
+                                            current.span.line,
+                                        );
+                                        block.program_number(n, o_span);
+                                    }
+                                }
+                                _ => {
+                                    block.diagnostics().emit_unexpected("O", &["eof"], current.span);
+                                }
+                            }
+                        }
+                    }
+                    'G' => {
+                        seen_command = true;
+                        let num_tok = stream.next();
+                        match num_tok {
+                            Some(Token {
+                                kind: TokenType::Number,
+                                value,
+                                span,
+                            }) => {
+                                if let Some(n) = parse_number(value) {
+                                    let cmd_span = Span::new(
+                                        current.span.start,
+                                        span.end() - current.span.start,
+                                        current.span.line,
+                                    );
+                                    match block.start_general_code(n) {
+                                        ControlFlow::Break(()) => {
+                                            return (ControlFlow::Break(()), line_span);
+                                        }
+                                        ControlFlow::Continue(mut cmd) => {
+                                            let end_span = parse_command_arguments(stream, &mut cmd, cmd_span);
+                                            cmd.end_command(end_span);
+                                        }
+                                    }
+                                }
+                            }
+                            _ => {
+                                block.diagnostics().emit_unexpected("G", &["eof"], current.span);
+                            }
+                        }
+                    }
+                    'M' => {
+                        seen_command = true;
+                        let num_tok = stream.next();
+                        match num_tok {
+                            Some(Token {
+                                kind: TokenType::Number,
+                                value,
+                                span,
+                            }) => {
+                                if let Some(n) = parse_number(value) {
+                                    let cmd_span = Span::new(
+                                        current.span.start,
+                                        span.end() - current.span.start,
+                                        current.span.line,
+                                    );
+                                    match block.start_miscellaneous_code(n) {
+                                        ControlFlow::Break(()) => {
+                                            return (ControlFlow::Break(()), line_span);
+                                        }
+                                        ControlFlow::Continue(mut cmd) => {
+                                            let end_span = parse_command_arguments(stream, &mut cmd, cmd_span);
+                                            cmd.end_command(end_span);
+                                        }
+                                    }
+                                }
+                            }
+                            _ => {
+                                block.diagnostics().emit_unexpected("M", &["eof"], current.span);
+                            }
+                        }
+                    }
+                    'T' => {
+                        seen_command = true;
+                        let num_tok = stream.next();
+                        match num_tok {
+                            Some(Token {
+                                kind: TokenType::Number,
+                                value,
+                                span,
+                            }) => {
+                                if let Some(n) = parse_number(value) {
+                                    let cmd_span = Span::new(
+                                        current.span.start,
+                                        span.end() - current.span.start,
+                                        current.span.line,
+                                    );
+                                    match block.start_tool_change_code(n) {
+                                        ControlFlow::Break(()) => {
+                                            return (ControlFlow::Break(()), line_span);
+                                        }
+                                        ControlFlow::Continue(mut cmd) => {
+                                            let end_span = parse_command_arguments(stream, &mut cmd, cmd_span);
+                                            cmd.end_command(end_span);
+                                        }
+                                    }
+                                }
+                            }
+                            _ => {
+                                block.diagnostics().emit_unexpected("T", &["eof"], current.span);
+                            }
+                        }
+                    }
+                    _ => {
+                        block.diagnostics().emit_unexpected(
+                            current.value,
+                            &["G, M, T, N, O, comment"],
+                            current.span,
+                        );
+                    }
+                }
+            }
+            TokenType::Comment => {
+                let value = current
+                    .value
+                    .strip_prefix(';')
+                    .unwrap_or(current.value);
+                block.comment(value, current.span);
+            }
+            TokenType::Number => {
+                block.diagnostics().emit_unexpected(current.value, &["letter"], current.span);
+            }
+            TokenType::Unknown => {
+                block.diagnostics().emit_unknown_content(current.value, current.span);
+            }
+            TokenType::Slash | TokenType::MinusSign | TokenType::PlusSign => {
+                block.diagnostics().emit_unexpected(current.value, &["word or comment"], current.span);
+            }
+        }
+        match stream.next() {
+            Some(t) => current = t,
+            None => return (ControlFlow::Continue(()), line_span),
+        }
+    }
+}
+
 /// Resumes parsing from a saved [`ParserState`].
 ///
 /// Use this when a visitor returned [`ControlFlow::Break`](crate::core::ControlFlow)
@@ -45,23 +423,48 @@ impl ParserState {
 pub fn resume(
     state: ParserState,
     src: &str,
-    _visitor: &mut impl ProgramVisitor,
+    visitor: &mut impl ProgramVisitor,
 ) -> ParserState {
     let mut tokens = Tokens::new(src, state.current_index, state.current_line);
-
+    let mut return_state = None;
     {
-        let mut tokens = tokens.by_ref().peekable();
-        while let Some(Token { kind, .. }) = tokens.next() {
-            match kind {
-                TokenType::Newline | TokenType::Unknown => {
-                    continue;
-                },
-                _ => todo!(),
+        let mut stream = TokenStream::new(&mut tokens);
+        loop {
+            while matches!(
+                stream.peek(),
+                Some(Token {
+                    kind: TokenType::Newline,
+                    ..
+                })
+            ) {
+                let _ = stream.next();
+            }
+            let first = match stream.next() {
+                None => break,
+                Some(t) => t,
+            };
+            if first.kind == TokenType::Newline {
+                continue;
+            }
+            let line_start_span = first.span;
+            match visitor.start_block() {
+                ControlFlow::Break(()) => {
+                    return_state = Some(stream.state_ref());
+                    break;
+                }
+                ControlFlow::Continue(mut block) => {
+                    let (flow, line_span) =
+                        parse_line(&mut stream, &mut block, first, line_start_span);
+                    if flow.is_break() {
+                        return_state = Some(stream.state_ref());
+                        break;
+                    }
+                    block.end_line(line_span);
+                }
             }
         }
     }
-
-    tokens.state()
+    return_state.unwrap_or_else(|| tokens.state())
 }
 
 impl Default for ParserState {
@@ -364,7 +767,7 @@ mod tests {
                 Event::Argument(
                     'X',
                     crate::ast::Value::Literal(1.0),
-                    sp(8, 10, 1)
+                    sp(8, 2, 1)
                 ),
             ]
         );
@@ -455,6 +858,12 @@ mod tests {
                     minor: None,
                 }),
                 Event::UnknownContentError("$$%#".into(), sp(4, 4, 0)),
+                Event::Unexpected(
+                    "X".into(),
+                    "G, M, T, N, O, comment".into(),
+                    sp(9, 1, 0)
+                ),
+                Event::Unexpected("10".into(), "letter".into(), sp(10, 2, 0)),
             ]
         );
     }
@@ -498,11 +907,7 @@ mod tests {
             events,
             vec![
                 Event::LineStarted,
-                Event::GeneralCode(Number {
-                    major: 90,
-                    minor: None,
-                }),
-                Event::Comment(" absolute mode".into(), sp(4, 19, 0)),
+                Event::Unexpected("42".into(), "letter".into(), sp(0, 2, 0)),
             ]
         );
     }
@@ -528,12 +933,12 @@ mod tests {
                 Event::Argument(
                     'X',
                     crate::ast::Value::Literal(1.0),
-                    sp(7, 9, 0)
+                    sp(7, 2, 0)
                 ),
                 Event::Argument(
                     'Y',
                     crate::ast::Value::Literal(2.0),
-                    sp(10, 12, 0)
+                    sp(10, 2, 0)
                 ),
             ]
         );

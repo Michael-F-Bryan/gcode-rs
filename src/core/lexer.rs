@@ -49,6 +49,11 @@ impl<'src> Tokens<'src> {
         ParserState::new(current_index, current_line)
     }
 
+    /// Current parse position (for use while the iterator is borrowed, e.g. by a peekable).
+    pub(crate) fn state_ref(&self) -> ParserState {
+        ParserState::new(self.current_index, self.current_line)
+    }
+
     /// Returns the next character without advancing. Uses UTF-8 decoding.
     fn peek(&self) -> Option<char> {
         self.src[self.current_index..].chars().next()
