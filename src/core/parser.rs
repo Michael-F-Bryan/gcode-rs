@@ -3,6 +3,12 @@ use crate::core::{
     lexer::{Token, TokenType, Tokens},
 };
 
+/// Opaque state for pausing and resuming a parse.
+///
+/// When a visitor returns [`ControlFlow::Break`](crate::core::ControlFlow), the
+/// parser yields a `ParserState`. Pass that state and the same visitor to
+/// [`resume`] to continue from the next block. The state is only valid for the
+/// same `src` slice and visitor; do not modify `src` between pause and resume.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub struct ParserState {
     current_index: usize,
@@ -10,11 +16,13 @@ pub struct ParserState {
 }
 
 impl ParserState {
+    /// State for starting a parse from the beginning of `src`.
     pub const fn empty() -> Self {
         Self::new(0, 0)
     }
 
-    pub const fn new(current_index: usize, current_line: usize) -> Self {
+    /// State at a specific byte index and line (for use by [`resume`]).
+    pub(crate) const fn new(current_index: usize, current_line: usize) -> Self {
         Self {
             current_index,
             current_line,
@@ -22,12 +30,17 @@ impl ParserState {
     }
 }
 
-/// Resume parsing from a given state.
+/// Resumes parsing from a saved [`ParserState`].
 ///
-/// ## Note
+/// Use this when a visitor returned [`ControlFlow::Break`](crate::core::ControlFlow)
+/// to continue from the next block. Pass the same `src` and visitor (or one that
+/// is logically equivalent). Returns the new state after this chunk of parsing;
+/// if the visitor breaks again, pass that state to the next `resume` call.
 ///
-/// This implicitly assumes that the `src` string ends with a complete line.
-/// Weird things may happen if you start parsing from a partial line.
+/// # Note
+///
+/// The implementation assumes that the `src` string ends with a complete line.
+/// Behaviour is unspecified if parsing resumes in the middle of a line.
 #[must_use]
 pub fn resume(
     state: ParserState,
