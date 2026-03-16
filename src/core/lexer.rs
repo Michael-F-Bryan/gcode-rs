@@ -1,30 +1,19 @@
-use crate::core::{ParserState, Span};
+use crate::core::{ParserState, Span, TokenType};
 
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub(crate) enum TokenType {
-    Letter,
-    Number,
-    Comment,
-    /// A `/` is used to indicate a deleted block.
-    Slash,
-    MinusSign,
-    PlusSign,
-    Newline,
-    Unknown,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub(crate) struct Token<'input> {
     pub(crate) kind: TokenType,
     pub(crate) value: &'input str,
     pub(crate) span: Span,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct Tokens<'src> {
     src: &'src str,
     current_index: usize,
     current_line: usize,
+    /// One-token lookahead for parser peek / resume state.
+    peeked: Option<Token<'src>>,
 }
 
 impl<'src> Tokens<'src> {
@@ -37,25 +26,51 @@ impl<'src> Tokens<'src> {
             src,
             current_index,
             current_line,
+            peeked: None,
         }
     }
 
-    pub(crate) fn state(self) -> ParserState {
-        let Self {
-            current_index,
-            current_line,
-            ..
-        } = self;
-        ParserState::new(current_index, current_line)
+    /// Parse position for resume: start of the next token if we have one, else end of input.
+    pub(crate) fn state(&self) -> ParserState {
+        match &self.peeked {
+            Some(t) => ParserState::new(t.span.start, t.span.line),
+            None => ParserState::new(self.current_index, self.current_line),
+        }
     }
 
-    /// Current parse position (for use while the iterator is borrowed, e.g. by a peekable).
-    pub(crate) fn state_ref(&self) -> ParserState {
-        ParserState::new(self.current_index, self.current_line)
+    /// Parser-facing peek: next token without consuming. Fills lookahead if needed.
+    pub(crate) fn peek_token(&mut self) -> Option<&Token<'src>> {
+        if self.peeked.is_none() {
+            self.peeked = self.read_next_token();
+        }
+        self.peeked.as_ref()
+    }
+
+    /// Parser-facing advance: consume and return the next token.
+    pub(crate) fn next_token(&mut self) -> Option<Token<'src>> {
+        self.peeked.take().or_else(|| self.read_next_token())
+    }
+
+    /// Advance lexer by one token; used by peek_token/next_token and Iterator.
+    fn read_next_token(&mut self) -> Option<Token<'src>> {
+        self.skip_whitespace();
+        let c = self.peek_char()?;
+        let token = match c {
+            '\n' => self.scan_newline(),
+            _ if c.is_ascii_alphabetic() => self.scan_letter(),
+            '-' => self.scan_single_char(TokenType::MinusSign),
+            '+' => self.scan_single_char(TokenType::PlusSign),
+            '/' => self.scan_single_char(TokenType::Slash),
+            ';' => self.scan_semicolon_comment(),
+            '(' => self.scan_paren_comment(),
+            _ if c.is_ascii_digit() || c == '.' => self.scan_number(),
+            _ => self.scan_unknown(),
+        };
+        Some(token)
     }
 
     /// Returns the next character without advancing. Uses UTF-8 decoding.
-    fn peek(&self) -> Option<char> {
+    fn peek_char(&self) -> Option<char> {
         self.src[self.current_index..].chars().next()
     }
 
@@ -63,7 +78,7 @@ impl<'src> Tokens<'src> {
     /// Returns the character consumed, or `None` if at end. This is the only place that updates
     /// `current_index` and `current_line`.
     fn advance_char(&mut self) -> Option<char> {
-        let c = self.peek()?;
+        let c = self.peek_char()?;
         self.current_index += c.len_utf8();
         if c == '\n' {
             self.current_line += 1;
@@ -79,7 +94,7 @@ impl<'src> Tokens<'src> {
     {
         let start = self.current_index;
         let line = self.current_line;
-        while let Some(c) = self.peek() {
+        while let Some(c) = self.peek_char() {
             if !pred(c) {
                 break;
             }
@@ -91,7 +106,7 @@ impl<'src> Tokens<'src> {
     }
 
     fn skip_whitespace(&mut self) {
-        let _ = self.take_while(|c| c == ' ' || c == '\t');
+        let _ = self.take_while(|c| c == ' ' || c == '\t' || c == '\r');
     }
 
     fn scan_newline(&mut self) -> Token<'src> {
@@ -160,11 +175,11 @@ impl<'src> Tokens<'src> {
     fn scan_number(&mut self) -> Token<'src> {
         let start = self.current_index;
         let line = self.current_line;
-        if self.peek() == Some('.') {
+        if self.peek_char() == Some('.') {
             let _ = self.advance_char();
         }
         let _ = self.take_while(|c| c.is_ascii_digit());
-        if self.peek() == Some('.') {
+        if self.peek_char() == Some('.') {
             let _ = self.advance_char();
             let _ = self.take_while(|c| c.is_ascii_digit());
         }
@@ -192,19 +207,7 @@ impl<'src> Iterator for Tokens<'src> {
     type Item = Token<'src>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.skip_whitespace();
-        let token = match self.peek()? {
-            '\n' => self.scan_newline(),
-            c if c.is_ascii_alphabetic() => self.scan_letter(),
-            '-' => self.scan_single_char(TokenType::MinusSign),
-            '+' => self.scan_single_char(TokenType::PlusSign),
-            '/' => self.scan_single_char(TokenType::Slash),
-            ';' => self.scan_semicolon_comment(),
-            '(' => self.scan_paren_comment(),
-            c if c.is_ascii_digit() || c == '.' => self.scan_number(),
-            _ => self.scan_unknown(),
-        };
-        Some(token)
+        self.next_token()
     }
 }
 

@@ -1,5 +1,53 @@
 use core::fmt::{self, Display, Formatter};
 
+/// Lexer token kind. Used by the parser and in [`Diagnostics::emit_unexpected`] to
+/// report what was expected.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum TokenType {
+    /// Single alphabetic character (e.g. G, M, X).
+    Letter,
+    /// Numeric literal.
+    Number,
+    /// Comment (semicolon or parentheses).
+    Comment,
+    /// A `/` is used to indicate a deleted block.
+    Slash,
+    /// Minus sign.
+    MinusSign,
+    /// Plus sign.
+    PlusSign,
+    /// Newline.
+    Newline,
+    /// Unrecognised token.
+    Unknown,
+    /// Virtual: expected end of input (no more tokens).
+    Eof,
+}
+
+impl TokenType {
+    /// Get the human-friendly name for this token type.
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            TokenType::Letter => "letter",
+            TokenType::Number => "number",
+            TokenType::Comment => "comment",
+            TokenType::Slash => "slash",
+            TokenType::MinusSign => "minus sign",
+            TokenType::PlusSign => "plus sign",
+            TokenType::Newline => "newline",
+            TokenType::Unknown => "unknown",
+            TokenType::Eof => "eof",
+        }
+    }
+}
+
+impl Display for TokenType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 /// Return type for visitor methods that may either continue with a child visitor
 /// or pause parsing. See the [module-level docs](crate::core) for the control-flow model.
 pub type ControlFlow<T> = core::ops::ControlFlow<(), T>;
@@ -72,8 +120,13 @@ pub trait Diagnostics {
     /// Called when the parser sees text it cannot interpret (e.g. invalid tokens).
     fn emit_unknown_content(&mut self, text: &str, span: Span) {}
 
-    /// Called when the parser expected one of `expected` but found `actual`.
-    fn emit_unexpected(&mut self, actual: &str, expected: &[&str], span: Span) {
+    /// Called when the parser expected one of `expected` token types but found `actual`.
+    fn emit_unexpected(
+        &mut self,
+        actual: &str,
+        expected: &[TokenType],
+        span: Span,
+    ) {
     }
 }
 

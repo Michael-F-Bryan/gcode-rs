@@ -1,7 +1,7 @@
 use alloc::{string::String, string::ToString, vec::Vec};
 use core::fmt::{self, Display, Formatter};
 
-use crate::core::Span;
+use crate::core::{Span, TokenType};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -75,11 +75,16 @@ impl crate::core::Diagnostics for Diagnostics {
         });
     }
 
-    fn emit_unexpected(&mut self, actual: &str, expected: &[&str], span: Span) {
+    fn emit_unexpected(
+        &mut self,
+        actual: &str,
+        expected: &[TokenType],
+        span: Span,
+    ) {
         self.0.push(Diagnostic {
             kind: DiagnosticKind::Unexpected {
                 actual: actual.to_string(),
-                expected: expected.iter().map(|e| e.to_string()).collect(),
+                expected: expected.iter().map(ToString::to_string).collect(),
             },
             span,
         });

@@ -7,7 +7,7 @@ use crate::{
     },
     core::{
         ControlFlow, Diagnostics as _, HasDiagnostics, Number, ProgramVisitor,
-        Span,
+        Span, TokenType,
     },
 };
 
@@ -93,11 +93,7 @@ impl crate::core::BlockVisitor for BlockBuilder<'_> {
         } else if let Some(value) = value.strip_prefix('(') {
             (CommentKind::Parentheses, value)
         } else {
-            return self.diags.emit_unexpected(
-                value,
-                &["semicolon", "parentheses"],
-                span,
-            );
+            return self.diags.emit_unexpected(value, &[TokenType::Comment], span);
         };
 
         self.comments.push(Comment {
@@ -125,9 +121,9 @@ impl crate::core::BlockVisitor for BlockBuilder<'_> {
 
     fn end_line(self, span: Span) {
         let block = Block {
-            line_number: None,
-            comments: Vec::new(),
-            codes: Vec::new(),
+            line_number: self.line_number,
+            comments: self.comments,
+            codes: self.codes,
             span,
         };
         self.blocks.push(block);
