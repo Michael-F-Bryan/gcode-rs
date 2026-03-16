@@ -20,6 +20,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["std"]
+alloc = []
 std = ["arrayvec/std"]
 serde-1 = ["serde", "serde_derive", "arrayvec/serde"]
 

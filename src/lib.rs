@@ -193,6 +193,15 @@ mod words;
 
 pub mod core;
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
+#[cfg(feature = "alloc")]
+pub mod ast;
+
+#[cfg(feature = "alloc")]
+pub use crate::ast::parse;
+
 pub use crate::{
     callbacks::{Callbacks, Nop},
     comment::Comment,
