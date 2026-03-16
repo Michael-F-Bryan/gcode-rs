@@ -298,11 +298,7 @@ mod tests {
     fn g_letter_yields_g_token_case_insensitive() {
         let tokens_upper: Vec<_> = Tokens::from_start("G").collect();
         let tokens_lower: Vec<_> = Tokens::from_start("g").collect();
-        assert_eq!(
-            tokens_upper[0].kind,
-            TokenType::G,
-            "G yields G token"
-        );
+        assert_eq!(tokens_upper[0].kind, TokenType::G, "G yields G token");
         assert_eq!(tokens_upper[0].value, "G");
         assert_eq!(tokens_lower[0].kind, TokenType::G, "g yields G token");
         assert_eq!(tokens_lower[0].value, "g");
@@ -310,7 +306,12 @@ mod tests {
 
     #[test]
     fn m_and_t_letters_yield_m_t_tokens_case_insensitive() {
-        for (src, kind) in [("M", TokenType::M), ("m", TokenType::M), ("T", TokenType::T), ("t", TokenType::T)] {
+        for (src, kind) in [
+            ("M", TokenType::M),
+            ("m", TokenType::M),
+            ("T", TokenType::T),
+            ("t", TokenType::T),
+        ] {
             let tokens: Vec<_> = Tokens::from_start(src).collect();
             assert_eq!(tokens.len(), 1);
             assert_eq!(tokens[0].kind, kind);
