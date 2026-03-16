@@ -1,0 +1,221 @@
+; Source: https://github.com/blu-base/gcodeLexer (samples.ngc)
+( this is a comment)
+; comment as well
+
+ ( commi;ent)
+ ; comment
+
+ ( brocken comment
+
+G17 G20 G40 G49 G54 G80 G90 G94
+ (;;))
+
+
+( ----- Simple G-Code -----)
+G17 G20 G40 G49 G54 G80 G90 G94
+M7
+
+G0 Z10
+F400
+G1 Z1
+
+
+G3 X50 Y50 Z1 I-7.5 J0
+G0 Z30
+
+
+G5.2 X3.53   Y-1.50   P2
+     X5.33   Y-11.01  P1
+     X3.52   Y-24.00  P1
+     X0.0    Y-29.56  P1
+G5.3
+
+G0 Z2
+G1 Z-5 F100
+F600
+
+( ----- Line Numbers ----- ) 
+N1
+N20
+N300
+N030 (insert numbers in place of .)
+N000   G1 X20
+N98765 G0 Z30
+( ----- Axis, Rotations, Feeds -----)
+
+xyz abc uvw ijk l pq freh s
+XYZ ABC UVW IJK L PQ FREH S
+
+G0 Z-0.5 X0.2
+G76 P0.05 Z-1 I-.075 J0.008 K0.045 Q29.5 L2 E0.045
+
+( ----- Tool Properties -----)
+H1 h1 d33 D543 T1 t0 
+
+( ----- Some examples from reprap.org ----- )
+
+G0 X12               ; move to 12mm on the X axis
+G0 F1500             ; Set the feedrate to 1500mm/minute
+G1 X90.6 Y13.8 E22.4 ; Move to 90.6mm on the X axis and 13.8mm on the Y axis while extruding 22.4mm of material
+
+G2 X90.6 Y13.8 I5 J10 E22.4
+
+G3 X90.6 Y13.8 I5 J10 E22.4
+
+G6 A45     ; Move SCARA A stepper to the 45° position
+G6 B20 R   ; Move SCARA B stepper 20° counter-clockwis
+G6 C10 R   ; Move DELTA C carriage up by 10mm
+
+
+G28     ; Home all axes
+G28 X Z ; Home the X and Z axes
+
+G29.2 Z0.0
+
+G30 P3 X180 Y180 Z-99999 S4  ; Probe the bed at X180 Y180, save the XY coordinates and the height error as point 3 and calculate 4-point compensation or calibration
+G130 X10 Y18 Z15 A20 B12
+
+M563 P0 D0:2:3 H1:3         ; create a tool using extruder drives 0, 2 and 3 and heaters 1 and 3
+M563 P1 D1 H2 X3            ; create a tool using extruder drive 1 and heater 2 with X movement mapped to the U axis
+M563 P2 D0:1 H1:2 X0:3 F0:2 ; create a tool using extruder drives 0 and 1, heaters 1 and 2,
+                            ; with X movement mapped to both X and U axes and fan 0 mapped to fan 0 and fan 2
+
+M665 L250 R160 S200 ; (Marlin)
+M665 L250 R160 B80 H240 X0 Y0 Z0 ; (RepRapFirmware and Marlin 1.1.0)
+
+( ----- Polar Coordinates -----)
+F100 G1 @.5 ^90
+G91 @.5 ^90
+@.5 ^90
+@.5 ^90
+@.5 ^90
+G90 G0 X0 Y0 M2
+
+F100 G1 @.5 ^90
+G91 ^90
+^90
+^90
+^90
+G90 G0 X0 Y0 M2
+
+( ----- Subroutine Arguments (1-30) ----- )
+#1 #2 #2+1 #3-2 #4/5 #30 #4 #5 #6 #7 #8 #9 #10 #18 #12 #23 #24 #25
+
+G123 X#3 y#10
+( ----- Numbered Variables ----- )
+#123 #45678 #00000 #31 #99999 
+
+( ----- Named Local Variables ----- )
+#<dir> #<x1> #<use_g43>
+G1 X#<pos>
+
+( ----- Named Global Variables ----- )
+#<_rpm> #<_xon>
+#<_endmill_dia> = 0.049
+S#<_rpm_max>
+
+#<feedrate> =  #4 (=10)
+#<y1>       = 4 ; still comment
+
+( ----- Nested Call ----- )
+##132
+##<zpos>
+##<_xpos>
+
+
+( ----- Braced Expression ----- )
+[1 + acos[0] - [#3 ** [4.0/2]]]
+o100 call [0.0] [0.0] [#<_inside_cutout>-#<_endmill_dia>] [#<_Zcut>] [#<_feedrate>]
+#<_endmill_rad> = [#<_endmill_dia>/2.0]
+
+( ----- Operators ----- )
+EQ NE GT GE LT LE
+AND OR XOR
+MOD
++ - * / ** 
+
+eq ne gt ge lt le
+and or xor
+mod
+( ----- Functions ----- )
+ATAN[1] ABS ACOS ASIN[] COS EXP FIX FUP ROUND LN SIN SQRT TAN EXISTS
+atan[1] abs acos asin[] cos exp fix fup round ln sin sqrt tan exists
+
+( ----- Subs ----- )
+o<i0> if [#<scale> EQ 0]
+        #<scale> = 1.0
+        (debug, scale was 0, setting #<scale>)
+o<i0> endif
+
+
+o<loadtool> call [#<toolno>][#<use_g43>][#<h_for_g43>][#<verbose>]
+#<tooldiam> = [#5410 + .001]
+
+o<l00> if [[#<dir> NE 2] AND [#<dir> NE 3]]
+         (debug, oquad: bogus direction #<dir> - EXITING)
+         (print, oquad: bogus direction #<dir> - EXITING)
+         (AXIS,notify, oquad: bogus direction - EXITING)
+         m2
+o<l00> endif
+
+o<test> sub
+o10 if [EXISTS[#<_global>]]
+    (debug, _global exists and has the value #<_global>)
+o10 else
+    (debug, _global does not exist)
+o10 endif
+o<test> endsub
+
+o<test> call
+#<_global> = 4711
+o<test> call
+m2
+
+(if parameter #2 is greater than 5 set F100)
+o102 if [#2 GT 5]
+  F100
+o102 elseif [#2 LT 2]
+(else if parameter #2 is less than 2 set F200)
+  F200
+(else if parameter #2 is 2 through 5 set F150)
+o102 else
+  F150
+o102 endif
+
+(Mill 5 diagonal shapes)
+G91 (Incremental mode)
+o103 repeat [5]
+... (insert milling code here)
+G0 X1 Y1 (diagonal move to next position)
+o103 endrepeat
+G90 (Absolute mode)
+
+o[#101+2] call
+
+( ----- Assorted LinuxCNC ----- )
+
+(MSG, This is a message)
+
+(PROBEOPEN filename.txt) 
+(PROBECLOSE) 
+
+(LOGOPEN,filename.txt) 
+(LOGAPPEND,filename)
+(LOGCLOSE) 
+(LOG,)
+(DEBUG,) 
+(PRINT,)
+
+(print,endmill dia = #<_endmill_dia>)
+(print,value of variable 123 is: #123)
+(msg, tHIS IS A MESSAGE)
+
+(probeopen FILENAME.TXT) 
+(probeclose) 
+
+(logopen,FILENAME.TXT) 
+(logappend,FILENAME)
+(logclose) 
+(log,)
+(debug,) 
+(print,)

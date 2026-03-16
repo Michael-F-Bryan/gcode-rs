@@ -1,0 +1,452 @@
+---
+source: tests/parse_fixtures.rs
+expression: program
+---
+Program {
+    blocks: [
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Source: https://github.com/stmcculloch/arc-overhang (input/end.gcode)",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 0,
+                        length: 71,
+                        line: 0,
+                    },
+                },
+            ],
+            codes: [],
+            span: Span {
+                start: 0,
+                length: 72,
+                line: 0,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: "End gcode",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 72,
+                        length: 10,
+                        line: 1,
+                    },
+                },
+            ],
+            codes: [],
+            span: Span {
+                start: 72,
+                length: 11,
+                line: 1,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: "retract",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 95,
+                        length: 8,
+                        line: 2,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 83,
+                            length: 11,
+                            line: 2,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'E',
+                                value: Literal(
+                                    -3.0,
+                                ),
+                                span: Span {
+                                    start: 86,
+                                    length: 3,
+                                    line: 2,
+                                },
+                            },
+                            Argument {
+                                letter: 'F',
+                                value: Literal(
+                                    300.0,
+                                ),
+                                span: Span {
+                                    start: 90,
+                                    length: 4,
+                                    line: 2,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 83,
+                length: 21,
+                line: 2,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " relative positioning",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 107,
+                        length: 22,
+                        line: 3,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 91,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 104,
+                            length: 3,
+                            line: 3,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 104,
+                length: 26,
+                line: 3,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " move z up little to prevent scratching of print",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 144,
+                        length: 49,
+                        line: 4,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 130,
+                            length: 13,
+                            line: 4,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    1.0,
+                                ),
+                                span: Span {
+                                    start: 133,
+                                    length: 4,
+                                    line: 4,
+                                },
+                            },
+                            Argument {
+                                letter: 'F',
+                                value: Literal(
+                                    3000.0,
+                                ),
+                                span: Span {
+                                    start: 138,
+                                    length: 5,
+                                    line: 4,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 130,
+                length: 64,
+                line: 4,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " absolute positioning",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 197,
+                        length: 22,
+                        line: 5,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 90,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 194,
+                            length: 3,
+                            line: 5,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 194,
+                length: 26,
+                line: 5,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " prepare for part removal",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 237,
+                        length: 26,
+                        line: 6,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 220,
+                            length: 16,
+                            line: 6,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 223,
+                                    length: 2,
+                                    line: 6,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    200.0,
+                                ),
+                                span: Span {
+                                    start: 226,
+                                    length: 4,
+                                    line: 6,
+                                },
+                            },
+                            Argument {
+                                letter: 'F',
+                                value: Literal(
+                                    1000.0,
+                                ),
+                                span: Span {
+                                    start: 231,
+                                    length: 5,
+                                    line: 6,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 220,
+                length: 44,
+                line: 6,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " turn off extruder",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 271,
+                        length: 19,
+                        line: 7,
+                    },
+                },
+            ],
+            codes: [],
+            span: Span {
+                start: 264,
+                length: 27,
+                line: 7,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " turn off bed",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 299,
+                        length: 14,
+                        line: 8,
+                    },
+                },
+            ],
+            codes: [],
+            span: Span {
+                start: 291,
+                length: 23,
+                line: 8,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " prepare for part removal",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 331,
+                        length: 26,
+                        line: 9,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 314,
+                            length: 16,
+                            line: 9,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 317,
+                                    length: 2,
+                                    line: 9,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    300.0,
+                                ),
+                                span: Span {
+                                    start: 320,
+                                    length: 4,
+                                    line: 9,
+                                },
+                            },
+                            Argument {
+                                letter: 'F',
+                                value: Literal(
+                                    1000.0,
+                                ),
+                                span: Span {
+                                    start: 325,
+                                    length: 5,
+                                    line: 9,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 314,
+                length: 44,
+                line: 9,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " disable motors",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 362,
+                        length: 16,
+                        line: 10,
+                    },
+                },
+            ],
+            codes: [],
+            span: Span {
+                start: 358,
+                length: 21,
+                line: 10,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " turn off fan",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 387,
+                        length: 14,
+                        line: 11,
+                    },
+                },
+            ],
+            codes: [],
+            span: Span {
+                start: 379,
+                length: 23,
+                line: 11,
+            },
+        },
+    ],
+}

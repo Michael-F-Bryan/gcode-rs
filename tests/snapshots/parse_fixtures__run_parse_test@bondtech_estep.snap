@@ -1,0 +1,48 @@
+---
+source: tests/parse_fixtures.rs
+expression: program
+---
+Program {
+    blocks: [
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Source: https://github.com/BondtechAB/Bondtech_Prusa_i3 (GCODE/Set Estep.gcode)\r",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 0,
+                        length: 82,
+                        line: 0,
+                    },
+                },
+            ],
+            codes: [],
+            span: Span {
+                start: 0,
+                length: 83,
+                line: 0,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [],
+            span: Span {
+                start: 83,
+                length: 10,
+                line: 1,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [],
+            span: Span {
+                start: 93,
+                length: 1,
+                line: 2,
+            },
+        },
+    ],
+}

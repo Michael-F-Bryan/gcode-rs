@@ -55,7 +55,7 @@ fn at(tokens: &mut Tokens<'_>, kind: TokenType) -> bool {
 fn at_letter(tokens: &mut Tokens<'_>, c: char) -> bool {
     match tokens.peek_token() {
         Some(t) if t.kind == TokenType::Letter && t.value.len() == 1 => {
-            t.value.chars().next() == Some(c)
+            t.value.starts_with(c)
         },
         _ => false,
     }
@@ -258,7 +258,7 @@ fn parse_command<B: BlockVisitor>(
         Some(t) => t,
         None => {
             block.diagnostics().emit_unexpected(
-                &letter_tok.value,
+                letter_tok.value,
                 &[TokenType::Eof],
                 letter_tok.span,
             );
@@ -270,7 +270,7 @@ fn parse_command<B: BlockVisitor>(
         true => (number_tok.value, number_tok.span),
         false => {
             block.diagnostics().emit_unexpected(
-                &number_tok.value,
+                number_tok.value,
                 &[TokenType::Number],
                 number_tok.span,
             );

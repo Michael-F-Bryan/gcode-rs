@@ -1,0 +1,728 @@
+---
+source: tests/parse_fixtures.rs
+expression: program
+---
+Program {
+    blocks: [
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Simple G Code Example Mill",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 0,
+                        length: 28,
+                        line: 0,
+                    },
+                },
+            ],
+            codes: [],
+            span: Span {
+                start: 0,
+                length: 29,
+                line: 0,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " From: http://www.helmancnc.com/simple-g-code-example-mill-g-code-programming-for-beginners/",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 29,
+                        length: 93,
+                        line: 1,
+                    },
+                },
+            ],
+            codes: [],
+            span: Span {
+                start: 29,
+                length: 94,
+                line: 1,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [],
+            span: Span {
+                start: 123,
+                length: 6,
+                line: 2,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [],
+            span: Span {
+                start: 129,
+                length: 6,
+                line: 3,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: "Linear / Feed - Absolute)",
+                    kind: Parentheses,
+                    span: Span {
+                        start: 135,
+                        length: 26,
+                        line: 4,
+                    },
+                },
+            ],
+            codes: [],
+            span: Span {
+                start: 135,
+                length: 27,
+                line: 4,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 0,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 162,
+                            length: 2,
+                            line: 5,
+                        },
+                        args: [],
+                    },
+                ),
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 90,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 165,
+                            length: 3,
+                            line: 5,
+                        },
+                        args: [],
+                    },
+                ),
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 40,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 169,
+                            length: 3,
+                            line: 5,
+                        },
+                        args: [],
+                    },
+                ),
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 21,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 173,
+                            length: 3,
+                            line: 5,
+                        },
+                        args: [],
+                    },
+                ),
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 17,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 177,
+                            length: 3,
+                            line: 5,
+                        },
+                        args: [],
+                    },
+                ),
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 94,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 181,
+                            length: 3,
+                            line: 5,
+                        },
+                        args: [],
+                    },
+                ),
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 80,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 185,
+                            length: 3,
+                            line: 5,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 162,
+                length: 27,
+                line: 5,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: "Position 6)",
+                    kind: Parentheses,
+                    span: Span {
+                        start: 212,
+                        length: 12,
+                        line: 6,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 54,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 189,
+                            length: 18,
+                            line: 6,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -75.0,
+                                ),
+                                span: Span {
+                                    start: 193,
+                                    length: 4,
+                                    line: 6,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -75.0,
+                                ),
+                                span: Span {
+                                    start: 198,
+                                    length: 4,
+                                    line: 6,
+                                },
+                            },
+                            Argument {
+                                letter: 'S',
+                                value: Literal(
+                                    500.0,
+                                ),
+                                span: Span {
+                                    start: 203,
+                                    length: 4,
+                                    line: 6,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 189,
+                length: 36,
+                line: 6,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 43,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 225,
+                            length: 11,
+                            line: 7,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    100.0,
+                                ),
+                                span: Span {
+                                    start: 229,
+                                    length: 4,
+                                    line: 7,
+                                },
+                            },
+                            Argument {
+                                letter: 'H',
+                                value: Literal(
+                                    1.0,
+                                ),
+                                span: Span {
+                                    start: 234,
+                                    length: 2,
+                                    line: 7,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 225,
+                length: 12,
+                line: 7,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 237,
+                            length: 6,
+                            line: 8,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    5.0,
+                                ),
+                                span: Span {
+                                    start: 241,
+                                    length: 2,
+                                    line: 8,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 237,
+                length: 7,
+                line: 8,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 244,
+                            length: 13,
+                            line: 9,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    -20.0,
+                                ),
+                                span: Span {
+                                    start: 248,
+                                    length: 4,
+                                    line: 9,
+                                },
+                            },
+                            Argument {
+                                letter: 'F',
+                                value: Literal(
+                                    100.0,
+                                ),
+                                span: Span {
+                                    start: 253,
+                                    length: 4,
+                                    line: 9,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 244,
+                length: 14,
+                line: 9,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: "Position 1)",
+                    kind: Parentheses,
+                    span: Span {
+                        start: 285,
+                        length: 12,
+                        line: 10,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 258,
+                            length: 8,
+                            line: 10,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -40.0,
+                                ),
+                                span: Span {
+                                    start: 262,
+                                    length: 4,
+                                    line: 10,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 258,
+                length: 40,
+                line: 10,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: "Position 2)",
+                    kind: Parentheses,
+                    span: Span {
+                        start: 325,
+                        length: 12,
+                        line: 11,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 298,
+                            length: 7,
+                            line: 11,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    40.0,
+                                ),
+                                span: Span {
+                                    start: 302,
+                                    length: 3,
+                                    line: 11,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 298,
+                length: 40,
+                line: 11,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: "Position 3)",
+                    kind: Parentheses,
+                    span: Span {
+                        start: 365,
+                        length: 12,
+                        line: 12,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 338,
+                            length: 7,
+                            line: 12,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    40.0,
+                                ),
+                                span: Span {
+                                    start: 342,
+                                    length: 3,
+                                    line: 12,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 338,
+                length: 40,
+                line: 12,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: "Position 4)",
+                    kind: Parentheses,
+                    span: Span {
+                        start: 405,
+                        length: 12,
+                        line: 13,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 378,
+                            length: 8,
+                            line: 13,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -40.0,
+                                ),
+                                span: Span {
+                                    start: 382,
+                                    length: 4,
+                                    line: 13,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 378,
+                length: 40,
+                line: 13,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: "Position 5)",
+                    kind: Parentheses,
+                    span: Span {
+                        start: 445,
+                        length: 12,
+                        line: 14,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 418,
+                            length: 8,
+                            line: 14,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -75.0,
+                                ),
+                                span: Span {
+                                    start: 422,
+                                    length: 4,
+                                    line: 14,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 418,
+                length: 40,
+                line: 14,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: "Position 6)",
+                    kind: Parentheses,
+                    span: Span {
+                        start: 485,
+                        length: 12,
+                        line: 15,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 458,
+                            length: 8,
+                            line: 15,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -75.0,
+                                ),
+                                span: Span {
+                                    start: 462,
+                                    length: 4,
+                                    line: 15,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 458,
+                length: 40,
+                line: 15,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 0,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 498,
+                            length: 7,
+                            line: 16,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    100.0,
+                                ),
+                                span: Span {
+                                    start: 501,
+                                    length: 4,
+                                    line: 16,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            span: Span {
+                start: 498,
+                length: 8,
+                line: 16,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [],
+            span: Span {
+                start: 506,
+                length: 4,
+                line: 17,
+            },
+        },
+    ],
+}

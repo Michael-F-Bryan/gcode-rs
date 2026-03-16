@@ -38,5 +38,12 @@ doc-cfg = "0.1.0"
 document-features = "0.2"
 
 [dev-dependencies]
+cfg-if = "1.0.4"
 insta = "1.46.3"
+libtest-mimic = "0.7"
 pretty_assertions = "1.4"
+
+[[test]]
+name = "parse_fixtures"
+path = "tests/parse_fixtures.rs"
+harness = false
