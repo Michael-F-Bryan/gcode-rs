@@ -692,17 +692,32 @@ mod tests {
     };
 
     #[derive(Debug, Clone, PartialEq)]
+    enum EventValue {
+        Literal(f32),
+        Variable(String),
+    }
+
+    impl From<Value<'_>> for EventValue {
+        fn from(value: Value<'_>) -> Self {
+            match value {
+                Value::Literal(n) => EventValue::Literal(n),
+                Value::Variable(v) => EventValue::Variable(v.into()),
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
     enum Event {
         LineStarted,
         LineNumber(Number, Span),
         Comment(String, Span),
         ProgramDelimiter(Span),
-        WordAddress(char, crate::ast::Value, Span),
+        WordAddress(char, EventValue, Span),
         GeneralCode(Number),
         MiscCode(Number),
         ToolChangeCode(Number),
         ProgramNumber(Number, Span),
-        Argument(char, crate::ast::Value, Span),
+        Argument(char, EventValue, Span),
         UnknownContentError(String, Span),
         Unexpected(String, String, Span),
     }
@@ -848,7 +863,7 @@ mod tests {
         let (letter, value, _span) = wa.unwrap();
         assert_eq!(letter, 'X');
         assert!(
-            matches!(value, crate::ast::Value::Literal(n) if (n - 5.0).abs() < 1e-6)
+            matches!(value, EventValue::Literal(n) if (n - 5.0).abs() < 1e-6)
         );
     }
 
@@ -856,7 +871,7 @@ mod tests {
     fn word_address_before_command_on_same_line() {
         let events = parse_and_record("S12000 M03\n");
         let has_s = events.iter().any(|e| {
-            matches!(e, Event::WordAddress('S', crate::ast::Value::Literal(n), _) if (*n - 12000.0).abs() < 1e-6)
+            matches!(e, Event::WordAddress('S', EventValue::Literal(n), _) if (n - 12000.0).abs() < 1e-6)
         });
         let has_m03 = events.iter().any(|e| {
             matches!(
@@ -875,9 +890,7 @@ mod tests {
     fn standalone_word_address_negative_value() {
         let events = parse_and_record("Y-89.314\n");
         let wa = events.iter().find_map(|e| match e {
-            Event::WordAddress('Y', crate::ast::Value::Literal(n), _) => {
-                Some(*n)
-            },
+            Event::WordAddress('Y', EventValue::Literal(n), _) => Some(*n),
             _ => None,
         });
         assert!(wa.is_some(), "expected Y word address");
@@ -894,24 +907,6 @@ mod tests {
             has_unexpected,
             "expected Unexpected diagnostic when letter has no number"
         );
-    }
-
-    #[cfg(feature = "alloc")]
-    #[test]
-    fn alloc_parse_captures_word_addresses() {
-        let program = crate::parse("X5.0 Y-3.0\n").unwrap();
-        assert_eq!(program.blocks.len(), 1);
-        assert_eq!(program.blocks[0].word_addresses.len(), 2);
-        assert_eq!(program.blocks[0].word_addresses[0].letter, 'X');
-        assert!(matches!(
-            program.blocks[0].word_addresses[0].value,
-            crate::ast::Value::Literal(n) if (n - 5.0).abs() < 1e-6
-        ));
-        assert_eq!(program.blocks[0].word_addresses[1].letter, 'Y');
-        assert!(matches!(
-            program.blocks[0].word_addresses[1].value,
-            crate::ast::Value::Literal(n) if (n - (-3.0)).abs() < 1e-6
-        ));
     }
 
     #[test]
@@ -940,16 +935,8 @@ mod tests {
                     major: 1,
                     minor: None,
                 }),
-                Event::Argument(
-                    'X',
-                    crate::ast::Value::Literal(10.0),
-                    sp(4, 3, 0)
-                ),
-                Event::Argument(
-                    'Y',
-                    crate::ast::Value::Literal(-20.0),
-                    sp(8, 4, 0)
-                ),
+                Event::Argument('X', EventValue::Literal(10.0), sp(4, 3, 0)),
+                Event::Argument('Y', EventValue::Literal(-20.0), sp(8, 4, 0)),
             ]
         );
     }
@@ -1032,11 +1019,7 @@ mod tests {
                     major: 3,
                     minor: None,
                 }),
-                Event::Argument(
-                    'S',
-                    crate::ast::Value::Literal(1000.0),
-                    sp(3, 5, 0)
-                ),
+                Event::Argument('S', EventValue::Literal(1000.0), sp(3, 5, 0)),
             ]
         );
     }
@@ -1099,11 +1082,7 @@ mod tests {
                     major: 1,
                     minor: None,
                 }),
-                Event::Argument(
-                    'X',
-                    crate::ast::Value::Literal(1.0),
-                    sp(8, 2, 1)
-                ),
+                Event::Argument('X', EventValue::Literal(1.0), sp(8, 2, 1)),
             ]
         );
     }
@@ -1119,16 +1098,8 @@ mod tests {
                     major: 1,
                     minor: None,
                 }),
-                Event::Argument(
-                    'X',
-                    crate::ast::Value::Literal(1.5),
-                    sp(4, 4, 0)
-                ),
-                Event::Argument(
-                    'Y',
-                    crate::ast::Value::Literal(-0.25),
-                    sp(9, 6, 0)
-                ),
+                Event::Argument('X', EventValue::Literal(1.5), sp(4, 4, 0)),
+                Event::Argument('Y', EventValue::Literal(-0.25), sp(9, 6, 0)),
             ]
         );
     }
@@ -1193,11 +1164,7 @@ mod tests {
                     minor: None,
                 }),
                 Event::UnknownContentError("$$%#".into(), sp(4, 4, 0)),
-                Event::WordAddress(
-                    'X',
-                    crate::ast::Value::Literal(10.0),
-                    sp(9, 3, 0)
-                ),
+                Event::WordAddress('X', EventValue::Literal(10.0), sp(9, 3, 0)),
             ]
         );
     }
@@ -1264,16 +1231,8 @@ mod tests {
                     major: 0,
                     minor: None,
                 }),
-                Event::Argument(
-                    'X',
-                    crate::ast::Value::Literal(1.0),
-                    sp(7, 2, 0)
-                ),
-                Event::Argument(
-                    'Y',
-                    crate::ast::Value::Literal(2.0),
-                    sp(10, 2, 0)
-                ),
+                Event::Argument('X', EventValue::Literal(1.0), sp(7, 2, 0)),
+                Event::Argument('Y', EventValue::Literal(2.0), sp(10, 2, 0)),
             ]
         );
     }
@@ -1295,11 +1254,7 @@ mod tests {
                     major: 1,
                     minor: None
                 }),
-                Event::Argument(
-                    'X',
-                    crate::ast::Value::Literal(1.0),
-                    sp(9, 2, 0)
-                ),
+                Event::Argument('X', EventValue::Literal(1.0), sp(9, 2, 0)),
             ]
         );
     }

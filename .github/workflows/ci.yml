@@ -18,12 +18,16 @@ jobs:
         uses: Swatinem/rust-cache@v2
       - name: Install Nextest
         uses: taiki-e/install-action@nextest
+      - name: Install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
       - name: Type Checking
         run: cargo check --workspace --verbose --locked
       - name: Build
         run: cargo build --workspace --verbose --locked
       - name: Test
         run: cargo nextest run --workspace --verbose --locked
+      - name: Test feature powerset
+        run: cargo hack test --feature-powerset --exclude-features unstable-doc-cfg
 
   lints:
     name: Linting and Formatting

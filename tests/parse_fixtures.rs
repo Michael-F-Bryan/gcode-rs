@@ -81,7 +81,7 @@ impl TestCase {
             } else {
                 const ENABLED: bool = false;
                 fn run_parse_test(
-                    case: &TestCase,
+                    _case: &TestCase,
                 ) -> Result<(), libtest_mimic::Failed> {
                     Err(libtest_mimic::Failed::from("not enabled"))
                 }

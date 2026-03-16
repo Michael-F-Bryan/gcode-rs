@@ -21,10 +21,11 @@
 //! [`Program`] and any [`Diagnostics`]. You can then walk [`Block`]s and
 //! inspect [`Code`]s (e.g. [`Code::General`]) and their [`Argument`]s.
 //!
-//! ```rust,ignore
+//! ```rust
 //! # #[cfg(feature = "alloc")]
-//! # fn main() -> Result<(), gcode::Diagnostics> {
-//! use gcode::{Code, Value};
+//! # fn main() -> Result<(), gcode::ast::Diagnostics> {
+//! # use std::collections::HashMap;
+//! use gcode::ast::{Code, Value};
 //!
 //! let src = "G90 (absolute)\nG00 X50.0 Y-10";
 //! let result = gcode::parse(src)?;
@@ -35,16 +36,19 @@
 //! for block in &program.blocks {
 //!     for code in &block.codes {
 //!         if let Code::General(g) = code {
-//!             let x = g.args.iter().find(|a| a.letter == 'X').map(|a| a.value);
-//!             let y = g.args.iter().find(|a| a.letter == 'Y').map(|a| a.value);
-//!             if let (Some(Value::Literal(x)), Some(Value::Literal(y))) = (x, y) {
-//!                 assert_eq!((x, y), (50.0, -10.0));
-//!             }
+//!             let args: HashMap<char, _> = g.args.iter()
+//!                 .map(|a| (a.letter, a.value.clone()))
+//!                 .collect();
+//!             let Some(x) = args.get(&'X') else { continue; };
+//!             let Some(y) = args.get(&'Y') else { continue; };
+//!             assert_eq!(x, &Value::Literal(50.0));
+//!             assert_eq!(y, &Value::Literal(-10.0));
 //!         }
 //!     }
 //! }
 //! # Ok(())
 //! # }
+//! # #[cfg(not(feature = "alloc"))] fn main() {}
 //! ```
 //!
 //! Parse errors are collected as [`Diagnostic`]s. The [`parse`] function fails
@@ -137,5 +141,5 @@ pub mod core;
 #[cfg(feature = "alloc")]
 pub use crate::ast::parse;
 
-#[cfg(doc)]
+#[cfg(all(doc, feature = "alloc"))]
 use crate::ast::*;
