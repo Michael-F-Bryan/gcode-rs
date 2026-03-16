@@ -1,0 +1,3076 @@
+---
+source: tests/parse_fixtures.rs
+expression: program
+---
+Program {
+    blocks: [
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Source: https://github.com/jcrocholl/25000 (cnc.gcode)",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 0,
+                        length: 56,
+                        line: 0,
+                    },
+                },
+            ],
+            codes: [],
+            word_addresses: [],
+            span: Span {
+                start: 0,
+                length: 57,
+                line: 0,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Select XY plane for arcs",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 61,
+                        length: 26,
+                        line: 1,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 17,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 57,
+                            length: 3,
+                            line: 1,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 57,
+                length: 31,
+                line: 1,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Absolute coordinates",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 92,
+                        length: 22,
+                        line: 2,
+                    },
+                },
+            ],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 90,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 88,
+                            length: 3,
+                            line: 2,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 88,
+                length: 27,
+                line: 2,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Start at bottom left corner",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 115,
+                        length: 29,
+                        line: 3,
+                    },
+                },
+            ],
+            codes: [],
+            word_addresses: [],
+            span: Span {
+                start: 115,
+                length: 30,
+                line: 3,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 92,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 145,
+                            length: 21,
+                            line: 4,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -141.6,
+                                ),
+                                span: Span {
+                                    start: 149,
+                                    length: 7,
+                                    line: 4,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -44.6,
+                                ),
+                                span: Span {
+                                    start: 157,
+                                    length: 6,
+                                    line: 4,
+                                },
+                            },
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 164,
+                                    length: 2,
+                                    line: 4,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 145,
+                length: 22,
+                line: 4,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 167,
+                            length: 20,
+                            line: 5,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -141.6,
+                                ),
+                                span: Span {
+                                    start: 170,
+                                    length: 7,
+                                    line: 5,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -44.6,
+                                ),
+                                span: Span {
+                                    start: 178,
+                                    length: 6,
+                                    line: 5,
+                                },
+                            },
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 185,
+                                    length: 2,
+                                    line: 5,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 167,
+                length: 21,
+                line: 5,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Screw holes for extrusion",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 188,
+                        length: 27,
+                        line: 6,
+                    },
+                },
+            ],
+            codes: [],
+            word_addresses: [],
+            span: Span {
+                start: 188,
+                length: 28,
+                line: 6,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 216,
+                            length: 6,
+                            line: 7,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    20.0,
+                                ),
+                                span: Span {
+                                    start: 219,
+                                    length: 3,
+                                    line: 7,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 216,
+                length: 7,
+                line: 7,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 223,
+                            length: 13,
+                            line: 8,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -132.0,
+                                ),
+                                span: Span {
+                                    start: 226,
+                                    length: 5,
+                                    line: 8,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -30.0,
+                                ),
+                                span: Span {
+                                    start: 232,
+                                    length: 4,
+                                    line: 8,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 223,
+                length: 14,
+                line: 8,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 237,
+                            length: 5,
+                            line: 9,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 240,
+                                    length: 2,
+                                    line: 9,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 237,
+                length: 6,
+                line: 9,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 243,
+                            length: 6,
+                            line: 10,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    20.0,
+                                ),
+                                span: Span {
+                                    start: 246,
+                                    length: 3,
+                                    line: 10,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 243,
+                length: 7,
+                line: 10,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 250,
+                            length: 17,
+                            line: 11,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -106.019,
+                                ),
+                                span: Span {
+                                    start: 253,
+                                    length: 9,
+                                    line: 11,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -15.0,
+                                ),
+                                span: Span {
+                                    start: 263,
+                                    length: 4,
+                                    line: 11,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 250,
+                length: 18,
+                line: 11,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 268,
+                            length: 5,
+                            line: 12,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 271,
+                                    length: 2,
+                                    line: 12,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 268,
+                length: 6,
+                line: 12,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 274,
+                            length: 6,
+                            line: 13,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    20.0,
+                                ),
+                                span: Span {
+                                    start: 277,
+                                    length: 3,
+                                    line: 13,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 274,
+                length: 7,
+                line: 13,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 281,
+                            length: 16,
+                            line: 14,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -106.019,
+                                ),
+                                span: Span {
+                                    start: 284,
+                                    length: 9,
+                                    line: 14,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    15.0,
+                                ),
+                                span: Span {
+                                    start: 294,
+                                    length: 3,
+                                    line: 14,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 281,
+                length: 17,
+                line: 14,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 298,
+                            length: 5,
+                            line: 15,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 301,
+                                    length: 2,
+                                    line: 15,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 298,
+                length: 6,
+                line: 15,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 304,
+                            length: 6,
+                            line: 16,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    20.0,
+                                ),
+                                span: Span {
+                                    start: 307,
+                                    length: 3,
+                                    line: 16,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 304,
+                length: 7,
+                line: 16,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 311,
+                            length: 12,
+                            line: 17,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -132.0,
+                                ),
+                                span: Span {
+                                    start: 314,
+                                    length: 5,
+                                    line: 17,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    30.0,
+                                ),
+                                span: Span {
+                                    start: 320,
+                                    length: 3,
+                                    line: 17,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 311,
+                length: 13,
+                line: 17,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 324,
+                            length: 5,
+                            line: 18,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 327,
+                                    length: 2,
+                                    line: 18,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 324,
+                length: 6,
+                line: 18,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 330,
+                            length: 6,
+                            line: 19,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    20.0,
+                                ),
+                                span: Span {
+                                    start: 333,
+                                    length: 3,
+                                    line: 19,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 330,
+                length: 7,
+                line: 19,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 337,
+                            length: 11,
+                            line: 20,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    132.0,
+                                ),
+                                span: Span {
+                                    start: 340,
+                                    length: 4,
+                                    line: 20,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    30.0,
+                                ),
+                                span: Span {
+                                    start: 345,
+                                    length: 3,
+                                    line: 20,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 337,
+                length: 12,
+                line: 20,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 349,
+                            length: 5,
+                            line: 21,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 352,
+                                    length: 2,
+                                    line: 21,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 349,
+                length: 6,
+                line: 21,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 355,
+                            length: 6,
+                            line: 22,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    20.0,
+                                ),
+                                span: Span {
+                                    start: 358,
+                                    length: 3,
+                                    line: 22,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 355,
+                length: 7,
+                line: 22,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 362,
+                            length: 15,
+                            line: 23,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    106.019,
+                                ),
+                                span: Span {
+                                    start: 365,
+                                    length: 8,
+                                    line: 23,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    15.0,
+                                ),
+                                span: Span {
+                                    start: 374,
+                                    length: 3,
+                                    line: 23,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 362,
+                length: 16,
+                line: 23,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 378,
+                            length: 5,
+                            line: 24,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 381,
+                                    length: 2,
+                                    line: 24,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 378,
+                length: 6,
+                line: 24,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 384,
+                            length: 6,
+                            line: 25,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    20.0,
+                                ),
+                                span: Span {
+                                    start: 387,
+                                    length: 3,
+                                    line: 25,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 384,
+                length: 7,
+                line: 25,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 391,
+                            length: 16,
+                            line: 26,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    106.019,
+                                ),
+                                span: Span {
+                                    start: 394,
+                                    length: 8,
+                                    line: 26,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -15.0,
+                                ),
+                                span: Span {
+                                    start: 403,
+                                    length: 4,
+                                    line: 26,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 391,
+                length: 17,
+                line: 26,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 408,
+                            length: 5,
+                            line: 27,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 411,
+                                    length: 2,
+                                    line: 27,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 408,
+                length: 6,
+                line: 27,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 414,
+                            length: 6,
+                            line: 28,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    20.0,
+                                ),
+                                span: Span {
+                                    start: 417,
+                                    length: 3,
+                                    line: 28,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 414,
+                length: 7,
+                line: 28,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 421,
+                            length: 12,
+                            line: 29,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    132.0,
+                                ),
+                                span: Span {
+                                    start: 424,
+                                    length: 4,
+                                    line: 29,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -30.0,
+                                ),
+                                span: Span {
+                                    start: 429,
+                                    length: 4,
+                                    line: 29,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 421,
+                length: 13,
+                line: 29,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 434,
+                            length: 5,
+                            line: 30,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 437,
+                                    length: 2,
+                                    line: 30,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 434,
+                length: 6,
+                line: 30,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Motor tabs",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 440,
+                        length: 12,
+                        line: 31,
+                    },
+                },
+            ],
+            codes: [],
+            word_addresses: [],
+            span: Span {
+                start: 440,
+                length: 13,
+                line: 31,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 453,
+                            length: 6,
+                            line: 32,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    20.0,
+                                ),
+                                span: Span {
+                                    start: 456,
+                                    length: 3,
+                                    line: 32,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 453,
+                length: 7,
+                line: 32,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 460,
+                            length: 18,
+                            line: 33,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    99.0192,
+                                ),
+                                span: Span {
+                                    start: 463,
+                                    length: 8,
+                                    line: 33,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -26.7,
+                                ),
+                                span: Span {
+                                    start: 472,
+                                    length: 6,
+                                    line: 33,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 460,
+                length: 19,
+                line: 33,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 479,
+                            length: 5,
+                            line: 34,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 482,
+                                    length: 2,
+                                    line: 34,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 479,
+                length: 6,
+                line: 34,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 485,
+                            length: 18,
+                            line: 35,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    121.019,
+                                ),
+                                span: Span {
+                                    start: 488,
+                                    length: 8,
+                                    line: 35,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -22.7,
+                                ),
+                                span: Span {
+                                    start: 497,
+                                    length: 6,
+                                    line: 35,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 485,
+                length: 19,
+                line: 35,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 504,
+                            length: 9,
+                            line: 36,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -12.6,
+                                ),
+                                span: Span {
+                                    start: 507,
+                                    length: 6,
+                                    line: 36,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 504,
+                length: 10,
+                line: 36,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 2,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 514,
+                            length: 14,
+                            line: 37,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'R',
+                                value: Literal(
+                                    12.6,
+                                ),
+                                span: Span {
+                                    start: 517,
+                                    length: 5,
+                                    line: 37,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    12.6,
+                                ),
+                                span: Span {
+                                    start: 523,
+                                    length: 5,
+                                    line: 37,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 514,
+                length: 15,
+                line: 37,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 529,
+                            length: 8,
+                            line: 38,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    22.7,
+                                ),
+                                span: Span {
+                                    start: 532,
+                                    length: 5,
+                                    line: 38,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 529,
+                length: 9,
+                line: 38,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 538,
+                            length: 17,
+                            line: 39,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    99.0192,
+                                ),
+                                span: Span {
+                                    start: 541,
+                                    length: 8,
+                                    line: 39,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    26.7,
+                                ),
+                                span: Span {
+                                    start: 550,
+                                    length: 5,
+                                    line: 39,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 538,
+                length: 18,
+                line: 39,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 556,
+                            length: 6,
+                            line: 40,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    20.0,
+                                ),
+                                span: Span {
+                                    start: 559,
+                                    length: 3,
+                                    line: 40,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 556,
+                length: 7,
+                line: 40,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 563,
+                            length: 18,
+                            line: 41,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -99.0192,
+                                ),
+                                span: Span {
+                                    start: 566,
+                                    length: 9,
+                                    line: 41,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    26.7,
+                                ),
+                                span: Span {
+                                    start: 576,
+                                    length: 5,
+                                    line: 41,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 563,
+                length: 19,
+                line: 41,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 582,
+                            length: 5,
+                            line: 42,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 585,
+                                    length: 2,
+                                    line: 42,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 582,
+                length: 6,
+                line: 42,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 588,
+                            length: 18,
+                            line: 43,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -121.019,
+                                ),
+                                span: Span {
+                                    start: 591,
+                                    length: 9,
+                                    line: 43,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    22.7,
+                                ),
+                                span: Span {
+                                    start: 601,
+                                    length: 5,
+                                    line: 43,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 588,
+                length: 19,
+                line: 43,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 607,
+                            length: 8,
+                            line: 44,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    12.6,
+                                ),
+                                span: Span {
+                                    start: 610,
+                                    length: 5,
+                                    line: 44,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 607,
+                length: 9,
+                line: 44,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 2,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 616,
+                            length: 15,
+                            line: 45,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'R',
+                                value: Literal(
+                                    12.6,
+                                ),
+                                span: Span {
+                                    start: 619,
+                                    length: 5,
+                                    line: 45,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -12.6,
+                                ),
+                                span: Span {
+                                    start: 625,
+                                    length: 6,
+                                    line: 45,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 616,
+                length: 16,
+                line: 45,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 632,
+                            length: 9,
+                            line: 46,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -22.7,
+                                ),
+                                span: Span {
+                                    start: 635,
+                                    length: 6,
+                                    line: 46,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 632,
+                length: 10,
+                line: 46,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 642,
+                            length: 19,
+                            line: 47,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -99.0192,
+                                ),
+                                span: Span {
+                                    start: 645,
+                                    length: 9,
+                                    line: 47,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -26.7,
+                                ),
+                                span: Span {
+                                    start: 655,
+                                    length: 6,
+                                    line: 47,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 642,
+                length: 20,
+                line: 47,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Left wing (for vertical extrusion)",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 662,
+                        length: 36,
+                        line: 48,
+                    },
+                },
+            ],
+            codes: [],
+            word_addresses: [],
+            span: Span {
+                start: 662,
+                length: 37,
+                line: 48,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 699,
+                            length: 6,
+                            line: 49,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    20.0,
+                                ),
+                                span: Span {
+                                    start: 702,
+                                    length: 3,
+                                    line: 49,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 699,
+                length: 7,
+                line: 49,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 706,
+                            length: 17,
+                            line: 50,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -132.5,
+                                ),
+                                span: Span {
+                                    start: 709,
+                                    length: 7,
+                                    line: 50,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -38.6,
+                                ),
+                                span: Span {
+                                    start: 717,
+                                    length: 6,
+                                    line: 50,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 706,
+                length: 18,
+                line: 50,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 724,
+                            length: 5,
+                            line: 51,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Z',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 727,
+                                    length: 2,
+                                    line: 51,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 724,
+                length: 6,
+                line: 51,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 2,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 730,
+                            length: 25,
+                            line: 52,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'I',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 733,
+                                    length: 2,
+                                    line: 52,
+                                },
+                            },
+                            Argument {
+                                letter: 'J',
+                                value: Literal(
+                                    9.1,
+                                ),
+                                span: Span {
+                                    start: 736,
+                                    length: 4,
+                                    line: 52,
+                                },
+                            },
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -141.6,
+                                ),
+                                span: Span {
+                                    start: 741,
+                                    length: 7,
+                                    line: 52,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -29.5,
+                                ),
+                                span: Span {
+                                    start: 749,
+                                    length: 6,
+                                    line: 52,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 730,
+                length: 26,
+                line: 52,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 756,
+                            length: 8,
+                            line: 53,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    29.5,
+                                ),
+                                span: Span {
+                                    start: 759,
+                                    length: 5,
+                                    line: 53,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 756,
+                length: 9,
+                line: 53,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 2,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 765,
+                            length: 24,
+                            line: 54,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'I',
+                                value: Literal(
+                                    9.1,
+                                ),
+                                span: Span {
+                                    start: 768,
+                                    length: 4,
+                                    line: 54,
+                                },
+                            },
+                            Argument {
+                                letter: 'J',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 773,
+                                    length: 2,
+                                    line: 54,
+                                },
+                            },
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -132.5,
+                                ),
+                                span: Span {
+                                    start: 776,
+                                    length: 7,
+                                    line: 54,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    38.6,
+                                ),
+                                span: Span {
+                                    start: 784,
+                                    length: 5,
+                                    line: 54,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 765,
+                length: 25,
+                line: 54,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Top flange",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 790,
+                        length: 12,
+                        line: 55,
+                    },
+                },
+            ],
+            codes: [],
+            word_addresses: [],
+            span: Span {
+                start: 790,
+                length: 13,
+                line: 55,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 803,
+                            length: 16,
+                            line: 56,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -132.5,
+                                ),
+                                span: Span {
+                                    start: 806,
+                                    length: 7,
+                                    line: 56,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    38.6,
+                                ),
+                                span: Span {
+                                    start: 814,
+                                    length: 5,
+                                    line: 56,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 803,
+                length: 17,
+                line: 56,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 820,
+                            length: 8,
+                            line: 57,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -125.0,
+                                ),
+                                span: Span {
+                                    start: 823,
+                                    length: 5,
+                                    line: 57,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 820,
+                length: 9,
+                line: 57,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 829,
+                            length: 8,
+                            line: 58,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    44.6,
+                                ),
+                                span: Span {
+                                    start: 832,
+                                    length: 5,
+                                    line: 58,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 829,
+                length: 9,
+                line: 58,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 838,
+                            length: 18,
+                            line: 59,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -102.608,
+                                ),
+                                span: Span {
+                                    start: 841,
+                                    length: 9,
+                                    line: 59,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    50.6,
+                                ),
+                                span: Span {
+                                    start: 851,
+                                    length: 5,
+                                    line: 59,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 838,
+                length: 19,
+                line: 59,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 857,
+                            length: 11,
+                            line: 60,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    102.608,
+                                ),
+                                span: Span {
+                                    start: 860,
+                                    length: 8,
+                                    line: 60,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 857,
+                length: 12,
+                line: 60,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 869,
+                            length: 13,
+                            line: 61,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    125.0,
+                                ),
+                                span: Span {
+                                    start: 872,
+                                    length: 4,
+                                    line: 61,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    44.6,
+                                ),
+                                span: Span {
+                                    start: 877,
+                                    length: 5,
+                                    line: 61,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 869,
+                length: 14,
+                line: 61,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 883,
+                            length: 8,
+                            line: 62,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    38.6,
+                                ),
+                                span: Span {
+                                    start: 886,
+                                    length: 5,
+                                    line: 62,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 883,
+                length: 9,
+                line: 62,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 892,
+                            length: 9,
+                            line: 63,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    132.5,
+                                ),
+                                span: Span {
+                                    start: 895,
+                                    length: 6,
+                                    line: 63,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 892,
+                length: 10,
+                line: 63,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Right wing (for vertical extrusion)",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 902,
+                        length: 37,
+                        line: 64,
+                    },
+                },
+            ],
+            codes: [],
+            word_addresses: [],
+            span: Span {
+                start: 902,
+                length: 38,
+                line: 64,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 2,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 940,
+                            length: 24,
+                            line: 65,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'I',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 943,
+                                    length: 2,
+                                    line: 65,
+                                },
+                            },
+                            Argument {
+                                letter: 'J',
+                                value: Literal(
+                                    -9.1,
+                                ),
+                                span: Span {
+                                    start: 946,
+                                    length: 5,
+                                    line: 65,
+                                },
+                            },
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    141.6,
+                                ),
+                                span: Span {
+                                    start: 952,
+                                    length: 6,
+                                    line: 65,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    29.5,
+                                ),
+                                span: Span {
+                                    start: 959,
+                                    length: 5,
+                                    line: 65,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 940,
+                length: 25,
+                line: 65,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 965,
+                            length: 9,
+                            line: 66,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -29.5,
+                                ),
+                                span: Span {
+                                    start: 968,
+                                    length: 6,
+                                    line: 66,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 965,
+                length: 10,
+                line: 66,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 2,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 975,
+                            length: 25,
+                            line: 67,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'I',
+                                value: Literal(
+                                    -9.1,
+                                ),
+                                span: Span {
+                                    start: 978,
+                                    length: 5,
+                                    line: 67,
+                                },
+                            },
+                            Argument {
+                                letter: 'J',
+                                value: Literal(
+                                    0.0,
+                                ),
+                                span: Span {
+                                    start: 984,
+                                    length: 2,
+                                    line: 67,
+                                },
+                            },
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    132.5,
+                                ),
+                                span: Span {
+                                    start: 987,
+                                    length: 6,
+                                    line: 67,
+                                },
+                            },
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -38.6,
+                                ),
+                                span: Span {
+                                    start: 994,
+                                    length: 6,
+                                    line: 67,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 975,
+                length: 26,
+                line: 67,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Bottom flange",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 1001,
+                        length: 15,
+                        line: 68,
+                    },
+                },
+            ],
+            codes: [],
+            word_addresses: [],
+            span: Span {
+                start: 1001,
+                length: 16,
+                line: 68,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 1017,
+                            length: 7,
+                            line: 69,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    125.0,
+                                ),
+                                span: Span {
+                                    start: 1020,
+                                    length: 4,
+                                    line: 69,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 1017,
+                length: 8,
+                line: 69,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 1025,
+                            length: 9,
+                            line: 70,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -44.6,
+                                ),
+                                span: Span {
+                                    start: 1028,
+                                    length: 6,
+                                    line: 70,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 1025,
+                length: 10,
+                line: 70,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 1035,
+                            length: 8,
+                            line: 71,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -125.0,
+                                ),
+                                span: Span {
+                                    start: 1038,
+                                    length: 5,
+                                    line: 71,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 1035,
+                length: 9,
+                line: 71,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 1044,
+                            length: 9,
+                            line: 72,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'Y',
+                                value: Literal(
+                                    -38.6,
+                                ),
+                                span: Span {
+                                    start: 1047,
+                                    length: 6,
+                                    line: 72,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 1044,
+                length: 10,
+                line: 72,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                General(
+                    GeneralCode {
+                        number: Number {
+                            major: 1,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 1054,
+                            length: 10,
+                            line: 73,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'X',
+                                value: Literal(
+                                    -141.6,
+                                ),
+                                span: Span {
+                                    start: 1057,
+                                    length: 7,
+                                    line: 73,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 1054,
+                length: 11,
+                line: 73,
+            },
+        },
+    ],
+}

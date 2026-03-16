@@ -7,152 +7,110 @@
 //!   requiring access to an operating system (e.g. `#[no_std]` environments or
 //!   WebAssembly)
 //! - **deterministic memory usage:** the library can be tweaked to use no
-//!   dynamic allocation (see [`buffers::Buffers`])
+//!   dynamic allocation (see the [`crate::core`] module)
 //! - **error-resistant:** erroneous input won't abort parsing, instead
-//!   notifying the caller and continuing on (see [`Callbacks`])
+//!   notifying the caller and continuing on (see [`crate::core::Diagnostics`])
 //! - **performance:** parsing should be reasonably fast, guaranteeing `O(n)`
 //!   time complexity with no backtracking
 //!
 //! # Getting Started
 //!
-//! The typical entry point to this crate is via the [`parse()`] function. This
-//! gives you an iterator over the [`GCode`]s in a string of text, ignoring any
-//! errors or comments that may appear along the way.
+//! ## Simple parsing (with `alloc`)
+//!
+//! With the [`alloc`] feature (enabled by default), use [`parse`] to get a
+//! [`Program`] and any [`Diagnostics`]. You can then walk [`Block`]s and
+//! inspect [`Code`]s (e.g. [`Code::General`]) and their [`Argument`]s.
 //!
 //! ```rust
-//! use gcode::Mnemonic;
+//! # #[cfg(feature = "alloc")]
+//! # fn main() -> Result<(), gcode::ast::Diagnostics> {
+//! # use std::collections::HashMap;
+//! use gcode::ast::{Code, Value};
 //!
-//! let src = r#"
-//!     G90              (absolute coordinates)
-//!     G00 X50.0 Y-10   (move somewhere)
-//! "#;
+//! let src = "G90 (absolute)\nG00 X50.0 Y-10";
+//! let result = gcode::parse(src)?;
 //!
-//! let got: Vec<_> = gcode::parse(src).collect();
+//! let program = result;
+//! assert!(program.blocks.len() >= 1);
 //!
-//! assert_eq!(got.len(), 2);
-//!
-//! let g90 = &got[0];
-//! assert_eq!(g90.mnemonic(), Mnemonic::General);
-//! assert_eq!(g90.major_number(), 90);
-//! assert_eq!(g90.minor_number(), 0);
-//!
-//! let rapid_move = &got[1];
-//! assert_eq!(rapid_move.mnemonic(), Mnemonic::General);
-//! assert_eq!(rapid_move.major_number(), 0);
-//! assert_eq!(rapid_move.value_for('X'), Some(50.0));
-//! assert_eq!(rapid_move.value_for('y'), Some(-10.0));
+//! for block in &program.blocks {
+//!     for code in &block.codes {
+//!         if let Code::General(g) = code {
+//!             let args: HashMap<char, _> = g.args.iter()
+//!                 .map(|a| (a.letter, a.value.clone()))
+//!                 .collect();
+//!             let Some(x) = args.get(&'X') else { continue; };
+//!             let Some(y) = args.get(&'Y') else { continue; };
+//!             assert_eq!(x, &Value::Literal(50.0));
+//!             assert_eq!(y, &Value::Literal(-10.0));
+//!         }
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! # #[cfg(not(feature = "alloc"))] fn main() {}
 //! ```
 //!
-//! The [`full_parse_with_callbacks()`] function can be used if you want access
-//! to [`Line`] information and to be notified on any parse errors.
+//! Parse errors are collected as [`Diagnostic`]s. The [`parse`] function fails
+//! if any parse errors were emitted.
+//!
+//! ## Push-based / zero-allocation parsing
+//!
+//! The [`core`] module is designed guaranteed to parse without requiring any
+//! heap allocations.
+//!
+//! Implement
+//! [`ProgramVisitor`](crate::core::ProgramVisitor): the parser calls
+//! [`ProgramVisitor::start_block`](crate::core::ProgramVisitor::start_block) and
+//! you return a [`ControlFlow::Continue`](crate::core::ControlFlow) with a
+//! [`BlockVisitor`](crate::core::BlockVisitor). That visitor receives
+//! [`BlockVisitor::line_number`](crate::core::BlockVisitor::line_number),
+//! [`BlockVisitor::comment`](crate::core::BlockVisitor::comment), and
+//! [`BlockVisitor::start_general_code`](crate::core::BlockVisitor::start_general_code)
+//! (and similar for M/O/T), returning a
+//! [`CommandVisitor`](crate::core::CommandVisitor) for each command. See
+//! [`crate::core`] for the full visitor model and [`resume`](crate::core::resume)
+//! for pause/resume.
 //!
 //! ```rust
-//! use gcode::{Callbacks, Span};
+//! use gcode::core::{
+//!     BlockVisitor, CommandVisitor, ControlFlow, Noop, ProgramVisitor,
+//! };
 //!
-//! /// A custom set of [`Callbacks`] we'll use to keep track of errors.
-//! #[derive(Debug, Default)]
-//! struct Errors {
-//!     unexpected_line_number : usize,
-//!     letter_without_number: usize,
-//!     garbage: Vec<String>,
-//! }
-//!
-//! impl Callbacks for Errors {
-//!     fn unknown_content(&mut self, text: &str, _span: Span) {
-//!         self.garbage.push(text.to_string());
-//!     }
-//!
-//!     fn unexpected_line_number(&mut self, _line_number: f32, _span: Span) {
-//!         self.unexpected_line_number += 1;
-//!     }
-//!
-//!     fn letter_without_a_number(&mut self, _value: &str, _span: Span) {
-//!         self.letter_without_number += 1;
-//!     }
-//! }
-//!
-//! let src = r"
-//!     G90 N1           ; Line numbers (N) should be at the start of a line
-//!     G                ; there was a G, but no number
-//!     G01 X50 $$%# Y20 ; invalid characters are ignored
-//! ";
-//!
-//! let mut errors = Errors::default();
-//!
-//! {
-//!     let lines: Vec<_> = gcode::full_parse_with_callbacks(src, &mut errors)
-//!         .collect();
-//!     
-//!     assert_eq!(lines.len(), 3);
-//!     let total_gcodes: usize = lines.iter()
-//!         .map(|line| line.gcodes().len())
-//!         .sum();
-//!     assert_eq!(total_gcodes, 2);
-//! }
-//!
-//! assert_eq!(errors.unexpected_line_number, 1);
-//! assert_eq!(errors.letter_without_number, 1);
-//! assert_eq!(errors.garbage.len(), 1);
-//! assert_eq!(errors.garbage[0], "$$%# ");
+//! let src = "G90 G01 X5";
+//! gcode::core::parse(src, &mut Noop);
 //! ```
 //!
-//! # Customising Memory Usage
+//! # Zero allocation
 //!
-//! You'll need to manually create a [`Parser`] if you want control over buffer
-//! sizes instead of relying on [`buffers::DefaultBuffers`].
-//!
-//! You shouldn't normally need to do this unless you are on an embedded device
-//! and know your expected input will be bigger than
-//! [`buffers::SmallFixedBuffers`] will allow.
-//!
-//! ```rust
-//! use gcode::{Word, Comment, GCode, Nop, Parser, buffers::Buffers};
-//! use arrayvec::ArrayVec;
-//!
-//! /// A type-level variable which contains definitions for each of our buffer
-//! /// types.
-//! enum MyBuffers {}
-//!
-//! impl<'input> Buffers<'input> for MyBuffers {
-//!     type Arguments = ArrayVec<[Word; 10]>;
-//!     type Commands = ArrayVec<[GCode<Self::Arguments>; 2]>;
-//!     type Comments = ArrayVec<[Comment<'input>; 1]>;
-//! }
-//!
-//! let src = "G90 G01 X5.1";
-//!
-//! let parser: Parser<Nop, MyBuffers> = Parser::new(src, Nop);
-//!
-//! let lines = parser.count();
-//! assert_eq!(lines, 1);
-//! ```
+//! To avoid dynamic allocation, do not enable the `alloc` feature and do not
+//! use the [`parse`] function (which builds an AST). Implement the
+//! [`ProgramVisitor`](crate::core::ProgramVisitor),
+//! [`BlockVisitor`](crate::core::BlockVisitor), and
+//! [`CommandVisitor`](crate::core::CommandVisitor) traits and pass your visitor
+//! to [`core::parse`]; the parser drives your visitor and
+//! does not allocate.
 //!
 //! # Spans
 //!
-//! Something that distinguishes this crate from a lot of other g-code parsers
-//! is that each element's original location, its [`Span`], is retained and
-//! passed to the caller.
+//! Each element's original location in the source is retained as a
+//! [`Span`](crate::core::Span).
 //!
-//! This is important for applications such as:
+//! This supports:
 //!
-//! - Indicating where in the source text a parsing error or semantic error has
-//!   occurred
-//! - Visually highlighting the command currently being executed when stepping
-//!   through a program in a simulator
-//! - Reporting what point a CNC machine is up to when executing a job
+//! - Showing where a parsing or semantic error occurred
+//! - Highlighting the current command when stepping through a program
+//! - Reporting progress (e.g. line/column) to the user or machine
 //!
-//! It's pretty easy to check whether something contains its [`Span`], just look
-//! for a `span()` method (e.g. [`GCode::span()`]) or a `span` field (e.g.
-//! [`Comment::span`]).
+//! In the core API, visitor methods receive a `Span` (e.g.
+//! [`BlockVisitor::line_number`](crate::core::BlockVisitor::line_number) and
+//! [`BlockVisitor::comment`](crate::core::BlockVisitor::comment)). AST types
+//! (with `alloc`) have a `span` field (e.g. [`Block::span`], [`Comment::span`],
+//! [`GeneralCode::span`], [`Argument::span`]).
 //!
-//! # Cargo Features
+//! ## Feature Flags
 //!
-//! Additional functionality can be enabled by adding feature flags to your
-//! `Cargo.toml` file:
-//!
-//! - **std:** adds `std::error::Error` impls to any errors and switches to
-//!   `Vec` for the default backing buffers
-//! - **serde-1:** allows serializing and deserializing most types with `serde`
+#![doc = document_features::document_features!()]
 #![deny(
     bare_trait_objects,
     elided_lifetimes_in_paths,
@@ -164,39 +122,24 @@
     unused_qualifications,
     unused_results,
     variant_size_differences,
-    rustdoc::broken_intra_doc_links,
+    // rustdoc::broken_intra_doc_links,
     missing_docs
 )]
-#![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(not(test), no_std)]
+// Make sure docs indicate when something is hidden behind a feature flag
+#![cfg_attr(feature = "unstable-doc-cfg", feature(doc_cfg))]
+#![cfg_attr(feature = "unstable-doc-cfg", doc(auto_cfg))]
 
-#[cfg(all(test, not(feature = "std")))]
-#[macro_use]
-extern crate std;
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
-#[cfg(test)]
-#[macro_use]
-extern crate pretty_assertions;
+#[cfg(feature = "alloc")]
+pub mod ast;
 
-#[macro_use]
-mod macros;
+pub mod core;
 
-pub mod buffers;
-mod callbacks;
-mod comment;
-mod gcode;
-mod lexer;
-mod line;
-mod parser;
-mod span;
-mod words;
+#[cfg(feature = "alloc")]
+pub use crate::ast::parse;
 
-pub use crate::{
-    callbacks::{Callbacks, Nop},
-    comment::Comment,
-    gcode::{GCode, Mnemonic},
-    line::Line,
-    parser::{Parser, full_parse_with_callbacks, parse},
-    span::Span,
-    words::Word,
-};
+#[cfg(all(doc, feature = "alloc"))]
+use crate::ast::*;

@@ -1,0 +1,72 @@
+; Source: https://github.com/multigcs/viaconstructor (docs/simple.ngc)
+(--------------------------------------------------)
+(Generator: viaConstructor)
+(Filename: tests/data/simple.dxf)
+(--------------------------------------------------)
+
+G21 (Metric/mm)
+G40 (No Offsets)
+G90 (Absolute-Mode)
+F100
+G64 P0.05
+M05 (Spindle off)
+M06 T1
+M03 S10000 (Spindle on / CW)
+G04 P1 (pause in sec)
+G00 Z5.0
+G00 X0.0 Y0.0
+
+
+(--------------------------------------------------)
+(Level: 1)
+(Order: 0)
+(Object: 0.0)
+(Closed: True)
+(isPocket: False)
+(Depth: -9.0mm / -9.0mm)
+(Tool-Diameter: 4.0mm)
+(Tool-Offset: 2.0mm inside)
+(--------------------------------------------------)
+G00 Z5.0
+G00 X22.0 Y14.828427124746183
+(- Depth: -9.0mm -)
+F100
+G01 Z-9.0
+F1000
+G01 X22.0 Y14.828427
+G01 X22.0 Y68.0
+G01 X75.171573 Y68.0
+G01 X22.0 Y14.828427
+G00 Z5.0
+
+(--------------------------------------------------)
+(Level: 0)
+(Order: 1)
+(Object: 1.0)
+(Closed: True)
+(isPocket: False)
+(Depth: -9.0mm / -9.0mm)
+(Tool-Diameter: 4.0mm)
+(Tool-Offset: 2.0mm outside)
+(--------------------------------------------------)
+G00 Z5.0
+G00 X-0.18107149208503706 Y-1.9917864129354077
+(- Depth: -9.0mm -)
+F100
+G01 Z-9.0
+F1000
+G01 X-0.181071 Y-1.991786
+G01 X109.818929 Y-11.991786
+G03 X111.987767 Y-10.220863 I0.181071 J1.991786
+G01 X121.987767 Y79.779137
+G03 X120.181071 Y81.991786 I-1.987767 J0.220863
+G01 X10.181071 Y91.991786
+G03 X8.012233 Y90.220863 I-0.181071 J-1.991786
+G01 X-1.987767 Y0.220863
+G03 X-0.181071 Y-1.991786 I1.987767 J-0.220863
+G00 Z5.0
+
+(- end -)
+G00 Z5.0
+M05 (Spindle off)
+G00 X0.0 Y0.0

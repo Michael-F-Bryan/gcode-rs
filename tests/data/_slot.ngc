@@ -1,0 +1,61 @@
+; Source: https://github.com/SebKuzminsky/lib-gcode (slot-0.ngc)
+
+o<slot-0> sub
+    #<x_min> = #1
+    #<x_max> = #2
+    #<y> = #3
+    #<z_start> = #4
+    #<z_bottom> = #5
+    #<z_depth_of_cut> = #6
+    #<z_safe> = #7
+
+    #<done> = 0
+
+    g0 z#<z_safe>
+    g0 x#<x_min> y#<y>
+
+    m3
+    g0 z#<z_start>
+
+    #<z> = #<z_start>
+    o100 while [ #<z> GT #<z_bottom> ]
+        #<z> = [ #<z> - [ #<z_depth_of_cut> / 2 ]]
+        o110 if [ #<z> LT #<z_bottom> ]
+            #<z> = #<z_bottom>
+            #<done> = 1
+        o110 endif
+        g1 x[#<x_min> + 0.300] z#<z>
+
+        #<z> = [ #<z> - [ #<z_depth_of_cut> / 2 ]]
+        o120 if [ #<z> LT #<z_bottom> ]
+            #<z> = #<z_bottom>
+            #<done> = 1
+        o120 endif
+        g1 x#<x_min> z#<z>
+
+        g1 x#<x_max>
+
+        o130 if [ #<done> EQ 1 ]
+            ;o<slot-0> return
+        o130 endif
+
+        #<z> = [ #<z> - [ #<z_depth_of_cut> / 2 ]]
+        o131 if [ #<z> LT #<z_bottom> ]
+            #<z> = #<z_bottom>
+        o131 endif
+        g1 x[#<x_max> - 0.300] z#<z>
+
+        #<z> = [ #<z> - [ #<z_depth_of_cut> / 2 ]]
+        o132 if [ #<z> LT #<z_bottom> ]
+            #<z> = #<z_bottom>
+        o132 endif
+        g1 x#<x_max> z#<z>
+
+        g1 x#<x_min>
+    o100 endwhile
+
+    g0 z#<z_safe>
+    m5
+o<slot-0> endsub
+m2
+

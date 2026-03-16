@@ -1,0 +1,74 @@
+; Source: https://github.com/jcrocholl/25000 (cnc.gcode)
+G17 ; Select XY plane for arcs
+G90 ; Absolute coordinates
+; Start at bottom left corner
+G92 X-141.6 Y-44.6 Z0
+G1 X-141.6 Y-44.6 Z0
+; Screw holes for extrusion
+G1 Z20
+G1 X-132 Y-30
+G1 Z0
+G1 Z20
+G1 X-106.019 Y-15
+G1 Z0
+G1 Z20
+G1 X-106.019 Y15
+G1 Z0
+G1 Z20
+G1 X-132 Y30
+G1 Z0
+G1 Z20
+G1 X132 Y30
+G1 Z0
+G1 Z20
+G1 X106.019 Y15
+G1 Z0
+G1 Z20
+G1 X106.019 Y-15
+G1 Z0
+G1 Z20
+G1 X132 Y-30
+G1 Z0
+; Motor tabs
+G1 Z20
+G1 X99.0192 Y-26.7
+G1 Z0
+G1 X121.019 Y-22.7
+G1 Y-12.6
+G2 R12.6 Y12.6
+G1 Y22.7
+G1 X99.0192 Y26.7
+G1 Z20
+G1 X-99.0192 Y26.7
+G1 Z0
+G1 X-121.019 Y22.7
+G1 Y12.6
+G2 R12.6 Y-12.6
+G1 Y-22.7
+G1 X-99.0192 Y-26.7
+; Left wing (for vertical extrusion)
+G1 Z20
+G1 X-132.5 Y-38.6
+G1 Z0
+G2 I0 J9.1 X-141.6 Y-29.5
+G1 Y29.5
+G2 I9.1 J0 X-132.5 Y38.6
+; Top flange
+G1 X-132.5 Y38.6
+G1 X-125
+G1 Y44.6
+G1 X-102.608 Y50.6
+G1 X102.608
+G1 X125 Y44.6
+G1 Y38.6
+G1 X132.5
+; Right wing (for vertical extrusion)
+G2 I0 J-9.1 X141.6 Y29.5
+G1 Y-29.5
+G2 I-9.1 J0 X132.5 Y-38.6
+; Bottom flange
+G1 X125
+G1 Y-44.6
+G1 X-125
+G1 Y-38.6
+G1 X-141.6

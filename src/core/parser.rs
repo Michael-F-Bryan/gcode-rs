@@ -1,0 +1,1303 @@
+//! Resilient LL-style parser for g-code. Each grammar rule is a small function that
+//! drives the visitor; recovery and follow sets control when we skip vs break.
+//!
+//! Grammar (conceptual):
+//!
+//! - Program = Block*
+//! - Block   = (line_number | program_number | comment | command)* Newline?
+//! - Command = ('G'|'M'|'T') number argument*
+//! - Argument = letter ('+'|'-')? number
+//!
+//! First sets and recovery sets are defined per loop so we know when to parse,
+//! skip with diagnostic, or break to the outer loop.
+
+use crate::core::{
+    BlockVisitor, CommandVisitor, ControlFlow, Number, ProgramVisitor, Span,
+    TokenType, Value,
+    lexer::{Token, Tokens},
+};
+
+/// Opaque state for pausing and resuming a parse.
+///
+/// When a visitor returns [`ControlFlow::Break`](crate::core::ControlFlow), the
+/// parser yields a `ParserState`. Pass that state and the same visitor to
+/// [`resume`] to continue from the next block. The state is only valid for the
+/// same `src` slice and visitor; do not modify `src` between pause and resume.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub struct ParserState {
+    current_index: usize,
+    current_line: usize,
+}
+
+impl ParserState {
+    /// State for starting a parse from the beginning of `src`.
+    pub const fn empty() -> Self {
+        Self::new(0, 0)
+    }
+
+    /// State at a specific byte index and line (for use by [`resume`]).
+    pub(crate) const fn new(current_index: usize, current_line: usize) -> Self {
+        Self {
+            current_index,
+            current_line,
+        }
+    }
+}
+
+// ---------- Token helpers (no allocation) ----------
+
+fn at(tokens: &mut Tokens<'_>, kind: TokenType) -> bool {
+    tokens.peek_token().map(|t| t.kind == kind).unwrap_or(false)
+}
+
+/// True if the next token is a single letter equal to `c`.
+#[allow(dead_code)]
+fn at_letter(tokens: &mut Tokens<'_>, c: char) -> bool {
+    match tokens.peek_token() {
+        Some(t) if t.kind == TokenType::Letter && t.value.len() == 1 => {
+            t.value.starts_with(c)
+        },
+        _ => false,
+    }
+}
+
+/// True if the next token is in the given set of token types.
+fn at_any_kind(tokens: &mut Tokens<'_>, set: &[TokenType]) -> bool {
+    match tokens.peek_token() {
+        Some(t) => set.contains(&t.kind),
+        None => false,
+    }
+}
+
+/// Block-level recovery set: tokens that end the current line (break inner loop).
+const BLOCK_FOLLOW: &[TokenType] = &[TokenType::Newline];
+
+/// Argument-level recovery: tokens that end the argument list (break so we don't consume the next command).
+/// Letter G/M/T/N/O, Comment, Newline. We check letter in the loop.
+fn at_block_follow(tokens: &mut Tokens<'_>) -> bool {
+    at_any_kind(tokens, BLOCK_FOLLOW) || tokens.peek_token().is_none()
+}
+
+/// First set for a block item: something we can parse as line number, program number, comment, or command.
+#[allow(dead_code)]
+fn is_block_item_start(tokens: &mut Tokens<'_>) -> bool {
+    match tokens.peek_token() {
+        None => false,
+        Some(Token { kind, .. }) => matches!(
+            kind,
+            TokenType::Letter
+                | TokenType::Comment
+                | TokenType::Unknown
+                | TokenType::Number
+                | TokenType::Slash
+                | TokenType::MinusSign
+                | TokenType::PlusSign
+        ),
+    }
+}
+
+/// True if the next token starts a command or line/program number (G/M/T by type, N/O by letter).
+fn at_command_letter(tokens: &mut Tokens<'_>) -> bool {
+    match tokens.peek_token() {
+        Some(t) => {
+            matches!(t.kind, TokenType::G | TokenType::M | TokenType::T)
+                || (t.kind == TokenType::Letter
+                    && t.value.len() == 1
+                    && t.value
+                        .chars()
+                        .next()
+                        .is_some_and(|c| matches!(c, 'N' | 'n' | 'O' | 'o')))
+        },
+        None => false,
+    }
+}
+
+/// First set for an argument: Letter token that is not N or O (G/M/T are separate token types).
+fn is_argument_start(tokens: &mut Tokens<'_>) -> Option<char> {
+    let t = tokens.peek_token()?;
+    if t.kind != TokenType::Letter || t.value.len() != 1 {
+        return None;
+    }
+    let c = t.value.chars().next()?;
+    if matches!(c, 'N' | 'n' | 'O' | 'o') {
+        return None;
+    }
+    Some(c)
+}
+
+// ---------- Span helper ----------
+
+/// Span from `start.start` through `end.end()` on the same line as `start`.
+fn span_from_to(start: Span, end: Span) -> Span {
+    Span::new(start.start, end.end() - start.start, start.line)
+}
+
+// ---------- Number / value helpers ----------
+
+fn parse_number(value: &str) -> Option<Number> {
+    let (major_str, minor_str) = match value.split_once('.') {
+        None => (value, None),
+        Some((maj, min)) => (maj, Some(min)),
+    };
+    let major = major_str.parse::<u16>().ok()?;
+    let minor = match minor_str {
+        Some(s) => s.parse::<u16>().ok(),
+        None => None,
+    };
+    Some(Number { major, minor })
+}
+
+fn literal_value(sign: i8, number_value: &str) -> Option<Value<'_>> {
+    let n: f32 = number_value.parse().ok()?;
+    let n = match sign {
+        -1 => -n,
+        _ => n,
+    };
+    Some(Value::Literal(n))
+}
+
+// ---------- Grammar: argument list ----------
+
+/// Argument = letter ('+'|'-')? number
+/// Recovery: G/M/T/N/O, Comment, Newline, EOF → break (don't consume).
+fn parse_argument<C: CommandVisitor>(
+    tokens: &mut Tokens<'_>,
+    cmd: &mut C,
+    _line_start: Span,
+) -> Option<Span> {
+    let letter_c = is_argument_start(tokens)?;
+    let letter_tok = tokens.next_token()?;
+    let letter_span = letter_tok.span;
+
+    let sign = match tokens.peek_token() {
+        Some(t) if t.kind == TokenType::MinusSign => {
+            let _ = tokens.next_token();
+            -1i8
+        },
+        Some(t) if t.kind == TokenType::PlusSign => {
+            let _ = tokens.next_token();
+            1i8
+        },
+        _ => 0i8,
+    };
+    // Only consume the number token if it's actually a number (recovery: don't swallow next command).
+    let is_number = tokens
+        .peek_token()
+        .map(|t| t.kind == TokenType::Number)
+        .unwrap_or(false);
+    let num_tok = if is_number { tokens.next_token() } else { None };
+
+    let (num_val, num_span) = match num_tok {
+        Some(Token {
+            kind: TokenType::Number,
+            value,
+            span,
+        }) => (value, span),
+        _ => {
+            let mut buf = [0u8; 4];
+            let s = letter_c.encode_utf8(&mut buf);
+            cmd.diagnostics().emit_unexpected(
+                s,
+                &[TokenType::Number],
+                letter_span,
+            );
+            return None;
+        },
+    };
+
+    let value = match literal_value(sign, num_val) {
+        Some(v) => v,
+        None => {
+            cmd.diagnostics().emit_unexpected(
+                num_val,
+                &[TokenType::Number],
+                num_span,
+            );
+            return None;
+        },
+    };
+
+    let arg_span = span_from_to(letter_span, num_span);
+    cmd.argument(letter_c, value, arg_span);
+    Some(arg_span)
+}
+
+/// Parse arguments until recovery set. Returns span from command start through last argument.
+fn parse_command_arguments<C: CommandVisitor>(
+    tokens: &mut Tokens<'_>,
+    cmd: &mut C,
+    command_start_span: Span,
+) -> Span {
+    let mut last_span = command_start_span;
+    while !at_block_follow(tokens) {
+        // Recovery: next command letter ends this command's arguments (G/M/T/N/O).
+        if at_command_letter(tokens) {
+            break;
+        }
+        if let Some(arg_span) = parse_argument(tokens, cmd, command_start_span)
+        {
+            last_span = span_from_to(command_start_span, arg_span);
+        } else {
+            break;
+        }
+    }
+    last_span
+}
+
+// ---------- Grammar: command (G / M / T + number) ----------
+
+fn parse_command<B: BlockVisitor>(
+    tokens: &mut Tokens<'_>,
+    block: &mut B,
+    letter_tok: Token<'_>,
+    cmd_letter: char,
+    _line_start_span: Span,
+) -> ControlFlow<()> {
+    let number_tok = match tokens.next_token() {
+        Some(t) => t,
+        None => {
+            block.diagnostics().emit_unexpected(
+                letter_tok.value,
+                &[TokenType::Eof],
+                letter_tok.span,
+            );
+            return ControlFlow::Continue(());
+        },
+    };
+
+    let (num_value, num_span) = match number_tok.kind == TokenType::Number {
+        true => (number_tok.value, number_tok.span),
+        false => {
+            block.diagnostics().emit_unexpected(
+                number_tok.value,
+                &[TokenType::Number],
+                number_tok.span,
+            );
+            return ControlFlow::Continue(());
+        },
+    };
+
+    let number = match parse_number(num_value) {
+        Some(n) => n,
+        None => {
+            block.diagnostics().emit_unexpected(
+                num_value,
+                &[TokenType::Number],
+                num_span,
+            );
+            return ControlFlow::Continue(());
+        },
+    };
+
+    let cmd_span = span_from_to(letter_tok.span, num_span);
+
+    match cmd_letter {
+        'G' => match block.start_general_code(number) {
+            ControlFlow::Break(()) => ControlFlow::Break(()),
+            ControlFlow::Continue(mut cmd) => {
+                let end_span =
+                    parse_command_arguments(tokens, &mut cmd, cmd_span);
+                cmd.end_command(end_span);
+                ControlFlow::Continue(())
+            },
+        },
+        'M' => match block.start_miscellaneous_code(number) {
+            ControlFlow::Break(()) => ControlFlow::Break(()),
+            ControlFlow::Continue(mut cmd) => {
+                let end_span =
+                    parse_command_arguments(tokens, &mut cmd, cmd_span);
+                cmd.end_command(end_span);
+                ControlFlow::Continue(())
+            },
+        },
+        'T' => match block.start_tool_change_code(number) {
+            ControlFlow::Break(()) => ControlFlow::Break(()),
+            ControlFlow::Continue(mut cmd) => {
+                let end_span =
+                    parse_command_arguments(tokens, &mut cmd, cmd_span);
+                cmd.end_command(end_span);
+                ControlFlow::Continue(())
+            },
+        },
+        _ => ControlFlow::Continue(()),
+    }
+}
+
+// ---------- Grammar: block-level items ----------
+
+/// Emit "unexpected N/O after command" and return. Used when N or O appears after a G/M/T.
+fn emit_unexpected_n_or_o_after_command<B: BlockVisitor>(
+    block: &mut B,
+    letter: &str,
+    letter_tok: Token<'_>,
+    num_tok: Option<Token<'_>>,
+) {
+    let span = num_tok
+        .as_ref()
+        .map(|t| span_from_to(letter_tok.span, t.span))
+        .unwrap_or(letter_tok.span);
+    block.diagnostics().emit_unexpected(
+        letter,
+        &[TokenType::Letter, TokenType::Number],
+        span,
+    );
+}
+
+/// Line number: N number. Caller has already consumed the N; we only consume the number.
+fn parse_line_number<B: BlockVisitor>(
+    tokens: &mut Tokens<'_>,
+    block: &mut B,
+    n_tok: Token<'_>,
+    seen_command: bool,
+) {
+    if seen_command {
+        emit_unexpected_n_or_o_after_command(
+            block,
+            "N",
+            n_tok,
+            tokens.next_token(),
+        );
+        return;
+    }
+    match tokens.next_token() {
+        Some(Token {
+            kind: TokenType::Number,
+            value,
+            span,
+        }) => {
+            if let Some(n) = parse_number(value) {
+                block.line_number(n, span_from_to(n_tok.span, span));
+            }
+        },
+        _ => {
+            block.diagnostics().emit_unexpected(
+                "N",
+                &[TokenType::Number],
+                n_tok.span,
+            );
+        },
+    }
+}
+
+/// Program number: O number. Caller has already consumed the O; we only consume the number.
+fn parse_program_number<B: BlockVisitor>(
+    tokens: &mut Tokens<'_>,
+    block: &mut B,
+    o_tok: Token<'_>,
+    seen_command: bool,
+) {
+    if seen_command {
+        emit_unexpected_n_or_o_after_command(
+            block,
+            "O",
+            o_tok,
+            tokens.next_token(),
+        );
+        return;
+    }
+    match tokens.next_token() {
+        Some(Token {
+            kind: TokenType::Number,
+            value,
+            span,
+        }) => {
+            if let Some(n) = parse_number(value) {
+                block.program_number(n, span_from_to(o_tok.span, span));
+            }
+        },
+        _ => {
+            block.diagnostics().emit_unexpected(
+                "O",
+                &[TokenType::Number],
+                o_tok.span,
+            );
+        },
+    }
+}
+
+/// Block-level word address: letter already in hand, consume optional sign + number from tokens.
+/// Returns true if number was present and word_address was called; false if no number (diagnostic emitted).
+fn try_parse_block_word_address<B: BlockVisitor>(
+    tokens: &mut Tokens<'_>,
+    block: &mut B,
+    letter_tok: Token<'_>,
+) -> bool {
+    let letter_c = letter_tok.value.chars().next().unwrap();
+    let letter_span = letter_tok.span;
+
+    let sign = match tokens.peek_token() {
+        Some(t) if t.kind == TokenType::MinusSign => {
+            let _ = tokens.next_token();
+            -1i8
+        },
+        Some(t) if t.kind == TokenType::PlusSign => {
+            let _ = tokens.next_token();
+            1i8
+        },
+        _ => 0i8,
+    };
+
+    let num_tok = match tokens.peek_token() {
+        Some(t) if t.kind == TokenType::Number => tokens.next_token(),
+        _ => {
+            block.diagnostics().emit_unexpected(
+                letter_tok.value,
+                &[TokenType::Number],
+                letter_span,
+            );
+            return false;
+        },
+    };
+
+    let Some(Token {
+        kind: TokenType::Number,
+        value: num_value,
+        span: num_span,
+    }) = num_tok
+    else {
+        return false;
+    };
+
+    let value = match literal_value(sign, num_value) {
+        Some(v) => v,
+        None => {
+            block.diagnostics().emit_unexpected(
+                num_value,
+                &[TokenType::Number],
+                num_span,
+            );
+            return false;
+        },
+    };
+
+    let span = span_from_to(letter_span, num_span);
+    block.word_address(letter_c, value, span);
+    true
+}
+
+/// Comment: ; ... or ( ... ). Consumes one comment token.
+#[allow(dead_code)]
+fn parse_comment<B: BlockVisitor>(
+    tokens: &mut Tokens<'_>,
+    block: &mut B,
+) -> bool {
+    if !matches!(tokens.peek_token(), Some(t) if t.kind == TokenType::Comment) {
+        return false;
+    }
+    let token = tokens.next_token().unwrap();
+    block.comment(token.value, token.span);
+    true
+}
+
+/// One block (line): optional N/O/comments, then zero or more G/M/T commands, until Newline or EOF.
+/// Returns (Break if visitor asked to pause, line_span).
+fn parse_block_body<'src, B: BlockVisitor>(
+    tokens: &mut Tokens<'src>,
+    block: &mut B,
+    mut current: Token<'src>,
+    line_start_span: Span,
+) -> (ControlFlow<()>, Span) {
+    let mut line_span;
+    let mut seen_command = false;
+
+    loop {
+        line_span = span_from_to(line_start_span, current.span);
+
+        // Follow set: end of line.
+        if current.kind == TokenType::Newline {
+            return (ControlFlow::Continue(()), line_span);
+        }
+
+        match current.kind {
+            TokenType::G | TokenType::M | TokenType::T => {
+                seen_command = true;
+                let cmd_letter = match current.kind {
+                    TokenType::G => 'G',
+                    TokenType::M => 'M',
+                    TokenType::T => 'T',
+                    _ => unreachable!(),
+                };
+                let flow = parse_command(
+                    tokens,
+                    block,
+                    current,
+                    cmd_letter,
+                    line_start_span,
+                );
+                if flow.is_break() {
+                    return (ControlFlow::Break(()), line_span);
+                }
+                current = match tokens.next_token() {
+                    Some(t) => t,
+                    None => return (ControlFlow::Continue(()), line_span),
+                };
+                continue;
+            },
+            TokenType::Percent => {
+                block.program_delimiter(current.span);
+            },
+            TokenType::Letter => {
+                let c = current.value.chars().next().unwrap_or('\0');
+                if current.value.len() != 1 {
+                    block.diagnostics().emit_unexpected(
+                        current.value,
+                        &[TokenType::Letter],
+                        current.span,
+                    );
+                    current = match tokens.next_token() {
+                        Some(t) => t,
+                        None => return (ControlFlow::Continue(()), line_span),
+                    };
+                    continue;
+                }
+                match c {
+                    'N' | 'n' => {
+                        parse_line_number(tokens, block, current, seen_command);
+                        current = match tokens.next_token() {
+                            Some(t) => t,
+                            None => {
+                                return (ControlFlow::Continue(()), line_span);
+                            },
+                        };
+                        continue;
+                    },
+                    'O' | 'o' => {
+                        parse_program_number(
+                            tokens,
+                            block,
+                            current,
+                            seen_command,
+                        );
+                        current = match tokens.next_token() {
+                            Some(t) => t,
+                            None => {
+                                return (ControlFlow::Continue(()), line_span);
+                            },
+                        };
+                        continue;
+                    },
+                    _ => {
+                        let _ = try_parse_block_word_address(
+                            tokens, block, current,
+                        );
+                    },
+                }
+            },
+            TokenType::Comment => {
+                block.comment(current.value, current.span);
+            },
+            TokenType::Number => {
+                block.diagnostics().emit_unexpected(
+                    current.value,
+                    &[TokenType::Letter],
+                    current.span,
+                );
+            },
+            TokenType::Unknown => {
+                block
+                    .diagnostics()
+                    .emit_unknown_content(current.value, current.span);
+            },
+            TokenType::Slash | TokenType::MinusSign | TokenType::PlusSign => {
+                block.diagnostics().emit_unexpected(
+                    current.value,
+                    &[TokenType::Letter, TokenType::Comment],
+                    current.span,
+                );
+            },
+            TokenType::Newline | TokenType::Eof => {},
+        }
+
+        // Progress: consume one token.
+        current = match tokens.next_token() {
+            Some(t) => t,
+            None => return (ControlFlow::Continue(()), line_span),
+        };
+    }
+}
+
+// ---------- Top level ----------
+
+/// Resumes parsing from a saved [`ParserState`].
+///
+/// Use this when a visitor returned [`ControlFlow::Break`](crate::core::ControlFlow)
+/// to continue from the next block. Pass the same `src` and visitor (or one that
+/// is logically equivalent). Returns the new state after this chunk of parsing;
+/// if the visitor breaks again, pass that state to the next `resume` call.
+///
+/// # Note
+///
+/// The implementation assumes that the `src` string ends with a complete line.
+/// Behaviour is unspecified if parsing resumes in the middle of a line.
+#[must_use]
+pub fn resume(
+    state: ParserState,
+    src: &str,
+    visitor: &mut impl ProgramVisitor,
+) -> ParserState {
+    let mut tokens = Tokens::new(src, state.current_index, state.current_line);
+    let mut return_state = None;
+
+    loop {
+        // Skip leading newlines so we start at the first token of a line.
+        while at(&mut tokens, TokenType::Newline) {
+            let _ = tokens.next_token();
+        }
+        let first = match tokens.next_token() {
+            None => break,
+            Some(t) => t,
+        };
+        // first is never Newline here: the loop above consumed all leading newlines.
+        let line_start_span = first.span;
+
+        match visitor.start_block() {
+            ControlFlow::Break(()) => {
+                return_state = Some(tokens.state());
+                break;
+            },
+            ControlFlow::Continue(mut block) => {
+                let (flow, line_span) = parse_block_body(
+                    &mut tokens,
+                    &mut block,
+                    first,
+                    line_start_span,
+                );
+                if flow.is_break() {
+                    return_state = Some(tokens.state());
+                    break;
+                }
+                block.end_line(line_span);
+            },
+        }
+    }
+
+    return_state.unwrap_or_else(|| tokens.state())
+}
+
+impl Default for ParserState {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
+// ---------- Tests ----------
+
+#[cfg(test)]
+#[allow(refining_impl_trait)]
+mod tests {
+    use super::*;
+    use crate::core::{
+        BlockVisitor, CommandVisitor, ControlFlow, Diagnostics, Number,
+        ProgramVisitor, Span, Value,
+    };
+
+    #[derive(Debug, Clone, PartialEq)]
+    enum EventValue {
+        Literal(f32),
+        Variable(String),
+    }
+
+    impl From<Value<'_>> for EventValue {
+        fn from(value: Value<'_>) -> Self {
+            match value {
+                Value::Literal(n) => EventValue::Literal(n),
+                Value::Variable(v) => EventValue::Variable(v.into()),
+            }
+        }
+    }
+
+    #[derive(Debug, Clone, PartialEq)]
+    enum Event {
+        LineStarted,
+        LineNumber(Number, Span),
+        Comment(String, Span),
+        ProgramDelimiter(Span),
+        WordAddress(char, EventValue, Span),
+        GeneralCode(Number),
+        MiscCode(Number),
+        ToolChangeCode(Number),
+        ProgramNumber(Number, Span),
+        Argument(char, EventValue, Span),
+        UnknownContentError(String, Span),
+        Unexpected(String, String, Span),
+    }
+
+    struct Recorder<'a>(&'a mut Vec<Event>);
+
+    impl Diagnostics for Recorder<'_> {
+        fn emit_unknown_content(&mut self, text: &str, span: Span) {
+            self.0
+                .push(Event::UnknownContentError(text.to_string(), span));
+        }
+        fn emit_unexpected(
+            &mut self,
+            actual: &str,
+            expected: &[TokenType],
+            span: Span,
+        ) {
+            self.0.push(Event::Unexpected(
+                actual.to_string(),
+                expected
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                span,
+            ));
+        }
+    }
+
+    impl ProgramVisitor for Recorder<'_> {
+        fn start_block(&mut self) -> ControlFlow<impl BlockVisitor + '_> {
+            self.0.push(Event::LineStarted);
+            ControlFlow::Continue(Recorder(self.0))
+        }
+    }
+
+    impl BlockVisitor for Recorder<'_> {
+        fn line_number(&mut self, n: Number, span: Span) {
+            self.0.push(Event::LineNumber(n, span));
+        }
+        fn comment(&mut self, value: &str, span: Span) {
+            self.0.push(Event::Comment(value.to_string(), span));
+        }
+        fn program_number(&mut self, number: Number, span: Span) {
+            self.0.push(Event::ProgramNumber(number, span));
+        }
+        fn program_delimiter(&mut self, span: Span) {
+            self.0.push(Event::ProgramDelimiter(span));
+        }
+        fn word_address(&mut self, letter: char, value: Value<'_>, span: Span) {
+            self.0.push(Event::WordAddress(letter, value.into(), span));
+        }
+        fn start_general_code(
+            &mut self,
+            number: Number,
+        ) -> ControlFlow<impl CommandVisitor + '_> {
+            self.0.push(Event::GeneralCode(number));
+            ControlFlow::Continue(Recorder(self.0))
+        }
+        fn start_miscellaneous_code(
+            &mut self,
+            number: Number,
+        ) -> ControlFlow<impl CommandVisitor + '_> {
+            self.0.push(Event::MiscCode(number));
+            ControlFlow::Continue(Recorder(self.0))
+        }
+        fn start_tool_change_code(
+            &mut self,
+            number: Number,
+        ) -> ControlFlow<impl CommandVisitor + '_> {
+            self.0.push(Event::ToolChangeCode(number));
+            ControlFlow::Continue(Recorder(self.0))
+        }
+    }
+
+    impl CommandVisitor for Recorder<'_> {
+        fn argument(&mut self, letter: char, value: Value<'_>, span: Span) {
+            self.0.push(Event::Argument(letter, value.into(), span));
+        }
+    }
+
+    fn parse_and_record(src: &str) -> Vec<Event> {
+        let mut events = Vec::new();
+        let _ = resume(ParserState::empty(), src, &mut Recorder(&mut events));
+        events
+    }
+
+    fn sp(start: usize, length: usize, line: usize) -> Span {
+        Span::new(start, length, line)
+    }
+
+    #[test]
+    fn empty_input_produces_no_events() {
+        let events = parse_and_record("");
+        assert_eq!(events, vec![]);
+    }
+
+    #[test]
+    fn program_delimiter_generates_no_error() {
+        let events = parse_and_record("%\n");
+        let has_diag = events.iter().any(|e| {
+            matches!(
+                e,
+                Event::UnknownContentError(_, _) | Event::Unexpected(_, _, _)
+            )
+        });
+        assert!(!has_diag, "program delimiter % should not emit diagnostics");
+        assert!(
+            events
+                .iter()
+                .any(|e| matches!(e, Event::ProgramDelimiter(_))),
+            "expected ProgramDelimiter event"
+        );
+    }
+
+    #[test]
+    fn program_delimiter_mid_program_does_not_discard_following_block() {
+        let events = parse_and_record("%\nG0 X1\n");
+        let has_delimiter = events
+            .iter()
+            .any(|e| matches!(e, Event::ProgramDelimiter(_)));
+        let has_g0 = events.iter().any(|e| {
+            matches!(
+                e,
+                Event::GeneralCode(Number {
+                    major: 0,
+                    minor: None
+                })
+            )
+        });
+        assert!(has_delimiter, "expected ProgramDelimiter");
+        assert!(has_g0, "expected G0 after %");
+    }
+
+    #[test]
+    fn standalone_word_address_calls_word_address_callback() {
+        let events = parse_and_record("X5.0\n");
+        let wa = events.iter().find_map(|e| match e {
+            Event::WordAddress(c, v, s) => Some((*c, v.clone(), *s)),
+            _ => None,
+        });
+        assert!(wa.is_some(), "expected WordAddress event");
+        let (letter, value, _span) = wa.unwrap();
+        assert_eq!(letter, 'X');
+        assert!(
+            matches!(value, EventValue::Literal(n) if (n - 5.0).abs() < 1e-6)
+        );
+    }
+
+    #[test]
+    fn word_address_before_command_on_same_line() {
+        let events = parse_and_record("S12000 M03\n");
+        let has_s = events.iter().any(|e| {
+            matches!(e, Event::WordAddress('S', EventValue::Literal(n), _) if (n - 12000.0).abs() < 1e-6)
+        });
+        let has_m03 = events.iter().any(|e| {
+            matches!(
+                e,
+                Event::MiscCode(Number {
+                    major: 3,
+                    minor: None
+                })
+            )
+        });
+        assert!(has_s, "expected S12000 word address");
+        assert!(has_m03, "expected M03");
+    }
+
+    #[test]
+    fn standalone_word_address_negative_value() {
+        let events = parse_and_record("Y-89.314\n");
+        let wa = events.iter().find_map(|e| match e {
+            Event::WordAddress('Y', EventValue::Literal(n), _) => Some(*n),
+            _ => None,
+        });
+        assert!(wa.is_some(), "expected Y word address");
+        assert!((wa.unwrap() - (-89.314)).abs() < 1e-6);
+    }
+
+    #[test]
+    fn word_address_without_number_still_errors() {
+        let events = parse_and_record("X\n");
+        let has_unexpected = events
+            .iter()
+            .any(|e| matches!(e, Event::Unexpected(_, _, _)));
+        assert!(
+            has_unexpected,
+            "expected Unexpected diagnostic when letter has no number"
+        );
+    }
+
+    #[test]
+    fn single_g_code_no_args() {
+        let events = parse_and_record("G90");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+            ]
+        );
+    }
+
+    #[test]
+    fn g_code_with_arguments() {
+        let events = parse_and_record("G01 X10 Y-20");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 1,
+                    minor: None,
+                }),
+                Event::Argument('X', EventValue::Literal(10.0), sp(4, 3, 0)),
+                Event::Argument('Y', EventValue::Literal(-20.0), sp(8, 4, 0)),
+            ]
+        );
+    }
+
+    #[test]
+    fn comment_semicolon() {
+        let events = parse_and_record("; hello world");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::Comment("; hello world".into(), sp(0, 13, 0)),
+            ]
+        );
+    }
+
+    #[test]
+    fn comment_parens() {
+        let events = parse_and_record("(Linear / Feed - Absolute)");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::Comment(
+                    "(Linear / Feed - Absolute)".into(),
+                    sp(0, 26, 0),
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn line_number_then_g_code() {
+        let events = parse_and_record("N42 G90");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::LineNumber(
+                    Number {
+                        major: 42,
+                        minor: None
+                    },
+                    sp(0, 3, 0)
+                ),
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+            ]
+        );
+    }
+
+    #[test]
+    fn program_number_o_code() {
+        let events = parse_and_record("O1000");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::ProgramNumber(
+                    Number {
+                        major: 1000,
+                        minor: None,
+                    },
+                    sp(0, 5, 0)
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn miscellaneous_code_with_arg() {
+        let events = parse_and_record("M3 S1000");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::MiscCode(Number {
+                    major: 3,
+                    minor: None,
+                }),
+                Event::Argument('S', EventValue::Literal(1000.0), sp(3, 5, 0)),
+            ]
+        );
+    }
+
+    #[test]
+    fn tool_change_code() {
+        let events = parse_and_record("T2");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::ToolChangeCode(Number {
+                    major: 2,
+                    minor: None,
+                }),
+            ]
+        );
+    }
+
+    #[test]
+    fn multiple_codes_same_line() {
+        let events = parse_and_record("G0 G90 G40 G21");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 0,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 40,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 21,
+                    minor: None,
+                }),
+            ]
+        );
+    }
+
+    #[test]
+    fn two_lines() {
+        let events = parse_and_record("G90\nG01 X1");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 1,
+                    minor: None,
+                }),
+                Event::Argument('X', EventValue::Literal(1.0), sp(8, 2, 1)),
+            ]
+        );
+    }
+
+    /// Regression test for #44: newline before G01 must not produce a phantom empty G01.
+    /// Input "G90 \n G01 X50.0 Y-10" must parse as exactly two blocks with two G-codes
+    /// (G90, then G01 with X50.0 Y-10).
+    #[test]
+    fn phantom_g01_regression() {
+        let events = parse_and_record("G90 \n G01 X50.0 Y-10");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 1,
+                    minor: None,
+                }),
+                Event::Argument('X', EventValue::Literal(50.0), sp(10, 5, 1)),
+                Event::Argument('Y', EventValue::Literal(-10.0), sp(16, 4, 1)),
+            ]
+        );
+    }
+
+    #[test]
+    fn decimal_argument() {
+        let events = parse_and_record("G01 X1.5 Y-0.25");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 1,
+                    minor: None,
+                }),
+                Event::Argument('X', EventValue::Literal(1.5), sp(4, 4, 0)),
+                Event::Argument('Y', EventValue::Literal(-0.25), sp(9, 6, 0)),
+            ]
+        );
+    }
+
+    #[test]
+    fn minor_subcode_g91_1() {
+        let events = parse_and_record("G91.1");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 91,
+                    minor: Some(1),
+                }),
+            ]
+        );
+    }
+
+    #[test]
+    fn whitespace_only_input() {
+        let events = parse_and_record("   \n\t  ");
+        assert_eq!(events, vec![]);
+    }
+
+    #[test]
+    fn no_space_between_words() {
+        let events = parse_and_record("G00G21G17G90");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 0,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 21,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 17,
+                    minor: None,
+                }),
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+            ]
+        );
+    }
+
+    #[test]
+    fn unknown_content_error() {
+        let events = parse_and_record("G90 $$%# X10");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+                Event::UnknownContentError("$$%#".into(), sp(4, 4, 0)),
+                Event::WordAddress('X', EventValue::Literal(10.0), sp(9, 3, 0)),
+            ]
+        );
+    }
+
+    #[test]
+    fn unexpected_line_number_error() {
+        let events = parse_and_record("G90 N42");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 90,
+                    minor: None,
+                }),
+                Event::Unexpected(
+                    "N".into(),
+                    "letter, number".into(),
+                    sp(4, 3, 0)
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn letter_without_number_error() {
+        let events = parse_and_record("G");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::Unexpected("G".into(), "eof".into(), sp(0, 1, 0)),
+            ]
+        );
+    }
+
+    #[test]
+    fn number_without_letter_error() {
+        let events = parse_and_record("42");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::Unexpected("42".into(), "letter".into(), sp(0, 2, 0)),
+            ]
+        );
+    }
+
+    #[test]
+    fn regression_fixed_snippet_event_sequence() {
+        let events = parse_and_record("N10 G0 X1 Y2");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::LineNumber(
+                    Number {
+                        major: 10,
+                        minor: None
+                    },
+                    sp(0, 3, 0)
+                ),
+                Event::GeneralCode(Number {
+                    major: 0,
+                    minor: None,
+                }),
+                Event::Argument('X', EventValue::Literal(1.0), sp(7, 2, 0)),
+                Event::Argument('Y', EventValue::Literal(2.0), sp(10, 2, 0)),
+            ]
+        );
+    }
+
+    /// Recovery set: after bad token we continue the line; next valid command is still parsed.
+    #[test]
+    fn recovery_after_unknown_then_next_command_parsed() {
+        let events = parse_and_record("G0 $$ G1 X1");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::GeneralCode(Number {
+                    major: 0,
+                    minor: None
+                }),
+                Event::UnknownContentError("$$".into(), sp(3, 2, 0)),
+                Event::GeneralCode(Number {
+                    major: 1,
+                    minor: None
+                }),
+                Event::Argument('X', EventValue::Literal(1.0), sp(9, 2, 0)),
+            ]
+        );
+    }
+
+    /// Argument recovery: G/M/T/N/O ends argument list without consuming the next command.
+    #[test]
+    fn argument_recovery_does_not_swallow_next_command() {
+        let events = parse_and_record("G1 X G0 Y1");
+        // G1 X (no number) -> error, then we break from arguments; G0 Y1 is a new command.
+        assert!(
+            events
+                .iter()
+                .any(|e| matches!(e, Event::GeneralCode(n) if n.major == 0))
+        );
+        assert!(
+            events
+                .iter()
+                .any(|e| matches!(e, Event::Argument('Y', _, _)))
+        );
+    }
+}

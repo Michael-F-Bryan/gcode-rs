@@ -1,0 +1,93 @@
+---
+source: tests/parse_fixtures.rs
+expression: program
+---
+Program {
+    blocks: [
+        Block {
+            line_number: None,
+            comments: [
+                Comment {
+                    value: " Source: https://github.com/BondtechAB/Bondtech_Prusa_i3 (GCODE/Set Estep.gcode)\r",
+                    kind: Semicolon,
+                    span: Span {
+                        start: 0,
+                        length: 82,
+                        line: 0,
+                    },
+                },
+            ],
+            codes: [],
+            word_addresses: [],
+            span: Span {
+                start: 0,
+                length: 83,
+                line: 0,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 92,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 83,
+                            length: 8,
+                            line: 1,
+                        },
+                        args: [
+                            Argument {
+                                letter: 'E',
+                                value: Literal(
+                                    415.0,
+                                ),
+                                span: Span {
+                                    start: 87,
+                                    length: 4,
+                                    line: 1,
+                                },
+                            },
+                        ],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 83,
+                length: 10,
+                line: 1,
+            },
+        },
+        Block {
+            line_number: None,
+            comments: [],
+            codes: [
+                Miscellaneous(
+                    MiscellaneousCode {
+                        number: Number {
+                            major: 500,
+                            minor: None,
+                        },
+                        span: Span {
+                            start: 93,
+                            length: 4,
+                            line: 2,
+                        },
+                        args: [],
+                    },
+                ),
+            ],
+            word_addresses: [],
+            span: Span {
+                start: 93,
+                length: 1,
+                line: 2,
+            },
+        },
+    ],
+}
