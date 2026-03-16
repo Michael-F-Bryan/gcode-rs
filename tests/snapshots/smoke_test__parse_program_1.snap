@@ -18,6 +18,7 @@ Program {
                 },
             ],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 0,
                 length: 29,
@@ -38,6 +39,7 @@ Program {
                 },
             ],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 29,
                 length: 94,
@@ -48,6 +50,7 @@ Program {
             line_number: None,
             comments: [],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 123,
                 length: 6,
@@ -58,6 +61,7 @@ Program {
             line_number: None,
             comments: [],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 129,
                 length: 6,
@@ -78,6 +82,7 @@ Program {
                 },
             ],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 135,
                 length: 27,
@@ -187,6 +192,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 162,
                 length: 27,
@@ -256,6 +262,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 189,
                 length: 36,
@@ -304,6 +311,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 225,
                 length: 12,
@@ -341,6 +349,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 237,
                 length: 7,
@@ -389,6 +398,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 244,
                 length: 14,
@@ -436,6 +446,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 258,
                 length: 40,
@@ -483,6 +494,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 298,
                 length: 40,
@@ -530,6 +542,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 338,
                 length: 40,
@@ -577,6 +590,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 378,
                 length: 40,
@@ -624,6 +638,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 418,
                 length: 40,
@@ -671,6 +686,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 458,
                 length: 40,
@@ -708,6 +724,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 498,
                 length: 8,
@@ -718,6 +735,7 @@ Program {
             line_number: None,
             comments: [],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 506,
                 length: 4,

@@ -16,6 +16,17 @@ pub struct Block {
     pub line_number: Option<Number>,
     pub comments: Vec<Comment>,
     pub codes: Vec<Code>,
+    /// Modal bare word addresses (e.g. `X5.0`, `S12000`) at block level without a G/M/T prefix.
+    pub word_addresses: Vec<WordAddress>,
+    pub span: Span,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub struct WordAddress {
+    pub letter: char,
+    pub value: Value,
     pub span: Span,
 }
 

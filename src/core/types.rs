@@ -5,8 +5,16 @@ use core::fmt::{self, Display, Formatter};
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TokenType {
-    /// Single alphabetic character (e.g. G, M, X).
+    /// Single alphabetic character that is not G, M, or T (e.g. N, O, X).
     Letter,
+    /// G code letter (case-insensitive in source).
+    G,
+    /// M code letter (case-insensitive in source).
+    M,
+    /// T code letter (case-insensitive in source).
+    T,
+    /// Program delimiter `%` (RS-274 / ISO 6983).
+    Percent,
     /// Numeric literal.
     Number,
     /// Comment (semicolon or parentheses).
@@ -30,6 +38,10 @@ impl TokenType {
     pub const fn as_str(self) -> &'static str {
         match self {
             TokenType::Letter => "letter",
+            TokenType::G => "G",
+            TokenType::M => "M",
+            TokenType::T => "T",
+            TokenType::Percent => "%",
             TokenType::Number => "number",
             TokenType::Comment => "comment",
             TokenType::Slash => "slash",
@@ -189,6 +201,10 @@ pub trait BlockVisitor: HasDiagnostics + Sized {
     fn comment(&mut self, value: &str, span: Span) {}
     /// Optional O program number (e.g. `O0001`). Called at most once per block.
     fn program_number(&mut self, number: Number, span: Span) {}
+    /// Program delimiter `%` (RS-274 / ISO 6983). Called once per `%` token.
+    fn program_delimiter(&mut self, _span: Span) {}
+    /// Modal bare word address (e.g. `X5.0`, `S12000` at block level without a G/M/T prefix).
+    fn word_address(&mut self, _letter: char, _value: Value<'_>, _span: Span) {}
 
     /// Start of a G (general) command. Return a [`CommandVisitor`] to handle
     /// this command, or use the default to ignore it.

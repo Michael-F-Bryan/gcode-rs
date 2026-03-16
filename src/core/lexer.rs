@@ -57,6 +57,10 @@ impl<'src> Tokens<'src> {
         let c = self.peek_char()?;
         let token = match c {
             '\n' => self.scan_newline(),
+            'G' | 'g' => self.scan_single_char(TokenType::G),
+            'M' | 'm' => self.scan_single_char(TokenType::M),
+            'T' | 't' => self.scan_single_char(TokenType::T),
+            '%' => self.scan_single_char(TokenType::Percent),
             _ if c.is_ascii_alphabetic() => self.scan_letter(),
             '-' => self.scan_single_char(TokenType::MinusSign),
             '+' => self.scan_single_char(TokenType::PlusSign),
@@ -278,33 +282,101 @@ mod tests {
 
     #[test]
     fn single_letter_yields_letter_token() {
-        let src = "G";
+        let src = "X";
         let tokens: Vec<_> = Tokens::from_start(src).collect();
         assert_eq!(
             tokens,
             [Token {
                 kind: TokenType::Letter,
-                value: "G",
+                value: "X",
                 span: Span::new(0, 1, 0),
             }]
         );
     }
 
     #[test]
-    fn letter_then_number_span_correctly() {
+    fn g_letter_yields_g_token_case_insensitive() {
+        let tokens_upper: Vec<_> = Tokens::from_start("G").collect();
+        let tokens_lower: Vec<_> = Tokens::from_start("g").collect();
+        assert_eq!(
+            tokens_upper[0].kind,
+            TokenType::G,
+            "G yields G token"
+        );
+        assert_eq!(tokens_upper[0].value, "G");
+        assert_eq!(tokens_lower[0].kind, TokenType::G, "g yields G token");
+        assert_eq!(tokens_lower[0].value, "g");
+    }
+
+    #[test]
+    fn m_and_t_letters_yield_m_t_tokens_case_insensitive() {
+        for (src, kind) in [("M", TokenType::M), ("m", TokenType::M), ("T", TokenType::T), ("t", TokenType::T)] {
+            let tokens: Vec<_> = Tokens::from_start(src).collect();
+            assert_eq!(tokens.len(), 1);
+            assert_eq!(tokens[0].kind, kind);
+            assert_eq!(tokens[0].value, src);
+        }
+    }
+
+    #[test]
+    fn g_then_number_span_correctly() {
         let src = "G90";
         let tokens: Vec<_> = Tokens::from_start(src).collect();
         assert_eq!(
             tokens,
             [
                 Token {
-                    kind: TokenType::Letter,
+                    kind: TokenType::G,
                     value: "G",
                     span: Span::new(0, 1, 0),
                 },
                 Token {
                     kind: TokenType::Number,
                     value: "90",
+                    span: Span::new(1, 2, 0),
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn percent_yields_percent_token() {
+        let tokens: Vec<_> = Tokens::from_start("%").collect();
+        assert_eq!(
+            tokens,
+            [Token {
+                kind: TokenType::Percent,
+                value: "%",
+                span: Span::new(0, 1, 0),
+            }]
+        );
+    }
+
+    #[test]
+    fn percent_crlf_yields_percent_then_newline() {
+        let src = "%\r\n";
+        let tokens: Vec<_> = Tokens::from_start(src).collect();
+        assert_eq!(tokens.len(), 2);
+        assert_eq!(tokens[0].kind, TokenType::Percent);
+        assert_eq!(tokens[0].value, "%");
+        assert_eq!(tokens[1].kind, TokenType::Newline);
+    }
+
+    #[test]
+    fn letter_then_number_span_correctly() {
+        let src = "N10";
+        let tokens: Vec<_> = Tokens::from_start(src).collect();
+        assert_eq!(
+            tokens,
+            [
+                Token {
+                    kind: TokenType::Letter,
+                    value: "N",
+                    span: Span::new(0, 1, 0),
+                },
+                Token {
+                    kind: TokenType::Number,
+                    value: "10",
                     span: Span::new(1, 2, 0),
                 },
             ]
@@ -515,7 +587,7 @@ mod tests {
             tokens,
             [
                 Token {
-                    kind: TokenType::Letter,
+                    kind: TokenType::G,
                     value: "G",
                     span: Span::new(0, 1, 0),
                 },
@@ -556,7 +628,7 @@ mod tests {
                     span: Span::new(1, 2, 0),
                 },
                 Token {
-                    kind: TokenType::Letter,
+                    kind: TokenType::G,
                     value: "G",
                     span: Span::new(4, 1, 0),
                 },
@@ -595,17 +667,17 @@ mod tests {
             tokens,
             vec![
                 Token {
-                    kind: TokenType::Letter,
+                    kind: TokenType::G,
                     value: "G",
                     span: Span::new(0, 1, 0),
                 },
                 Token {
-                    kind: TokenType::Letter,
+                    kind: TokenType::T,
                     value: "T",
                     span: Span::new(1, 1, 0),
                 },
                 Token {
-                    kind: TokenType::Letter,
+                    kind: TokenType::M,
                     value: "M",
                     span: Span::new(2, 1, 0),
                 },
@@ -625,7 +697,6 @@ mod tests {
     fn slash_is_deleted_block() {
         let src = "/G1\n";
         let tokens: Vec<_> = Tokens::from_start(src).collect();
-        println!("{:?}", tokens);
         assert_eq!(
             tokens,
             [
@@ -635,7 +706,7 @@ mod tests {
                     span: Span::new(0, 1, 0),
                 },
                 Token {
-                    kind: TokenType::Letter,
+                    kind: TokenType::G,
                     value: "G",
                     span: Span::new(1, 1, 0),
                 },

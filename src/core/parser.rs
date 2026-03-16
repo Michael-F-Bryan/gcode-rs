@@ -96,31 +96,30 @@ fn is_block_item_start(tokens: &mut Tokens<'_>) -> bool {
     }
 }
 
-/// Letters that start a command or line/program number; argument list ends before these.
-const COMMAND_LETTERS: [char; 5] = ['G', 'M', 'T', 'N', 'O'];
-
-fn is_command_letter(c: char) -> bool {
-    COMMAND_LETTERS.contains(&c)
-}
-
-/// True if the next token is a single letter in COMMAND_LETTERS (used for argument-list recovery).
+/// True if the next token starts a command or line/program number (G/M/T by type, N/O by letter).
 fn at_command_letter(tokens: &mut Tokens<'_>) -> bool {
     match tokens.peek_token() {
-        Some(t) if t.kind == TokenType::Letter && t.value.len() == 1 => {
-            t.value.chars().next().is_some_and(is_command_letter)
+        Some(t) => {
+            matches!(t.kind, TokenType::G | TokenType::M | TokenType::T)
+                || (t.kind == TokenType::Letter
+                    && t.value.len() == 1
+                    && t.value
+                        .chars()
+                        .next()
+                        .is_some_and(|c| matches!(c, 'N' | 'n' | 'O' | 'o')))
         },
-        _ => false,
+        None => false,
     }
 }
 
-/// First set for an argument: single letter that is not N, O, G, M, T.
+/// First set for an argument: Letter token that is not N or O (G/M/T are separate token types).
 fn is_argument_start(tokens: &mut Tokens<'_>) -> Option<char> {
     let t = tokens.peek_token()?;
     if t.kind != TokenType::Letter || t.value.len() != 1 {
         return None;
     }
     let c = t.value.chars().next()?;
-    if is_command_letter(c) {
+    if matches!(c, 'N' | 'n' | 'O' | 'o') {
         return None;
     }
     Some(c)
@@ -416,6 +415,66 @@ fn parse_program_number<B: BlockVisitor>(
     }
 }
 
+/// Block-level word address: letter already in hand, consume optional sign + number from tokens.
+/// Returns true if number was present and word_address was called; false if no number (diagnostic emitted).
+fn try_parse_block_word_address<B: BlockVisitor>(
+    tokens: &mut Tokens<'_>,
+    block: &mut B,
+    letter_tok: Token<'_>,
+) -> bool {
+    let letter_c = letter_tok.value.chars().next().unwrap();
+    let letter_span = letter_tok.span;
+
+    let sign = match tokens.peek_token() {
+        Some(t) if t.kind == TokenType::MinusSign => {
+            let _ = tokens.next_token();
+            -1i8
+        },
+        Some(t) if t.kind == TokenType::PlusSign => {
+            let _ = tokens.next_token();
+            1i8
+        },
+        _ => 0i8,
+    };
+
+    let num_tok = match tokens.peek_token() {
+        Some(t) if t.kind == TokenType::Number => tokens.next_token(),
+        _ => {
+            block.diagnostics().emit_unexpected(
+                letter_tok.value,
+                &[TokenType::Number],
+                letter_span,
+            );
+            return false;
+        },
+    };
+
+    let Some(Token {
+        kind: TokenType::Number,
+        value: num_value,
+        span: num_span,
+    }) = num_tok
+    else {
+        return false;
+    };
+
+    let value = match literal_value(sign, num_value) {
+        Some(v) => v,
+        None => {
+            block.diagnostics().emit_unexpected(
+                num_value,
+                &[TokenType::Number],
+                num_span,
+            );
+            return false;
+        },
+    };
+
+    let span = span_from_to(letter_span, num_span);
+    block.word_address(letter_c, value, span);
+    true
+}
+
 /// Comment: ; ... or ( ... ). Consumes one comment token.
 #[allow(dead_code)]
 fn parse_comment<B: BlockVisitor>(
@@ -450,6 +509,33 @@ fn parse_block_body<'src, B: BlockVisitor>(
         }
 
         match current.kind {
+            TokenType::G | TokenType::M | TokenType::T => {
+                seen_command = true;
+                let cmd_letter = match current.kind {
+                    TokenType::G => 'G',
+                    TokenType::M => 'M',
+                    TokenType::T => 'T',
+                    _ => unreachable!(),
+                };
+                let flow = parse_command(
+                    tokens,
+                    block,
+                    current,
+                    cmd_letter,
+                    line_start_span,
+                );
+                if flow.is_break() {
+                    return (ControlFlow::Break(()), line_span);
+                }
+                current = match tokens.next_token() {
+                    Some(t) => t,
+                    None => return (ControlFlow::Continue(()), line_span),
+                };
+                continue;
+            },
+            TokenType::Percent => {
+                block.program_delimiter(current.span);
+            },
             TokenType::Letter => {
                 let c = current.value.chars().next().unwrap_or('\0');
                 if current.value.len() != 1 {
@@ -465,7 +551,7 @@ fn parse_block_body<'src, B: BlockVisitor>(
                     continue;
                 }
                 match c {
-                    'N' => {
+                    'N' | 'n' => {
                         parse_line_number(tokens, block, current, seen_command);
                         current = match tokens.next_token() {
                             Some(t) => t,
@@ -475,7 +561,7 @@ fn parse_block_body<'src, B: BlockVisitor>(
                         };
                         continue;
                     },
-                    'O' => {
+                    'O' | 'o' => {
                         parse_program_number(
                             tokens,
                             block,
@@ -490,31 +576,9 @@ fn parse_block_body<'src, B: BlockVisitor>(
                         };
                         continue;
                     },
-                    'G' | 'M' | 'T' => {
-                        seen_command = true;
-                        let flow = parse_command(
-                            tokens,
-                            block,
-                            current,
-                            c,
-                            line_start_span,
-                        );
-                        if flow.is_break() {
-                            return (ControlFlow::Break(()), line_span);
-                        }
-                        current = match tokens.next_token() {
-                            Some(t) => t,
-                            None => {
-                                return (ControlFlow::Continue(()), line_span);
-                            },
-                        };
-                        continue;
-                    },
                     _ => {
-                        block.diagnostics().emit_unexpected(
-                            current.value,
-                            &[TokenType::Letter, TokenType::Comment],
-                            current.span,
+                        let _ = try_parse_block_word_address(
+                            tokens, block, current,
                         );
                     },
                 }
@@ -632,6 +696,8 @@ mod tests {
         LineStarted,
         LineNumber(Number, Span),
         Comment(String, Span),
+        ProgramDelimiter(Span),
+        WordAddress(char, crate::ast::Value, Span),
         GeneralCode(Number),
         MiscCode(Number),
         ToolChangeCode(Number),
@@ -683,6 +749,12 @@ mod tests {
         fn program_number(&mut self, number: Number, span: Span) {
             self.0.push(Event::ProgramNumber(number, span));
         }
+        fn program_delimiter(&mut self, span: Span) {
+            self.0.push(Event::ProgramDelimiter(span));
+        }
+        fn word_address(&mut self, letter: char, value: Value<'_>, span: Span) {
+            self.0.push(Event::WordAddress(letter, value.into(), span));
+        }
         fn start_general_code(
             &mut self,
             number: Number,
@@ -726,6 +798,120 @@ mod tests {
     fn empty_input_produces_no_events() {
         let events = parse_and_record("");
         assert_eq!(events, vec![]);
+    }
+
+    #[test]
+    fn program_delimiter_generates_no_error() {
+        let events = parse_and_record("%\n");
+        let has_diag = events.iter().any(|e| {
+            matches!(
+                e,
+                Event::UnknownContentError(_, _) | Event::Unexpected(_, _, _)
+            )
+        });
+        assert!(!has_diag, "program delimiter % should not emit diagnostics");
+        assert!(
+            events
+                .iter()
+                .any(|e| matches!(e, Event::ProgramDelimiter(_))),
+            "expected ProgramDelimiter event"
+        );
+    }
+
+    #[test]
+    fn program_delimiter_mid_program_does_not_discard_following_block() {
+        let events = parse_and_record("%\nG0 X1\n");
+        let has_delimiter = events
+            .iter()
+            .any(|e| matches!(e, Event::ProgramDelimiter(_)));
+        let has_g0 = events.iter().any(|e| {
+            matches!(
+                e,
+                Event::GeneralCode(Number {
+                    major: 0,
+                    minor: None
+                })
+            )
+        });
+        assert!(has_delimiter, "expected ProgramDelimiter");
+        assert!(has_g0, "expected G0 after %");
+    }
+
+    #[test]
+    fn standalone_word_address_calls_word_address_callback() {
+        let events = parse_and_record("X5.0\n");
+        let wa = events.iter().find_map(|e| match e {
+            Event::WordAddress(c, v, s) => Some((*c, v.clone(), *s)),
+            _ => None,
+        });
+        assert!(wa.is_some(), "expected WordAddress event");
+        let (letter, value, _span) = wa.unwrap();
+        assert_eq!(letter, 'X');
+        assert!(
+            matches!(value, crate::ast::Value::Literal(n) if (n - 5.0).abs() < 1e-6)
+        );
+    }
+
+    #[test]
+    fn word_address_before_command_on_same_line() {
+        let events = parse_and_record("S12000 M03\n");
+        let has_s = events.iter().any(|e| {
+            matches!(e, Event::WordAddress('S', crate::ast::Value::Literal(n), _) if (*n - 12000.0).abs() < 1e-6)
+        });
+        let has_m03 = events.iter().any(|e| {
+            matches!(
+                e,
+                Event::MiscCode(Number {
+                    major: 3,
+                    minor: None
+                })
+            )
+        });
+        assert!(has_s, "expected S12000 word address");
+        assert!(has_m03, "expected M03");
+    }
+
+    #[test]
+    fn standalone_word_address_negative_value() {
+        let events = parse_and_record("Y-89.314\n");
+        let wa = events.iter().find_map(|e| match e {
+            Event::WordAddress('Y', crate::ast::Value::Literal(n), _) => {
+                Some(*n)
+            },
+            _ => None,
+        });
+        assert!(wa.is_some(), "expected Y word address");
+        assert!((wa.unwrap() - (-89.314)).abs() < 1e-6);
+    }
+
+    #[test]
+    fn word_address_without_number_still_errors() {
+        let events = parse_and_record("X\n");
+        let has_unexpected = events
+            .iter()
+            .any(|e| matches!(e, Event::Unexpected(_, _, _)));
+        assert!(
+            has_unexpected,
+            "expected Unexpected diagnostic when letter has no number"
+        );
+    }
+
+    #[cfg(feature = "alloc")]
+    #[test]
+    fn alloc_parse_captures_word_addresses() {
+        let program = crate::parse("X5.0 Y-3.0\n").unwrap();
+        assert_eq!(program.blocks.len(), 1);
+        assert_eq!(program.blocks[0].word_addresses.len(), 2);
+        assert_eq!(program.blocks[0].word_addresses[0].letter, 'X');
+        assert!(matches!(
+            program.blocks[0].word_addresses[0].value,
+            crate::ast::Value::Literal(n) if (n - 5.0).abs() < 1e-6
+        ));
+        assert_eq!(program.blocks[0].word_addresses[1].letter, 'Y');
+        assert!(matches!(
+            program.blocks[0].word_addresses[1].value,
+            crate::ast::Value::Literal(n) if (n - (-3.0)).abs() < 1e-6
+        ));
     }
 
     #[test]
@@ -1007,12 +1193,11 @@ mod tests {
                     minor: None,
                 }),
                 Event::UnknownContentError("$$%#".into(), sp(4, 4, 0)),
-                Event::Unexpected(
-                    "X".into(),
-                    "letter, comment".into(),
-                    sp(9, 1, 0)
+                Event::WordAddress(
+                    'X',
+                    crate::ast::Value::Literal(10.0),
+                    sp(9, 3, 0)
                 ),
-                Event::Unexpected("10".into(), "letter".into(), sp(10, 2, 0)),
             ]
         );
     }

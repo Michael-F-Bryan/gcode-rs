@@ -3,7 +3,7 @@ use alloc::vec::Vec;
 use crate::{
     ast::{
         Argument, Block, Code, Comment, CommentKind, Diagnostics, GeneralCode,
-        Program,
+        Program, WordAddress,
     },
     core::{
         ControlFlow, Diagnostics as _, HasDiagnostics, Number, ProgramVisitor,
@@ -67,6 +67,7 @@ struct BlockBuilder<'a> {
     diags: &'a mut Diagnostics,
     comments: Vec<Comment>,
     codes: Vec<Code>,
+    word_addresses: Vec<WordAddress>,
     line_number: Option<Number>,
 }
 
@@ -77,6 +78,7 @@ impl<'a> BlockBuilder<'a> {
             diags,
             comments: Vec::new(),
             codes: Vec::new(),
+            word_addresses: Vec::new(),
             line_number: None,
         }
     }
@@ -93,13 +95,30 @@ impl crate::core::BlockVisitor for BlockBuilder<'_> {
         } else if let Some(value) = value.strip_prefix('(') {
             (CommentKind::Parentheses, value)
         } else {
-            return self.diags.emit_unexpected(value, &[TokenType::Comment], span);
+            return self.diags.emit_unexpected(
+                value,
+                &[TokenType::Comment],
+                span,
+            );
         };
 
         self.comments.push(Comment {
             value: value.into(),
             span,
             kind,
+        });
+    }
+
+    fn word_address(
+        &mut self,
+        letter: char,
+        value: crate::core::Value<'_>,
+        span: Span,
+    ) {
+        self.word_addresses.push(WordAddress {
+            letter,
+            value: value.into(),
+            span,
         });
     }
 
@@ -124,6 +143,7 @@ impl crate::core::BlockVisitor for BlockBuilder<'_> {
             line_number: self.line_number,
             comments: self.comments,
             codes: self.codes,
+            word_addresses: self.word_addresses,
             span,
         };
         self.blocks.push(block);

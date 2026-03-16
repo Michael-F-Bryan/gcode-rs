@@ -18,6 +18,7 @@ Program {
                 },
             ],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 0,
                 length: 72,
@@ -38,6 +39,7 @@ Program {
                 },
             ],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 72,
                 length: 11,
@@ -96,6 +98,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 83,
                 length: 21,
@@ -131,6 +134,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 104,
                 length: 26,
@@ -189,6 +193,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 130,
                 length: 64,
@@ -224,6 +229,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 194,
                 length: 26,
@@ -293,6 +299,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 220,
                 length: 44,
@@ -313,6 +320,7 @@ Program {
                 },
             ],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 264,
                 length: 27,
@@ -333,6 +341,7 @@ Program {
                 },
             ],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 291,
                 length: 23,
@@ -402,6 +411,7 @@ Program {
                     },
                 ),
             ],
+            word_addresses: [],
             span: Span {
                 start: 314,
                 length: 44,
@@ -422,6 +432,7 @@ Program {
                 },
             ],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 358,
                 length: 21,
@@ -442,6 +453,7 @@ Program {
                 },
             ],
             codes: [],
+            word_addresses: [],
             span: Span {
                 start: 379,
                 length: 23,
