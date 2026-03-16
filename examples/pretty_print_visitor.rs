@@ -8,8 +8,8 @@
 use std::fmt::Write;
 
 use gcode::core::{
-    BlockVisitor, CommandVisitor, ControlFlow, Diagnostics, HasDiagnostics, Number,
-    ProgramVisitor, Span, Value,
+    BlockVisitor, CommandVisitor, ControlFlow, Diagnostics, HasDiagnostics,
+    Number, ProgramVisitor, Span, Value,
 };
 
 /// Format a g-code argument value for output (literal number or variable ref).
@@ -17,10 +17,10 @@ fn format_value(value: Value<'_>, out: &mut String) {
     match value {
         Value::Literal(n) => {
             write!(out, "{}", n).unwrap();
-        }
+        },
         Value::Variable(s) => {
             write!(out, "#{}", s).unwrap();
-        }
+        },
     }
 }
 
