@@ -1,0 +1,25 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="The `#[doc_cfg(..)]` attribute works much like `#[cfg(..)]`, but it allows the item being documented to show up in the crate documentation when built on a platform or configuration that doesn’t match the predicate."><title>doc_cfg in doc_cfg - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="doc_cfg" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.1 (4eb161250 2025-03-15)" data-channel="1.85.1" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../static.files/storage-59e33391.js"></script><script defer src="sidebar-items.js"></script><script defer src="../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc attr"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../doc_cfg/index.html">doc_cfg</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">doc_cfg</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#doccfg" title="`#[doc(cfg(..))]`"><code>#[doc(cfg(..))]</code></a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="index.html">In crate doc_<wbr>cfg</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><span class="rustdoc-breadcrumbs"><a href="index.html">doc_cfg</a></span><h1>Attribute Macro <span class="attr">doc_cfg</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/doc_cfg/lib.rs.html#67-69">Source</a> </span></div><pre class="rust item-decl"><code>#[doc_cfg]</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>The <code>#[doc_cfg(..)]</code> attribute works much like <code>#[cfg(..)]</code>, but it allows
+the item being documented to show up in the crate documentation when built
+on a platform or configuration that doesn’t match the predicate.</p>
+<p>It can be used like so:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#![cfg_attr(feature = <span class="string">"unstable-doc-cfg"</span>, feature(doc_cfg))]
+
+</span><span class="kw">use </span>doc_cfg::doc_cfg;
+
+<span class="attr">#[doc_cfg(windows)]
+</span><span class="kw">pub fn </span>cool_nonportable_fn() { }</code></pre></div>
+<p>Check out <a href="http://arcnmx.github.io/doc-cfg/doc_cfg_example">the full example to see how it looks</a>.</p>
+<h3 id="doccfg"><a class="doc-anchor" href="#doccfg">§</a><code>#[doc(cfg(..))]</code></h3>
+<p>In cases where the predicate contains irrelevant implementation details or
+private dependency names you can specify an alternate condition to be
+included in the documentation:</p>
+
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="attr">#![cfg_attr(feature = <span class="string">"unstable-doc-cfg"</span>, feature(doc_cfg))]
+
+</span><span class="kw">use </span>doc_cfg::doc_cfg;
+
+<span class="attr">#[doc_cfg(feature = <span class="string">"__private_feature"</span>)]
+#[doc(cfg(feature = <span class="string">"cargo-feature-flag"</span>))]
+</span><span class="kw">pub fn </span>cool_fn() { }</code></pre></div>
+</div></details></section></div></main></body></html>

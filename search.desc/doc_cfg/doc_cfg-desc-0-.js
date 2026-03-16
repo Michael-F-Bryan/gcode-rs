@@ -1,0 +1,1 @@
+searchState.loadedDescShard("doc_cfg", 0, "The [<code>doc_cfg</code>] attribute is a convenience that removes the …\nThe <code>#[doc_cfg(..)]</code> attribute works much like <code>#[cfg(..)]</code>, …")
