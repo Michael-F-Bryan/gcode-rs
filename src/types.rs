@@ -518,4 +518,51 @@ mod tests {
             Code::ToolChange(t) if t.number.major() == 1
         ));
     }
+
+    /// Regression test for #55: newline must start a new block so "G01 X1 Y2\nX3 Y4"
+    /// is two blocks, not one G01 with four arguments.
+    #[test]
+    fn newline_separates_blocks_issue_55() {
+        let src = "G01 X1.0 Y2.0
+X3.0 Y4.0
+";
+        let program = crate::parse(src).expect("should parse without error");
+
+        assert_eq!(
+            program.blocks.len(),
+            2,
+            "expected two blocks (newline separates)"
+        );
+
+        let g01 = program.blocks[0]
+            .codes
+            .iter()
+            .find_map(|c| {
+                if let Code::General(g) = c {
+                    if g.number.to_string() == "1" {
+                        Some(g)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .expect("G01 in block 1");
+        assert_eq!(
+            g01.args.len(),
+            2,
+            "first block G01 should have exactly 2 arguments (X1.0 Y2.0), not 4; issue #55"
+        );
+
+        assert!(
+            program.blocks[1].codes.is_empty(),
+            "second block has no explicit G/M/T command"
+        );
+        assert_eq!(
+            program.blocks[1].word_addresses.len(),
+            2,
+            "second block should have two word addresses (X3.0 Y4.0)"
+        );
+    }
 }
