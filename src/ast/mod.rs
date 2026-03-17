@@ -51,13 +51,13 @@ mod tests {
         assert_eq!(program.blocks[1].codes.len(), 1);
         assert!(matches!(
             &program.blocks[1].codes[0],
-            Code::Miscellaneous(m) if m.number.major == 3
+            Code::Miscellaneous(m) if m.number.major() == 3
         ));
 
         assert_eq!(program.blocks[2].codes.len(), 1);
         assert!(matches!(
             &program.blocks[2].codes[0],
-            Code::ToolChange(t) if t.number.major == 1
+            Code::ToolChange(t) if t.number.major() == 1
         ));
     }
 }

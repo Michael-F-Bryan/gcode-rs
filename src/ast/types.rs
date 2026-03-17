@@ -31,7 +31,7 @@ impl core::str::FromStr for Program {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct Block {
-    pub line_number: Option<Number>,
+    pub line_number: Option<u32>,
     pub comments: Vec<Comment>,
     pub codes: Vec<Code>,
     /// Modal bare word addresses (e.g. `X5.0`, `S12000`) at block level without a G/M/T prefix.

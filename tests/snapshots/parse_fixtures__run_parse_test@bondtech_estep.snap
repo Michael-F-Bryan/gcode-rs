@@ -31,10 +31,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 92,
-                            minor: None,
-                        },
+                        number: 92,
                         span: Span {
                             start: 83,
                             length: 8,
@@ -69,10 +66,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 500,
-                            minor: None,
-                        },
+                        number: 500,
                         span: Span {
                             start: 93,
                             length: 4,

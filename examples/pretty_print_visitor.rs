@@ -60,7 +60,7 @@ impl HasDiagnostics for PrettyPrintBlock<'_> {
 }
 
 impl BlockVisitor for PrettyPrintBlock<'_> {
-    fn line_number(&mut self, n: Number, _span: Span) {
+    fn line_number(&mut self, n: u32, _span: Span) {
         self.space_if_needed();
         write!(self.current_line, "N{}", n).unwrap();
     }
@@ -70,7 +70,7 @@ impl BlockVisitor for PrettyPrintBlock<'_> {
         self.current_line.push_str(value);
     }
 
-    fn program_number(&mut self, number: Number, _span: Span) {
+    fn program_number(&mut self, number: u32, _span: Span) {
         self.space_if_needed();
         write!(self.current_line, "O{}", number).unwrap();
     }

@@ -83,10 +83,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 21,
-                            minor: None,
-                        },
+                        number: 21,
                         span: Span {
                             start: 540,
                             length: 3,
@@ -119,10 +116,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 90,
-                            minor: None,
-                        },
+                        number: 90,
                         span: Span {
                             start: 557,
                             length: 3,
@@ -155,10 +149,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 92,
-                            minor: None,
-                        },
+                        number: 92,
                         span: Span {
                             start: 577,
                             length: 21,
@@ -225,10 +216,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 300,
-                            minor: None,
-                        },
+                        number: 300,
                         span: Span {
                             start: 615,
                             length: 8,
@@ -273,10 +261,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 4,
-                            minor: None,
-                        },
+                        number: 4,
                         span: Span {
                             start: 635,
                             length: 7,
@@ -321,10 +306,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 300,
-                            minor: None,
-                        },
+                        number: 300,
                         span: Span {
                             start: 656,
                             length: 8,
@@ -369,10 +351,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 4,
-                            minor: None,
-                        },
+                        number: 4,
                         span: Span {
                             start: 674,
                             length: 7,
@@ -417,10 +396,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 18,
-                            minor: None,
-                        },
+                        number: 18,
                         span: Span {
                             start: 695,
                             length: 3,
@@ -453,10 +429,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 718,
                             length: 3,
@@ -489,10 +462,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 17,
-                            minor: None,
-                        },
+                        number: 17,
                         span: Span {
                             start: 758,
                             length: 3,
@@ -536,10 +506,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 837,
                             length: 24,
@@ -606,10 +573,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 300,
-                            minor: None,
-                        },
+                        number: 300,
                         span: Span {
                             start: 862,
                             length: 11,
@@ -654,10 +618,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 4,
-                            minor: None,
-                        },
+                        number: 4,
                         span: Span {
                             start: 885,
                             length: 7,
@@ -692,10 +653,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 906,
                             length: 24,
@@ -752,10 +710,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 931,
                             length: 24,
@@ -812,10 +767,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 956,
                             length: 24,
@@ -872,10 +824,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 981,
                             length: 24,
@@ -932,10 +881,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1006,
                             length: 24,
@@ -992,10 +938,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1031,
                             length: 24,
@@ -1052,10 +995,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1056,
                             length: 24,
@@ -1112,10 +1052,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1081,
                             length: 24,
@@ -1172,10 +1109,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1106,
                             length: 24,
@@ -1232,10 +1166,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1131,
                             length: 24,
@@ -1292,10 +1223,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1156,
                             length: 24,
@@ -1352,10 +1280,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1181,
                             length: 24,
@@ -1422,10 +1347,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 300,
-                            minor: None,
-                        },
+                        number: 300,
                         span: Span {
                             start: 1206,
                             length: 11,
@@ -1470,10 +1392,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 4,
-                            minor: None,
-                        },
+                        number: 4,
                         span: Span {
                             start: 1227,
                             length: 7,
@@ -1529,10 +1448,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1286,
                             length: 24,
@@ -1599,10 +1515,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 300,
-                            minor: None,
-                        },
+                        number: 300,
                         span: Span {
                             start: 1311,
                             length: 11,
@@ -1647,10 +1560,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 4,
-                            minor: None,
-                        },
+                        number: 4,
                         span: Span {
                             start: 1334,
                             length: 7,
@@ -1685,10 +1595,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1355,
                             length: 24,
@@ -1745,10 +1652,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1380,
                             length: 24,
@@ -1805,10 +1709,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1405,
                             length: 24,
@@ -1865,10 +1766,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1430,
                             length: 24,
@@ -1925,10 +1823,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1455,
                             length: 24,
@@ -1985,10 +1880,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1480,
                             length: 24,
@@ -2045,10 +1937,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1505,
                             length: 24,
@@ -2105,10 +1994,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1530,
                             length: 24,
@@ -2165,10 +2051,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1555,
                             length: 24,
@@ -2225,10 +2108,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1580,
                             length: 24,
@@ -2285,10 +2165,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1605,
                             length: 24,
@@ -2345,10 +2222,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1630,
                             length: 24,
@@ -2415,10 +2289,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 300,
-                            minor: None,
-                        },
+                        number: 300,
                         span: Span {
                             start: 1655,
                             length: 11,
@@ -2463,10 +2334,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 4,
-                            minor: None,
-                        },
+                        number: 4,
                         span: Span {
                             start: 1676,
                             length: 7,
@@ -2522,10 +2390,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1735,
                             length: 24,
@@ -2592,10 +2457,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 300,
-                            minor: None,
-                        },
+                        number: 300,
                         span: Span {
                             start: 1760,
                             length: 11,
@@ -2640,10 +2502,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 4,
-                            minor: None,
-                        },
+                        number: 4,
                         span: Span {
                             start: 1783,
                             length: 7,
@@ -2678,10 +2537,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1804,
                             length: 24,
@@ -2738,10 +2594,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1829,
                             length: 24,
@@ -2798,10 +2651,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1854,
                             length: 24,
@@ -2858,10 +2708,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1879,
                             length: 24,
@@ -2918,10 +2765,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1904,
                             length: 24,
@@ -2978,10 +2822,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1929,
                             length: 24,
@@ -3038,10 +2879,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1954,
                             length: 24,
@@ -3098,10 +2936,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 1979,
                             length: 24,
@@ -3158,10 +2993,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2004,
                             length: 24,
@@ -3218,10 +3050,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2029,
                             length: 24,
@@ -3278,10 +3107,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2054,
                             length: 24,
@@ -3338,10 +3164,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2079,
                             length: 24,
@@ -3408,10 +3231,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 300,
-                            minor: None,
-                        },
+                        number: 300,
                         span: Span {
                             start: 2104,
                             length: 11,
@@ -3456,10 +3276,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 4,
-                            minor: None,
-                        },
+                        number: 4,
                         span: Span {
                             start: 2125,
                             length: 7,
@@ -3515,10 +3332,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2184,
                             length: 24,
@@ -3585,10 +3399,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 300,
-                            minor: None,
-                        },
+                        number: 300,
                         span: Span {
                             start: 2209,
                             length: 11,
@@ -3633,10 +3444,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 4,
-                            minor: None,
-                        },
+                        number: 4,
                         span: Span {
                             start: 2232,
                             length: 7,
@@ -3671,10 +3479,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2253,
                             length: 24,
@@ -3731,10 +3536,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2278,
                             length: 24,
@@ -3791,10 +3593,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2303,
                             length: 24,
@@ -3851,10 +3650,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2328,
                             length: 24,
@@ -3911,10 +3707,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2353,
                             length: 24,
@@ -3971,10 +3764,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2378,
                             length: 24,
@@ -4031,10 +3821,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2403,
                             length: 24,
@@ -4091,10 +3878,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2428,
                             length: 24,
@@ -4151,10 +3935,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2453,
                             length: 24,
@@ -4211,10 +3992,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2478,
                             length: 24,
@@ -4271,10 +4049,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2503,
                             length: 24,
@@ -4331,10 +4106,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2528,
                             length: 24,
@@ -4401,10 +4173,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 300,
-                            minor: None,
-                        },
+                        number: 300,
                         span: Span {
                             start: 2553,
                             length: 11,
@@ -4449,10 +4218,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 4,
-                            minor: None,
-                        },
+                        number: 4,
                         span: Span {
                             start: 2574,
                             length: 7,
@@ -4508,10 +4274,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2633,
                             length: 24,
@@ -4578,10 +4341,7 @@ Program {
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 300,
-                            minor: None,
-                        },
+                        number: 300,
                         span: Span {
                             start: 2658,
                             length: 11,
@@ -4626,10 +4386,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 4,
-                            minor: None,
-                        },
+                        number: 4,
                         span: Span {
                             start: 2681,
                             length: 7,
@@ -4664,10 +4421,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2702,
                             length: 24,
@@ -4724,10 +4478,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2727,
                             length: 24,
@@ -4784,10 +4535,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2752,
                             length: 24,
@@ -4844,10 +4592,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2777,
                             length: 24,
@@ -4904,10 +4649,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2802,
                             length: 24,
@@ -4964,10 +4706,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2827,
                             length: 24,
@@ -5024,10 +4763,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2852,
                             length: 24,
@@ -5084,10 +4820,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2877,
                             length: 24,
@@ -5144,10 +4877,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2902,
                             length: 24,
@@ -5204,10 +4934,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2927,
                             length: 24,
@@ -5264,10 +4991,7 @@ Program {
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 2952,
                             length: 24,

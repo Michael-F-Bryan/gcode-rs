@@ -68,7 +68,7 @@ struct BlockBuilder<'a> {
     comments: Vec<Comment>,
     codes: Vec<Code>,
     word_addresses: Vec<WordAddress>,
-    line_number: Option<Number>,
+    line_number: Option<u32>,
 }
 
 impl<'a> BlockBuilder<'a> {
@@ -85,7 +85,7 @@ impl<'a> BlockBuilder<'a> {
 }
 
 impl crate::core::BlockVisitor for BlockBuilder<'_> {
-    fn line_number(&mut self, n: Number, _: Span) {
+    fn line_number(&mut self, n: u32, _: Span) {
         self.line_number = Some(n);
     }
 
