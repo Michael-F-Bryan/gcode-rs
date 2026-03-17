@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0-rc.1](https://github.com/Michael-F-Bryan/gcode-rs/compare/v0.7.0-beta...v0.7.0-rc.1) (2026-03-17)
+
+
+### Features
+
+* hoisted the contents of the `ast` module to the top level ([259f685](https://github.com/Michael-F-Bryan/gcode-rs/commit/259f68544b91902871311ce2e09c5a67e4f06752))
+* Syntax errors will now include the expected tokens as a `TokenType` instead of their string representation ([424a5b2](https://github.com/Michael-F-Bryan/gcode-rs/commit/424a5b25ac3d89345237cdc86af31f263ceb5dcd))
+
+
+### Bug Fixes
+
+* Make sure the `DiagnosticKind` is public ([152d89a](https://github.com/Michael-F-Bryan/gcode-rs/commit/152d89ac17be686961f9f09b548de8c4ff6bad41))
+
+
+### Miscellaneous Chores
+
+* release 0.7.0-rc.1 ([44c5649](https://github.com/Michael-F-Bryan/gcode-rs/commit/44c56494ad77cf3fdc549699d1773b6678622159))
+
 ## [0.7.0-beta](https://github.com/Michael-F-Bryan/gcode-rs/compare/v0.7.0-alpha...v0.7.0-beta) (2026-03-17)
 
 
