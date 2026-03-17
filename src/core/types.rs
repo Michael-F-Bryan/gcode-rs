@@ -1,4 +1,7 @@
-use core::fmt::{self, Display, Formatter};
+use core::{
+    fmt::{self, Debug, Display, Formatter},
+    num::NonZeroU32,
+};
 
 /// Lexer token kind. Used by the parser and in [`Diagnostics::emit_unexpected`] to
 /// report what was expected.
@@ -99,25 +102,100 @@ impl Span {
     }
 }
 
-/// A g-code command or line number: major (e.g. the `1` in `G01`) and optional
-/// minor (e.g. the `2` in `O0002`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+/// A g-code command number (G, M, T): fixed-point decimal premultiplied by 10.
+/// E.g. `G91.1` → `Number::new_with_minor(91, 1)`.
+/// Line numbers (N) and program numbers (O) use `u32`; see
+/// [`BlockVisitor::line_number`](BlockVisitor::line_number) and
+/// [`BlockVisitor::program_number`](BlockVisitor::program_number).
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub struct Number {
-    /// The main numeric part (e.g. 1 for `G01`, 30 for `M30`).
-    pub major: u16,
-    /// Optional minor part (e.g. for `O0002` program numbers).
-    pub minor: Option<u16>,
+#[repr(transparent)]
+pub struct Number(u32);
+
+impl Number {
+    const SCALAR: u32 = 10;
+
+    /// Create a new number with no decimals.
+    pub const fn new(major: u32) -> Self {
+        Self(major * Self::SCALAR)
+    }
+
+    /// Create a new number with a minor (decimal) component (e.g. `G91.1`).
+    pub const fn new_with_minor(major: u32, minor: u32) -> Self {
+        assert!(minor < Self::SCALAR, "Overflow");
+        Self(major * Self::SCALAR + minor)
+    }
+
+    /// The major component (e.g. the `91` in `G91.1`).
+    pub const fn major(self) -> u32 {
+        self.0 / Self::SCALAR
+    }
+
+    /// The minor (decimal) component (e.g. the `1` in `G91.1`).
+    pub const fn minor(self) -> Option<NonZeroU32> {
+        NonZeroU32::new(self.0 % Self::SCALAR)
+    }
+}
+
+impl core::str::FromStr for Number {
+    type Err = ParseNumberError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (major_str, minor_str) = match s.split_once('.') {
+            None => (s, None),
+            Some((maj, min)) => (maj, Some(min)),
+        };
+        let major = major_str.parse::<u32>()?;
+
+        let minor = match minor_str {
+            Some(s) => s.parse::<u32>()?,
+            None => 0,
+        };
+        if minor >= Self::SCALAR {
+            return Err(ParseNumberError::Overflow);
+        }
+
+        let value = major * 10 + minor;
+        Ok(Number(value))
+    }
 }
 
 impl Display for Number {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let Number { major, minor } = self;
-        write!(f, "{}", major)?;
-        if let Some(minor) = minor {
-            write!(f, ".{}", minor)?;
+        let major = self.major();
+        write!(f, "{major}")?;
+
+        if let Some(minor) = self.minor() {
+            write!(f, ".{minor}")?;
         }
         Ok(())
+    }
+}
+
+impl Debug for Number {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        Display::fmt(self, f)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ParseNumberError {
+    ParseInt(core::num::ParseIntError),
+    Overflow,
+}
+
+impl From<core::num::ParseIntError> for ParseNumberError {
+    fn from(error: core::num::ParseIntError) -> Self {
+        ParseNumberError::ParseInt(error)
+    }
+}
+
+impl Display for ParseNumberError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            ParseNumberError::ParseInt(e) => write!(f, "{}", e),
+            ParseNumberError::Overflow => write!(f, "Overflow"),
+        }
     }
 }
 
@@ -125,7 +203,7 @@ impl Display for Number {
 ///
 /// The parser does not abort on these conditions; it reports via your
 /// implementation and continues. Override the default no-op implementations to
-/// collect or log diagnostics. The [`crate::ast`] module provides a
+/// collect or log diagnostics. The [`crate`] module provides a
 /// diagnostics type that implements this trait and accumulates messages.
 #[allow(unused_variables)]
 pub trait Diagnostics {
@@ -137,6 +215,24 @@ pub trait Diagnostics {
         &mut self,
         actual: &str,
         expected: &[TokenType],
+        span: Span,
+    ) {
+    }
+
+    /// Called when parsing a G/M/T number fails (e.g. overflow, invalid format).
+    fn emit_parse_number_error(
+        &mut self,
+        value: &str,
+        error: ParseNumberError,
+        span: Span,
+    ) {
+    }
+
+    /// Called when parsing an N or O number fails (e.g. invalid integer, overflow).
+    fn emit_parse_int_error(
+        &mut self,
+        value: &str,
+        _error: core::num::ParseIntError,
         span: Span,
     ) {
     }
@@ -196,11 +292,11 @@ pub trait ProgramVisitor: HasDiagnostics {
 #[allow(unused_variables)]
 pub trait BlockVisitor: HasDiagnostics + Sized {
     /// Optional N line number (e.g. `N100`). Called at most once per block.
-    fn line_number(&mut self, n: Number, span: Span) {}
+    fn line_number(&mut self, n: u32, span: Span) {}
     /// Comment content (excluding parentheses). Called for each comment on the line.
     fn comment(&mut self, value: &str, span: Span) {}
     /// Optional O program number (e.g. `O0001`). Called at most once per block.
-    fn program_number(&mut self, number: Number, span: Span) {}
+    fn program_number(&mut self, number: u32, span: Span) {}
     /// Program delimiter `%` (RS-274 / ISO 6983). Called once per `%` token.
     fn program_delimiter(&mut self, _span: Span) {}
     /// Modal bare word address (e.g. `X5.0`, `S12000` at block level without a G/M/T prefix).

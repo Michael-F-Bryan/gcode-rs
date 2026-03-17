@@ -27,7 +27,7 @@ $ cargo add gcode
 Then, you can start using it. Here is a simple example that parses a G-code program using the `alloc` feature:
 
 ```rust
-fn main() -> Result<(), gcode::ast::Diagnostics> {
+fn main() -> Result<(), gcode::Diagnostics> {
     let src = "G90 G00 X10 Y20";
     let program = gcode::parse(src)?;
     assert_eq!(program.blocks.len(), 1);

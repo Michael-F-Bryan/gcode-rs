@@ -90,19 +90,13 @@ Program {
         },
         Block {
             line_number: Some(
-                Number {
-                    major: 10,
-                    minor: None,
-                },
+                10,
             ),
             comments: [],
             codes: [
                 ToolChange(
                     ToolChangeCode {
-                        number: Number {
-                            major: 2,
-                            minor: None,
-                        },
+                        number: 2,
                         span: Span {
                             start: 231,
                             length: 2,
@@ -113,10 +107,7 @@ Program {
                 ),
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 3,
-                            minor: None,
-                        },
+                        number: 3,
                         span: Span {
                             start: 234,
                             length: 11,
@@ -158,19 +149,13 @@ Program {
         },
         Block {
             line_number: Some(
-                Number {
-                    major: 20,
-                    minor: None,
-                },
+                20,
             ),
             comments: [],
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 0,
-                            minor: None,
-                        },
+                        number: 0,
                         span: Span {
                             start: 250,
                             length: 11,
@@ -233,19 +218,13 @@ Program {
         },
         Block {
             line_number: Some(
-                Number {
-                    major: 40,
-                    minor: None,
-                },
+                40,
             ),
             comments: [],
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 41,
-                            minor: None,
-                        },
+                        number: 41,
                         span: Span {
                             start: 275,
                             length: 3,
@@ -264,19 +243,13 @@ Program {
         },
         Block {
             line_number: Some(
-                Number {
-                    major: 50,
-                    minor: None,
-                },
+                50,
             ),
             comments: [],
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 283,
                             length: 9,
@@ -310,10 +283,7 @@ Program {
                 ),
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 8,
-                            minor: None,
-                        },
+                        number: 8,
                         span: Span {
                             start: 293,
                             length: 2,
@@ -395,19 +365,13 @@ Program {
         },
         Block {
             line_number: Some(
-                Number {
-                    major: 90,
-                    minor: None,
-                },
+                90,
             ),
             comments: [],
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 2,
-                            minor: None,
-                        },
+                        number: 2,
                         span: Span {
                             start: 330,
                             length: 17,
@@ -471,19 +435,13 @@ Program {
         },
         Block {
             line_number: Some(
-                Number {
-                    major: 100,
-                    minor: None,
-                },
+                100,
             ),
             comments: [],
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 353,
                             length: 6,
@@ -514,19 +472,13 @@ Program {
         },
         Block {
             line_number: Some(
-                Number {
-                    major: 110,
-                    minor: None,
-                },
+                110,
             ),
             comments: [],
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 3,
-                            minor: None,
-                        },
+                        number: 3,
                         span: Span {
                             start: 365,
                             length: 17,
@@ -590,19 +542,13 @@ Program {
         },
         Block {
             line_number: Some(
-                Number {
-                    major: 120,
-                    minor: None,
-                },
+                120,
             ),
             comments: [],
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 1,
-                            minor: None,
-                        },
+                        number: 1,
                         span: Span {
                             start: 388,
                             length: 7,
@@ -633,19 +579,13 @@ Program {
         },
         Block {
             line_number: Some(
-                Number {
-                    major: 130,
-                    minor: None,
-                },
+                130,
             ),
             comments: [],
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 40,
-                            minor: None,
-                        },
+                        number: 40,
                         span: Span {
                             start: 401,
                             length: 3,
@@ -664,19 +604,13 @@ Program {
         },
         Block {
             line_number: Some(
-                Number {
-                    major: 140,
-                    minor: None,
-                },
+                140,
             ),
             comments: [],
             codes: [
                 General(
                     GeneralCode {
-                        number: Number {
-                            major: 0,
-                            minor: None,
-                        },
+                        number: 0,
                         span: Span {
                             start: 410,
                             length: 7,
@@ -699,10 +633,7 @@ Program {
                 ),
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 9,
-                            minor: None,
-                        },
+                        number: 9,
                         span: Span {
                             start: 418,
                             length: 2,
@@ -742,19 +673,13 @@ Program {
         },
         Block {
             line_number: Some(
-                Number {
-                    major: 160,
-                    minor: None,
-                },
+                160,
             ),
             comments: [],
             codes: [
                 Miscellaneous(
                     MiscellaneousCode {
-                        number: Number {
-                            major: 30,
-                            minor: None,
-                        },
+                        number: 30,
                         span: Span {
                             start: 442,
                             length: 3,

@@ -1,16 +1,20 @@
 use alloc::vec::Vec;
 
 use crate::{
-    ast::{
-        Argument, Block, Code, Comment, CommentKind, Diagnostics, GeneralCode,
-        MiscellaneousCode, Program, ToolChangeCode, WordAddress,
-    },
     core::{
         ControlFlow, Diagnostics as _, HasDiagnostics, Number, ProgramVisitor,
         Span, TokenType,
     },
+    diags::Diagnostics,
+    types::{
+        Argument, Block, Code, Comment, CommentKind, GeneralCode,
+        MiscellaneousCode, Program, ToolChangeCode, WordAddress,
+    },
 };
 
+/// [`ProgramVisitor`](crate::core::ProgramVisitor) that builds an owned [`Program`] and collects [`Diagnostics`].
+///
+/// Used by [`parse`](crate::parse); typically not constructed by users.
 #[derive(Debug)]
 pub struct AstBuilder {
     blocks: Vec<Block>,
@@ -18,6 +22,7 @@ pub struct AstBuilder {
 }
 
 impl AstBuilder {
+    /// Creates a new `AstBuilder`.
     pub const fn new() -> Self {
         Self {
             blocks: Vec::new(),
@@ -25,6 +30,7 @@ impl AstBuilder {
         }
     }
 
+    /// Returns the built [`Program`], or [`Err`] with the collected [`Diagnostics`] if any diagnostic was emitted.
     pub fn finish(self) -> Result<Program, Diagnostics> {
         let AstBuilder {
             blocks,
@@ -68,7 +74,7 @@ struct BlockBuilder<'a> {
     comments: Vec<Comment>,
     codes: Vec<Code>,
     word_addresses: Vec<WordAddress>,
-    line_number: Option<Number>,
+    line_number: Option<u32>,
 }
 
 impl<'a> BlockBuilder<'a> {
@@ -85,7 +91,7 @@ impl<'a> BlockBuilder<'a> {
 }
 
 impl crate::core::BlockVisitor for BlockBuilder<'_> {
-    fn line_number(&mut self, n: Number, _: Span) {
+    fn line_number(&mut self, n: u32, _: Span) {
         self.line_number = Some(n);
     }
 

@@ -1,8 +1,13 @@
+#![allow(missing_docs)]
+
 use alloc::{string::String, vec::Vec};
 use core::fmt;
 
 use crate::core::{Number, Span};
 
+/// Top-level parse result: a sequence of blocks.
+///
+/// Obtain via [`parse`](crate::parse).
 #[derive(Debug, Default, Clone, PartialEq)]
 #[non_exhaustive]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -20,18 +25,19 @@ impl fmt::Display for Program {
 }
 
 impl core::str::FromStr for Program {
-    type Err = crate::ast::Diagnostics;
+    type Err = crate::Diagnostics;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        crate::ast::parse(s)
+        crate::parse(s)
     }
 }
 
+/// One line of g-code: optional N number, comments, G/M/T codes, and word addresses.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub struct Block {
-    pub line_number: Option<Number>,
+    pub line_number: Option<u32>,
     pub comments: Vec<Comment>,
     pub codes: Vec<Code>,
     /// Modal bare word addresses (e.g. `X5.0`, `S12000`) at block level without a G/M/T prefix.
@@ -72,6 +78,9 @@ impl fmt::Display for Block {
     }
 }
 
+/// Modal bare address at block level (e.g. `X5.0`, `S12000`) without a G/M/T prefix.
+///
+/// See [`Block::word_addresses`].
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -87,6 +96,7 @@ impl fmt::Display for WordAddress {
     }
 }
 
+/// How the comment appears in source: semicolon (`;...`) or parentheses (`(...)`).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -95,6 +105,7 @@ pub enum CommentKind {
     Parentheses,
 }
 
+/// Comment text, kind, and source span.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -113,6 +124,9 @@ impl fmt::Display for Comment {
     }
 }
 
+/// One G, M, or T command (variant plus optional arguments).
+///
+/// Appears in [`Block::codes`].
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -132,6 +146,7 @@ impl fmt::Display for Code {
     }
 }
 
+/// G-code: motion, coordinate system, plane selection, etc.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -151,6 +166,7 @@ impl fmt::Display for GeneralCode {
     }
 }
 
+/// M-code: spindle, coolant, program control, etc.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -170,6 +186,7 @@ impl fmt::Display for MiscellaneousCode {
     }
 }
 
+/// T-code: tool selection.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -189,6 +206,9 @@ impl fmt::Display for ToolChangeCode {
     }
 }
 
+/// One address letter and its value (e.g. X, Y, Z, F, S).
+///
+/// On a G/M/T code; see e.g. [`GeneralCode::args`].
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -204,6 +224,7 @@ impl fmt::Display for Argument {
     }
 }
 
+/// Argument value: a literal number or a variable reference (e.g. `#1`).
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -458,5 +479,43 @@ mod tests {
         assert_eq!(v.to_string(), "#1");
         let v = Value::Variable("var".into());
         assert_eq!(v.to_string(), "#var");
+    }
+
+    #[test]
+    fn alloc_parse_captures_word_addresses() {
+        let program = crate::parse("X5.0 Y-3.0\n").unwrap();
+        assert_eq!(program.blocks.len(), 1);
+        assert_eq!(program.blocks[0].word_addresses.len(), 2);
+        assert_eq!(program.blocks[0].word_addresses[0].letter, 'X');
+        assert!(matches!(
+            program.blocks[0].word_addresses[0].value,
+            Value::Literal(n) if (n - 5.0).abs() < 1e-6
+        ));
+        assert_eq!(program.blocks[0].word_addresses[1].letter, 'Y');
+        assert!(matches!(
+            program.blocks[0].word_addresses[1].value,
+            Value::Literal(n) if (n - (-3.0)).abs() < 1e-6
+        ));
+    }
+
+    #[test]
+    fn ast_parse_captures_m_and_t_codes() {
+        let program = crate::parse("G0 X0\nM3 S1000\nT1\n").unwrap();
+        assert_eq!(program.blocks.len(), 3);
+
+        assert_eq!(program.blocks[0].codes.len(), 1);
+        assert!(matches!(&program.blocks[0].codes[0], Code::General(_)));
+
+        assert_eq!(program.blocks[1].codes.len(), 1);
+        assert!(matches!(
+            &program.blocks[1].codes[0],
+            Code::Miscellaneous(m) if m.number.major() == 3
+        ));
+
+        assert_eq!(program.blocks[2].codes.len(), 1);
+        assert!(matches!(
+            &program.blocks[2].codes[0],
+            Code::ToolChange(t) if t.number.major() == 1
+        ));
     }
 }
