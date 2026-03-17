@@ -266,6 +266,15 @@ pub enum Value<'src> {
     Variable(&'src str),
 }
 
+impl Display for Value<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Value::Literal(n) => write!(f, "{}", n),
+            Value::Variable(s) => write!(f, "#{}", s),
+        }
+    }
+}
+
 /// A no-op visitor that ignores all callbacks.
 ///
 /// Use when you only need to drive the parser (e.g. to validate syntax or

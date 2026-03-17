@@ -12,18 +12,6 @@ use gcode::core::{
     Number, ProgramVisitor, Span, Value,
 };
 
-/// Format a g-code argument value for output (literal number or variable ref).
-fn format_value(value: Value<'_>, out: &mut String) {
-    match value {
-        Value::Literal(n) => {
-            write!(out, "{}", n).unwrap();
-        },
-        Value::Variable(s) => {
-            write!(out, "#{}", s).unwrap();
-        },
-    }
-}
-
 /// Top-level visitor: owns the output buffer and delegates each block to a block visitor.
 struct PrettyPrinter<'a> {
     output: &'a mut String,
@@ -95,7 +83,7 @@ impl BlockVisitor for PrettyPrintBlock<'_> {
     fn word_address(&mut self, letter: char, value: Value<'_>, _span: Span) {
         self.space_if_needed();
         self.current_line.push(letter);
-        format_value(value, &mut self.current_line);
+        write!(self.current_line, "{}", value).unwrap();
     }
 
     fn start_general_code(
@@ -156,7 +144,7 @@ impl CommandVisitor for PrettyPrintCommand<'_> {
     fn argument(&mut self, letter: char, value: Value<'_>, _span: Span) {
         self.line.push(' ');
         self.line.push(letter);
-        format_value(value, self.line);
+        write!(self.line, "{}", value).unwrap();
     }
 
     fn end_command(self, _span: Span) {}

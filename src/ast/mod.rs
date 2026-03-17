@@ -1,4 +1,4 @@
-//! Parse G-code into an AST.
+//! G-code text → typed AST.
 
 #![allow(missing_docs)]
 
@@ -12,6 +12,7 @@ pub use self::{
     visitor::AstBuilder,
 };
 
+/// Parse G-code source into a [`Program`] or return [`Diagnostics`] on error.
 pub fn parse(src: &str) -> Result<Program, Diagnostics> {
     let mut visitor = AstBuilder::new();
     crate::core::parse(src, &mut visitor);
@@ -20,6 +21,7 @@ pub fn parse(src: &str) -> Result<Program, Diagnostics> {
 
 #[cfg(test)]
 mod tests {
+    use crate::ast::{Code, Value};
 
     #[test]
     fn alloc_parse_captures_word_addresses() {
@@ -29,12 +31,12 @@ mod tests {
         assert_eq!(program.blocks[0].word_addresses[0].letter, 'X');
         assert!(matches!(
             program.blocks[0].word_addresses[0].value,
-            crate::ast::Value::Literal(n) if (n - 5.0).abs() < 1e-6
+            Value::Literal(n) if (n - 5.0).abs() < 1e-6
         ));
         assert_eq!(program.blocks[0].word_addresses[1].letter, 'Y');
         assert!(matches!(
             program.blocks[0].word_addresses[1].value,
-            crate::ast::Value::Literal(n) if (n - (-3.0)).abs() < 1e-6
+            Value::Literal(n) if (n - (-3.0)).abs() < 1e-6
         ));
     }
 
@@ -44,21 +46,18 @@ mod tests {
         assert_eq!(program.blocks.len(), 3);
 
         assert_eq!(program.blocks[0].codes.len(), 1);
-        assert!(matches!(
-            &program.blocks[0].codes[0],
-            crate::ast::Code::General(_)
-        ));
+        assert!(matches!(&program.blocks[0].codes[0], Code::General(_)));
 
         assert_eq!(program.blocks[1].codes.len(), 1);
         assert!(matches!(
             &program.blocks[1].codes[0],
-            crate::ast::Code::Miscellaneous(m) if m.number.major == 3
+            Code::Miscellaneous(m) if m.number.major == 3
         ));
 
         assert_eq!(program.blocks[2].codes.len(), 1);
         assert!(matches!(
             &program.blocks[2].codes[0],
-            crate::ast::Code::ToolChange(t) if t.number.major == 1
+            Code::ToolChange(t) if t.number.major == 1
         ));
     }
 }
