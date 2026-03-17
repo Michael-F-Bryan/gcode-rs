@@ -143,3 +143,8 @@ pub use crate::ast::parse;
 
 #[cfg(all(doc, feature = "alloc"))]
 use crate::ast::*;
+
+#[cfg(all(feature = "alloc"))]
+#[doc = include_str!("../README.md")]
+#[doc(hidden)]
+pub fn _assert_readme_code_examples_compile() {}

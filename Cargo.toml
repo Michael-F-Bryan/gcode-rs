@@ -4,7 +4,7 @@ version = "0.7.0-alpha"
 authors = ["Michael Bryan <michaelfbryan@gmail.com>"]
 description = "A gcode parser for no-std applications."
 repository = "https://github.com/Michael-F-Bryan/gcode-rs"
-readme = "../README.md"
+readme = "README.md"
 license = "MIT OR Apache-2.0"
 keywords = ["gcode", "parser"]
 categories = ["no-std", "parser-implementations", "embedded"]
@@ -46,6 +46,7 @@ pretty_assertions = "1.4"
 [[example]]
 name = "pretty_print_visitor"
 path = "examples/pretty_print_visitor.rs"
+doc-scrape-examples = true
 
 [[test]]
 name = "parse_fixtures"
