@@ -143,7 +143,12 @@
 <a href="#142" id="142">142</a>
 <a href="#143" id="143">143</a>
 <a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a></pre></div><pre class="rust"><code><span class="doccomment">//! A crate for parsing g-code programs, designed with embedded environments in
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a></pre></div><pre class="rust"><code><span class="doccomment">//! A crate for parsing g-code programs, designed with embedded environments in
 //! mind.
 //!
 //! Some explicit design goals of this crate are:
@@ -288,4 +293,9 @@
 
 <span class="attr">#[cfg(all(doc, feature = <span class="string">"alloc"</span>))]
 </span><span class="kw">use </span><span class="kw">crate</span>::ast::<span class="kw-2">*</span>;
+
+<span class="attr">#[cfg(feature = <span class="string">"alloc"</span>)]
+#[doc = <span class="macro">include_str!</span>(<span class="string">"../README.md"</span>)]
+#[doc(hidden)]
+</span><span class="kw">pub fn </span>_assert_readme_code_examples_compile() {}
 </code></pre></div></section></main></body></html>

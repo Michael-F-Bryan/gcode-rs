@@ -61,8 +61,7 @@
 <a href="#60" id="60">60</a>
 <a href="#61" id="61">61</a>
 <a href="#62" id="62">62</a>
-<a href="#63" id="63">63</a>
-<a href="#64" id="64">64</a></pre></div><pre class="rust"><code><span class="doccomment">//! Parse G-code into an AST.
+<a href="#63" id="63">63</a></pre></div><pre class="rust"><code><span class="doccomment">//! G-code text → typed AST.
 
 </span><span class="attr">#![allow(missing_docs)]
 
@@ -76,7 +75,8 @@
     visitor::AstBuilder,
 };
 
-<span class="kw">pub fn </span>parse(src: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Program, Diagnostics&gt; {
+<span class="doccomment">/// Parse G-code source into a [`Program`] or return [`Diagnostics`] on error.
+</span><span class="kw">pub fn </span>parse(src: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Program, Diagnostics&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>visitor = AstBuilder::new();
     <span class="kw">crate</span>::core::parse(src, <span class="kw-2">&amp;mut </span>visitor);
     visitor.finish()
@@ -84,6 +84,7 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
+    <span class="kw">use </span><span class="kw">crate</span>::ast::{Code, Value};
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>alloc_parse_captures_word_addresses() {
@@ -93,12 +94,12 @@
         <span class="macro">assert_eq!</span>(program.blocks[<span class="number">0</span>].word_addresses[<span class="number">0</span>].letter, <span class="string">'X'</span>);
         <span class="macro">assert!</span>(<span class="macro">matches!</span>(
             program.blocks[<span class="number">0</span>].word_addresses[<span class="number">0</span>].value,
-            <span class="kw">crate</span>::ast::Value::Literal(n) <span class="kw">if </span>(n - <span class="number">5.0</span>).abs() &lt; <span class="number">1e-6
+            Value::Literal(n) <span class="kw">if </span>(n - <span class="number">5.0</span>).abs() &lt; <span class="number">1e-6
         </span>));
         <span class="macro">assert_eq!</span>(program.blocks[<span class="number">0</span>].word_addresses[<span class="number">1</span>].letter, <span class="string">'Y'</span>);
         <span class="macro">assert!</span>(<span class="macro">matches!</span>(
             program.blocks[<span class="number">0</span>].word_addresses[<span class="number">1</span>].value,
-            <span class="kw">crate</span>::ast::Value::Literal(n) <span class="kw">if </span>(n - (-<span class="number">3.0</span>)).abs() &lt; <span class="number">1e-6
+            Value::Literal(n) <span class="kw">if </span>(n - (-<span class="number">3.0</span>)).abs() &lt; <span class="number">1e-6
         </span>));
     }
 
@@ -108,21 +109,18 @@
         <span class="macro">assert_eq!</span>(program.blocks.len(), <span class="number">3</span>);
 
         <span class="macro">assert_eq!</span>(program.blocks[<span class="number">0</span>].codes.len(), <span class="number">1</span>);
-        <span class="macro">assert!</span>(<span class="macro">matches!</span>(
-            <span class="kw-2">&amp;</span>program.blocks[<span class="number">0</span>].codes[<span class="number">0</span>],
-            <span class="kw">crate</span>::ast::Code::General(<span class="kw">_</span>)
-        ));
+        <span class="macro">assert!</span>(<span class="macro">matches!</span>(<span class="kw-2">&amp;</span>program.blocks[<span class="number">0</span>].codes[<span class="number">0</span>], Code::General(<span class="kw">_</span>)));
 
         <span class="macro">assert_eq!</span>(program.blocks[<span class="number">1</span>].codes.len(), <span class="number">1</span>);
         <span class="macro">assert!</span>(<span class="macro">matches!</span>(
             <span class="kw-2">&amp;</span>program.blocks[<span class="number">1</span>].codes[<span class="number">0</span>],
-            <span class="kw">crate</span>::ast::Code::Miscellaneous(m) <span class="kw">if </span>m.number.major == <span class="number">3
+            Code::Miscellaneous(m) <span class="kw">if </span>m.number.major == <span class="number">3
         </span>));
 
         <span class="macro">assert_eq!</span>(program.blocks[<span class="number">2</span>].codes.len(), <span class="number">1</span>);
         <span class="macro">assert!</span>(<span class="macro">matches!</span>(
             <span class="kw-2">&amp;</span>program.blocks[<span class="number">2</span>].codes[<span class="number">0</span>],
-            <span class="kw">crate</span>::ast::Code::ToolChange(t) <span class="kw">if </span>t.number.major == <span class="number">1
+            Code::ToolChange(t) <span class="kw">if </span>t.number.major == <span class="number">1
         </span>));
     }
 }
