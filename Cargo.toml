@@ -1,6 +1,6 @@
 [package]
 name = "gcode"
-version = "0.7.0-alpha"
+version = "0.7.0-beta"
 authors = ["Michael Bryan <michaelfbryan@gmail.com>"]
 description = "A gcode parser for no-std applications."
 repository = "https://github.com/Michael-F-Bryan/gcode-rs"
