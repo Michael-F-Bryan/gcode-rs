@@ -35,9 +35,7 @@ impl Display for Diagnostic {
 #[non_exhaustive]
 pub enum DiagnosticKind {
     /// text the parser could not interpret (e.g. invalid token).
-    UnknownContent {
-        text: String,
-    },
+    UnknownContent { text: String },
     /// the parser expected one of `expected` token types but found `actual`.
     Unexpected {
         actual: String,
