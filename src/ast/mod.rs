@@ -7,7 +7,7 @@ mod types;
 mod visitor;
 
 pub use self::{
-    diags::{Diagnostic, Diagnostics},
+    diags::{Diagnostic, DiagnosticKind, Diagnostics},
     types::*,
     visitor::AstBuilder,
 };
