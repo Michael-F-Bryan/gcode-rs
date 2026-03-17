@@ -101,7 +101,83 @@
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
-<a href="#103" id="103">103</a></pre></div><pre class="rust"><code><span class="doccomment">//! A zero-allocation, push-based parser for g-code.
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a></pre></div><pre class="rust"><code><span class="doccomment">//! A zero-allocation, push-based parser for g-code.
 //!
 //! `gcode::core` is the low-level engine of this crate. Instead of building an
 //! abstract syntax tree (AST) for you, it drives your own visitor
@@ -109,9 +185,9 @@
 //! you need deterministic memory usage (e.g. embedded or `no_std`), when you
 //! want to stream g-code and act on it as it arrives, or when you want full
 //! control over how commands, numbers, and diagnostics are represented. If you
-//! prefer a ready-made AST and default diagnostics, use [`crate::parse`] and
-//! the [`crate::ast`] module instead; they are thin layers built on top of
-//! `gcode::core`.
+//! prefer a ready-made AST and default diagnostics, use [`crate::parse`]
+//! and the [`crate::Program`] type instead; they are thin layers built on top
+//! of [`crate::core`].
 //!
 //! ## How the API works
 //!
@@ -178,12 +254,88 @@
 //!
 //! ## Relationship to the rest of the crate
 //!
-//! The higher-level [`crate::ast`] module and the [`crate::parse`] convenience
+//! The higher-level [`crate`] module and the [`crate::parse`] convenience
 //! function are implemented in terms of `gcode::core`: they provide visitors
 //! that build an owned AST and collect diagnostics into a single value. As a
 //! result, the behaviour of the entire crate is defined here; understanding
 //! `gcode::core` gives you a precise mental model for how parsing, spans, and
 //! diagnostics behave at every layer.
+//!
+//! Examples
+//!
+//! Implement [`ProgramVisitor`] to receive blocks as they are parsed. Each
+//! block is handled by a [`BlockVisitor`], which in turn creates a
+//! [`CommandVisitor`] for each G/M/T command.
+//!
+//! We don't care about errors in this example, so we use [`Noop`] as the
+//! diagnostics implementation.
+//!
+//! ```rust
+//! # #[allow(refining_impl_trait)]
+//! use gcode::core::{
+//!     BlockVisitor, CommandVisitor, ControlFlow, HasDiagnostics, Noop,
+//!     Number, ProgramVisitor,
+//! };
+//!
+//! #[derive(Default)]
+//! struct Counter {
+//!     blocks: usize,
+//!     commands: usize,
+//!     diag: Noop,
+//! }
+//!
+//! impl HasDiagnostics for Counter {
+//!     fn diagnostics(&amp;mut self) -&gt; &amp;mut dyn gcode::core::Diagnostics {
+//!         &amp;mut self.diag
+//!     }
+//! }
+//!
+//! struct BlockCounter&lt;'a&gt;(&amp;'a mut Counter);
+//!
+//! impl ProgramVisitor for Counter {
+//!     fn start_block(&amp;mut self) -&gt; ControlFlow&lt;BlockCounter&lt;'_&gt;&gt; {
+//!         self.blocks += 1;
+//!         ControlFlow::Continue(BlockCounter(&amp;mut *self))
+//!     }
+//! }
+//!
+//! impl HasDiagnostics for BlockCounter&lt;'_&gt; {
+//!     fn diagnostics(&amp;mut self) -&gt; &amp;mut dyn gcode::core::Diagnostics {
+//!         &amp;mut self.0.diag
+//!     }
+//! }
+//!
+//! struct CommandCounter&lt;'a&gt;(&amp;'a mut Counter);
+//!
+//! impl BlockVisitor for BlockCounter&lt;'_&gt; {
+//!     fn start_general_code(&amp;mut self, _number: Number) -&gt; ControlFlow&lt;CommandCounter&lt;'_&gt;&gt; {
+//!         self.0.commands += 1;
+//!         ControlFlow::Continue(CommandCounter(&amp;mut *self.0))
+//!     }
+//!     fn start_miscellaneous_code(&amp;mut self, _number: Number) -&gt; ControlFlow&lt;CommandCounter&lt;'_&gt;&gt; {
+//!         self.0.commands += 1;
+//!         ControlFlow::Continue(CommandCounter(&amp;mut *self.0))
+//!     }
+//!     fn start_tool_change_code(&amp;mut self, _number: Number) -&gt; ControlFlow&lt;CommandCounter&lt;'_&gt;&gt; {
+//!         self.0.commands += 1;
+//!         ControlFlow::Continue(CommandCounter(&amp;mut *self.0))
+//!     }
+//! }
+//!
+//! impl HasDiagnostics for CommandCounter&lt;'_&gt; {
+//!     fn diagnostics(&amp;mut self) -&gt; &amp;mut dyn gcode::core::Diagnostics {
+//!         &amp;mut self.0.diag
+//!     }
+//! }
+//!
+//! impl CommandVisitor for CommandCounter&lt;'_&gt; {}
+//!
+//! let src = "G90\nG01 X5\nM3";
+//! let mut counter = Counter::default();
+//! gcode::core::parse(src, &amp;mut counter);
+//! assert_eq!(counter.blocks, 3);
+//! assert_eq!(counter.commands, 3);
+//! ```
 
 </span><span class="kw">mod </span>lexer;
 <span class="kw">mod </span>parser;

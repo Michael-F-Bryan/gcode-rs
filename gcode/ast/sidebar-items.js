@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":["Code","CommentKind","Value"],"fn":["parse"],"struct":["Argument","AstBuilder","Block","Comment","Diagnostic","Diagnostics","GeneralCode","MiscellaneousCode","Program","ToolChangeCode","WordAddress"]};

@@ -1,75 +1,70 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A crate for parsing g-code programs, designed with embedded environments in mind."><title>gcode - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="gcode" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.1 (4eb161250 2025-03-15)" data-channel="1.85.1" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../static.files/storage-59e33391.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../gcode/index.html">gcode</a><span class="version">0.7.0-beta</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#getting-started" title="Getting Started">Getting Started</a><ul><li><a href="#simple-parsing-with-alloc" title="Simple parsing (with `alloc`)">Simple parsing (with <code>alloc</code>)</a></li><li><a href="#push-based--zero-allocation-parsing" title="Push-based / zero-allocation parsing">Push-based / zero-allocation parsing</a></li></ul></li><li><a href="#zero-allocation" title="Zero allocation">Zero allocation</a></li><li><a href="#spans" title="Spans">Spans</a><ul><li><a href="#feature-flags" title="Feature Flags">Feature Flags</a></li></ul></li></ul><h3><a href="#reexports">Crate Items</a></h3><ul class="block"><li><a href="#reexports" title="Re-exports">Re-exports</a></li><li><a href="#modules" title="Modules">Modules</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>gcode</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/gcode/lib.rs.html#1-150">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A crate for parsing g-code programs, designed with embedded environments in
-mind.</p>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="A parser for g-code programs, with both a convenient AST API and a zero-allocation visitor-based core designed for embedded environments."><title>gcode - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../" data-static-root-path="../static.files/" data-current-crate="gcode" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.1 (4eb161250 2025-03-15)" data-channel="1.85.1" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../static.files/storage-59e33391.js"></script><script defer src="../crates.js"></script><script defer src="../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../static.files/favicon-044be391.svg"></head><body class="rustdoc mod crate"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../gcode/index.html">gcode</a><span class="version">0.7.0-beta</span></h2></div><div class="sidebar-elems"><ul class="block"><li><a id="all-types" href="all.html">All Items</a></li></ul><section id="rustdoc-toc"><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#getting-started" title="Getting Started">Getting Started</a></li><li><a href="#document-model" title="Document model">Document model</a></li><li><a href="#zero-allocation" title="Zero allocation">Zero allocation</a></li><li><a href="#spans" title="Spans">Spans</a></li><li><a href="#feature-flags" title="Feature Flags">Feature Flags</a><ul><li><a href="#internal-features" title="Internal Features">Internal Features</a></li></ul></li></ul><h3><a href="#modules">Crate Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Crate <span>gcode</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../src/gcode/lib.rs.html#1-163">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>A parser for g-code programs, with both a convenient AST API and a
+zero-allocation visitor-based core designed for embedded environments.</p>
 <p>Some explicit design goals of this crate are:</p>
 <ul>
 <li><strong>embedded-friendly:</strong> users should be able to use this crate without
 requiring access to an operating system (e.g. <code>#[no_std]</code> environments or
 WebAssembly)</li>
-<li><strong>deterministic memory usage:</strong> the library can be tweaked to use no
-dynamic allocation (see the <a href="core/index.html" title="mod gcode::core"><code>crate::core</code></a> module)</li>
-<li><strong>error-resistant:</strong> erroneous input won’t abort parsing, instead
-notifying the caller and continuing on (see <a href="core/trait.Diagnostics.html" title="trait gcode::core::Diagnostics"><code>crate::core::Diagnostics</code></a>)</li>
+<li><strong>deterministic memory usage:</strong> the <a href="core/index.html" title="mod gcode::core"><code>crate::core</code></a> parser can operate
+without dynamic allocation</li>
+<li><strong>error-resistant:</strong> the parser attempts to recover from erroneous input,
+reporting diagnostics and continuing where possible</li>
 <li><strong>performance:</strong> parsing should be reasonably fast, guaranteeing <code>O(n)</code>
 time complexity with no backtracking</li>
 </ul>
-<h2 id="getting-started"><a class="doc-anchor" href="#getting-started">§</a>Getting Started</h2><h3 id="simple-parsing-with-alloc"><a class="doc-anchor" href="#simple-parsing-with-alloc">§</a>Simple parsing (with <code>alloc</code>)</h3>
-<p>With the <a href="https://doc.rust-lang.org/1.85.1/alloc/index.html" title="mod alloc"><code>alloc</code></a> feature (enabled by default), use <a href="ast/fn.parse.html" title="fn gcode::ast::parse"><code>parse</code></a> to get a
-<a href="ast/struct.Program.html" title="struct gcode::ast::Program"><code>Program</code></a> and any <a href="ast/struct.Diagnostics.html" title="struct gcode::ast::Diagnostics"><code>Diagnostics</code></a>. You can then walk <a href="ast/struct.Block.html" title="struct gcode::ast::Block"><code>Block</code></a>s and
-inspect <a href="ast/enum.Code.html" title="enum gcode::ast::Code"><code>Code</code></a>s (e.g. <a href="ast/enum.Code.html#variant.General" title="variant gcode::ast::Code::General"><code>Code::General</code></a>) and their <a href="ast/struct.Argument.html" title="struct gcode::ast::Argument"><code>Argument</code></a>s.</p>
+<h2 id="getting-started"><a class="doc-anchor" href="#getting-started">§</a>Getting Started</h2>
+<p>With the <a href="https://doc.rust-lang.org/1.85.1/alloc/index.html" title="mod alloc"><code>alloc</code></a> feature (enabled by default), use <a href="fn.parse.html" title="fn gcode::parse"><code>parse</code></a> to parse
+g-code into a <a href="struct.Program.html" title="struct gcode::Program"><code>Program</code></a>. If any parse errors are emitted, <a href="fn.parse.html" title="fn gcode::parse"><code>parse</code></a>
+returns <code>Err</code> with the collected <a href="struct.Diagnostics.html" title="struct gcode::Diagnostics"><code>Diagnostics</code></a>.</p>
 
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>gcode::ast::{Code, Value};
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>gcode::{Code, Value};
 
 <span class="kw">let </span>src = <span class="string">"G90 (absolute)\nG00 X50.0 Y-10"</span>;
-<span class="kw">let </span>result = gcode::parse(src)<span class="question-mark">?</span>;
+<span class="kw">let </span>program = gcode::parse(src)<span class="question-mark">?</span>;
 
-<span class="kw">let </span>program = result;
 <span class="macro">assert!</span>(program.blocks.len() &gt;= <span class="number">1</span>);
 
 <span class="kw">for </span>block <span class="kw">in </span><span class="kw-2">&amp;</span>program.blocks {
     <span class="kw">for </span>code <span class="kw">in </span><span class="kw-2">&amp;</span>block.codes {
         <span class="kw">if let </span>Code::General(g) = code {
-            <span class="kw">let </span>args: HashMap&lt;char, <span class="kw">_</span>&gt; = g.args.iter()
-                .map(|a| (a.letter, a.value.clone()))
-                .collect();
-            <span class="kw">let </span><span class="prelude-val">Some</span>(x) = args.get(<span class="kw-2">&amp;</span><span class="string">'X'</span>) <span class="kw">else </span>{ <span class="kw">continue</span>; };
-            <span class="kw">let </span><span class="prelude-val">Some</span>(y) = args.get(<span class="kw-2">&amp;</span><span class="string">'Y'</span>) <span class="kw">else </span>{ <span class="kw">continue</span>; };
-            <span class="macro">assert_eq!</span>(x, <span class="kw-2">&amp;</span>Value::Literal(<span class="number">50.0</span>));
-            <span class="macro">assert_eq!</span>(y, <span class="kw-2">&amp;</span>Value::Literal(-<span class="number">10.0</span>));
+            <span class="kw">for </span>arg <span class="kw">in </span><span class="kw-2">&amp;</span>g.args {
+                <span class="kw">match </span>(arg.letter, <span class="kw-2">&amp;</span>arg.value) {
+                    (<span class="string">'X'</span>, Value::Literal(x)) =&gt; <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>x, <span class="number">50.0</span>),
+                    (<span class="string">'Y'</span>, Value::Literal(y)) =&gt; <span class="macro">assert_eq!</span>(<span class="kw-2">*</span>y, -<span class="number">10.0</span>),
+                    <span class="kw">_ </span>=&gt; {}
+                }
+            }
         }
     }
 }</code></pre></div>
-<p>Parse errors are collected as <a href="ast/struct.Diagnostic.html" title="struct gcode::ast::Diagnostic"><code>Diagnostic</code></a>s. The <a href="ast/fn.parse.html" title="fn gcode::ast::parse"><code>parse</code></a> function fails
-if any parse errors were emitted.</p>
-<h3 id="push-based--zero-allocation-parsing"><a class="doc-anchor" href="#push-based--zero-allocation-parsing">§</a>Push-based / zero-allocation parsing</h3>
-<p>The <a href="core/index.html" title="mod gcode::core"><code>core</code></a> module is designed guaranteed to parse without requiring any
-heap allocations.</p>
-<p>Implement
-<a href="core/trait.ProgramVisitor.html" title="trait gcode::core::ProgramVisitor"><code>ProgramVisitor</code></a>: the parser calls
-<a href="core/trait.ProgramVisitor.html#tymethod.start_block" title="method gcode::core::ProgramVisitor::start_block"><code>ProgramVisitor::start_block</code></a> and
-you return a <a href="core/type.ControlFlow.html" title="type gcode::core::ControlFlow"><code>ControlFlow::Continue</code></a> with a
-<a href="core/trait.BlockVisitor.html" title="trait gcode::core::BlockVisitor"><code>BlockVisitor</code></a>. That visitor receives
-<a href="core/trait.BlockVisitor.html#method.line_number" title="method gcode::core::BlockVisitor::line_number"><code>BlockVisitor::line_number</code></a>,
-<a href="core/trait.BlockVisitor.html#method.comment" title="method gcode::core::BlockVisitor::comment"><code>BlockVisitor::comment</code></a>, and
-<a href="core/trait.BlockVisitor.html#method.start_general_code" title="method gcode::core::BlockVisitor::start_general_code"><code>BlockVisitor::start_general_code</code></a>
-(and similar for M/O/T), returning a
-<a href="core/trait.CommandVisitor.html" title="trait gcode::core::CommandVisitor"><code>CommandVisitor</code></a> for each command. See
-<a href="core/index.html" title="mod gcode::core"><code>crate::core</code></a> for the full visitor model and <a href="core/fn.resume.html" title="fn gcode::core::resume"><code>resume</code></a>
-for pause/resume.</p>
-
-<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>gcode::core::{
-    BlockVisitor, CommandVisitor, ControlFlow, Noop, ProgramVisitor,
-};
-
-<span class="kw">let </span>src = <span class="string">"G90 G01 X5"</span>;
-gcode::core::parse(src, <span class="kw-2">&amp;mut </span>Noop);</code></pre></div>
+<p>Parse errors are reported as <a href="struct.Diagnostic.html" title="struct gcode::Diagnostic"><code>Diagnostic</code></a>s and collected in <a href="struct.Diagnostics.html" title="struct gcode::Diagnostics"><code>Diagnostics</code></a>.</p>
+<p>For more complex use cases, including zero-allocation or streaming parsing,
+refer to the <a href="core/index.html" title="mod gcode::core"><code>core</code></a> module.</p>
+<h2 id="document-model"><a class="doc-anchor" href="#document-model">§</a>Document model</h2>
+<p>G-code is modelled as a sequence of <em>blocks</em>. A <a href="struct.Program.html" title="struct gcode::Program"><code>Program</code></a> (from <a href="fn.parse.html" title="fn gcode::parse"><code>parse</code></a>)
+is the root: it has <code>blocks</code>. Each <a href="struct.Block.html" title="struct gcode::Block"><code>Block</code></a> corresponds roughly to one line
+of source and contains an optional line number (N), comments, G/M/T
+commands (<a href="enum.Code.html" title="enum gcode::Code"><code>Code</code></a> with <a href="struct.Argument.html" title="struct gcode::Argument"><code>Argument</code></a>s), and bare word addresses
+(<a href="struct.Block.html#structfield.word_addresses" title="field gcode::Block::word_addresses"><code>Block::word_addresses</code></a>—e.g. <code>X10.5</code> without a preceding G/M/T).</p>
+<p>For example, this source:</p>
+<div class="example-wrap"><pre class="language-text"><code>G1 X10.5 Y20.0 F1500
+M3 S1000
+; start cutting</code></pre></div>
+<p>is a document of three blocks: the first has one G-code (G1) with arguments
+X, Y, F; the second has one M-code (M3) with S; the third has a comment.</p>
+<p>Unlike JSON or XML, g-code has no single universal grammar; controllers and
+dialects differ, and the meaning of a block often depends on machine state
+or dialect rules. This crate therefore models g-code at the <em>syntactic</em>
+level: the parser represents what was written, not what the machine would
+do. Higher-level interpretation (e.g. whether X/Y are coordinates for a
+move) is left to downstream code.</p>
 <h2 id="zero-allocation"><a class="doc-anchor" href="#zero-allocation">§</a>Zero allocation</h2>
 <p>To avoid dynamic allocation, do not enable the <code>alloc</code> feature and do not
-use the <a href="ast/fn.parse.html" title="fn gcode::ast::parse"><code>parse</code></a> function (which builds an AST). Implement the
+use the <a href="fn.parse.html" title="fn gcode::parse"><code>parse</code></a> function (which builds an AST). Implement
 <a href="core/trait.ProgramVisitor.html" title="trait gcode::core::ProgramVisitor"><code>ProgramVisitor</code></a>,
 <a href="core/trait.BlockVisitor.html" title="trait gcode::core::BlockVisitor"><code>BlockVisitor</code></a>, and
-<a href="core/trait.CommandVisitor.html" title="trait gcode::core::CommandVisitor"><code>CommandVisitor</code></a> traits and pass your visitor
-to <a href="core/fn.parse.html" title="fn gcode::core::parse"><code>core::parse</code></a>; the parser drives your visitor and
-does not allocate.</p>
+<a href="core/trait.CommandVisitor.html" title="trait gcode::core::CommandVisitor"><code>CommandVisitor</code></a> and pass your visitor to
+<a href="core/fn.parse.html" title="fn gcode::core::parse"><code>core::parse</code></a>; the parser drives your visitor and does not allocate.</p>
 <h2 id="spans"><a class="doc-anchor" href="#spans">§</a>Spans</h2>
 <p>Each element’s original location in the source is retained as a
 <a href="core/struct.Span.html" title="struct gcode::core::Span"><code>Span</code></a>.</p>
@@ -82,11 +77,11 @@ does not allocate.</p>
 <p>In the core API, visitor methods receive a <code>Span</code> (e.g.
 <a href="core/trait.BlockVisitor.html#method.line_number" title="method gcode::core::BlockVisitor::line_number"><code>BlockVisitor::line_number</code></a> and
 <a href="core/trait.BlockVisitor.html#method.comment" title="method gcode::core::BlockVisitor::comment"><code>BlockVisitor::comment</code></a>). AST types
-(with <code>alloc</code>) have a <code>span</code> field (e.g. <a href="ast/struct.Block.html#structfield.span" title="field gcode::ast::Block::span"><code>Block::span</code></a>, <a href="ast/struct.Comment.html#structfield.span" title="field gcode::ast::Comment::span"><code>Comment::span</code></a>,
-<a href="ast/struct.GeneralCode.html#structfield.span" title="field gcode::ast::GeneralCode::span"><code>GeneralCode::span</code></a>, <a href="ast/struct.Argument.html#structfield.span" title="field gcode::ast::Argument::span"><code>Argument::span</code></a>).</p>
-<h3 id="feature-flags"><a class="doc-anchor" href="#feature-flags">§</a>Feature Flags</h3>
+(with <code>alloc</code>) have a <code>span</code> field (e.g. <a href="struct.Block.html#structfield.span" title="field gcode::Block::span"><code>Block::span</code></a>, <a href="struct.Comment.html#structfield.span" title="field gcode::Comment::span"><code>Comment::span</code></a>,
+<a href="struct.GeneralCode.html#structfield.span" title="field gcode::GeneralCode::span"><code>GeneralCode::span</code></a>, <a href="struct.Argument.html#structfield.span" title="field gcode::Argument::span"><code>Argument::span</code></a>).</p>
+<h2 id="feature-flags"><a class="doc-anchor" href="#feature-flags">§</a>Feature Flags</h2>
 <ul>
-<li><strong><code>alloc</code></strong> <em>(enabled by default)</em> —  Enables the <a href="ast/index.html" title="mod gcode::ast"><code>ast</code></a> module and <a href="ast/fn.parse.html" title="fn gcode::ast::parse"><code>parse</code></a>, producing a <a href="ast/struct.Program.html" title="struct gcode::ast::Program"><code>Program</code></a> and collecting <a href="ast/struct.Diagnostics.html" title="struct gcode::ast::Diagnostics"><code>Diagnostics</code></a>.</li>
+<li><strong><code>alloc</code></strong> <em>(enabled by default)</em> —  Enables the <code>alloc</code> crate, enabling <a href="fn.parse.html" title="fn gcode::parse"><code>parse</code></a> and the heap-allocated AST (<a href="struct.Program.html" title="struct gcode::Program"><code>Program</code></a>, <a href="struct.Diagnostics.html" title="struct gcode::Diagnostics"><code>Diagnostics</code></a>, etc.).</li>
 <li><strong><code>serde</code></strong> <em>(enabled by default)</em> —  Enables serialisation and deserialisation of core and AST types via <code>serde</code>.</li>
 </ul>
 <h4 id="internal-features"><a class="doc-anchor" href="#internal-features">§</a>Internal Features</h4>
@@ -94,4 +89,4 @@ does not allocate.</p>
 <ul>
 <li><strong><code>unstable-doc-cfg</code></strong> —  Enables rustdoc labels for items gated by features (for docs.rs - requires nightly).</li>
 </ul>
-</div></details><h2 id="reexports" class="section-header">Re-exports<a href="#reexports" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name" id="reexport.parse"><code>pub use crate::ast::<a class="fn" href="ast/fn.parse.html" title="fn gcode::ast::parse">parse</a>;</code></div></li></ul><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="ast/index.html" title="mod gcode::ast">ast</a></div><div class="desc docblock-short">G-code text → typed AST.</div></li><li><div class="item-name"><a class="mod" href="core/index.html" title="mod gcode::core">core</a></div><div class="desc docblock-short">A zero-allocation, push-based parser for g-code.</div></li></ul></section></div></main></body></html>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="mod" href="core/index.html" title="mod gcode::core">core</a></div><div class="desc docblock-short">A zero-allocation, push-based parser for g-code.</div></li></ul><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Argument.html" title="struct gcode::Argument">Argument</a></div><div class="desc docblock-short">One address letter and its value (e.g. X, Y, Z, F, S).</div></li><li><div class="item-name"><a class="struct" href="struct.AstBuilder.html" title="struct gcode::AstBuilder">AstBuilder</a></div><div class="desc docblock-short"><a href="core/trait.ProgramVisitor.html" title="trait gcode::core::ProgramVisitor"><code>ProgramVisitor</code></a> that builds an owned <a href="struct.Program.html" title="struct gcode::Program"><code>Program</code></a> and collects <a href="struct.Diagnostics.html" title="struct gcode::Diagnostics"><code>Diagnostics</code></a>.</div></li><li><div class="item-name"><a class="struct" href="struct.Block.html" title="struct gcode::Block">Block</a></div><div class="desc docblock-short">One line of g-code: optional N number, comments, G/M/T codes, and word addresses.</div></li><li><div class="item-name"><a class="struct" href="struct.Comment.html" title="struct gcode::Comment">Comment</a></div><div class="desc docblock-short">Comment text, kind, and source span.</div></li><li><div class="item-name"><a class="struct" href="struct.Diagnostic.html" title="struct gcode::Diagnostic">Diagnostic</a></div><div class="desc docblock-short">A single recoverable parse issue with a <a href="enum.DiagnosticKind.html" title="enum gcode::DiagnosticKind"><code>DiagnosticKind</code></a> and source <a href="core/struct.Span.html" title="struct gcode::core::Span"><code>Span</code></a>.</div></li><li><div class="item-name"><a class="struct" href="struct.Diagnostics.html" title="struct gcode::Diagnostics">Diagnostics</a></div><div class="desc docblock-short">Collection of <a href="struct.Diagnostic.html" title="struct gcode::Diagnostic"><code>Diagnostic</code></a>s produced by a parse.</div></li><li><div class="item-name"><a class="struct" href="struct.GeneralCode.html" title="struct gcode::GeneralCode">General<wbr>Code</a></div><div class="desc docblock-short">G-code: motion, coordinate system, plane selection, etc.</div></li><li><div class="item-name"><a class="struct" href="struct.MiscellaneousCode.html" title="struct gcode::MiscellaneousCode">Miscellaneous<wbr>Code</a></div><div class="desc docblock-short">M-code: spindle, coolant, program control, etc.</div></li><li><div class="item-name"><a class="struct" href="struct.Program.html" title="struct gcode::Program">Program</a></div><div class="desc docblock-short">Top-level parse result: a sequence of blocks.</div></li><li><div class="item-name"><a class="struct" href="struct.ToolChangeCode.html" title="struct gcode::ToolChangeCode">Tool<wbr>Change<wbr>Code</a></div><div class="desc docblock-short">T-code: tool selection.</div></li><li><div class="item-name"><a class="struct" href="struct.WordAddress.html" title="struct gcode::WordAddress">Word<wbr>Address</a></div><div class="desc docblock-short">Modal bare address at block level (e.g. <code>X5.0</code>, <code>S12000</code>) without a G/M/T prefix.</div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.Code.html" title="enum gcode::Code">Code</a></div><div class="desc docblock-short">One G, M, or T command (variant plus optional arguments).</div></li><li><div class="item-name"><a class="enum" href="enum.CommentKind.html" title="enum gcode::CommentKind">Comment<wbr>Kind</a></div><div class="desc docblock-short">How the comment appears in source: semicolon (<code>;...</code>) or parentheses (<code>(...)</code>).</div></li><li><div class="item-name"><a class="enum" href="enum.DiagnosticKind.html" title="enum gcode::DiagnosticKind">Diagnostic<wbr>Kind</a></div><div class="desc docblock-short">Category of parse diagnostic emitted during recovery.</div></li><li><div class="item-name"><a class="enum" href="enum.Value.html" title="enum gcode::Value">Value</a></div><div class="desc docblock-short">Argument value: a literal number or a variable reference (e.g. <code>#1</code>).</div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.parse.html" title="fn gcode::parse">parse</a></div><div class="desc docblock-short">Parse G-code source into a <a href="struct.Program.html" title="struct gcode::Program"><code>Program</code></a> or return <a href="struct.Diagnostics.html" title="struct gcode::Diagnostics"><code>Diagnostics</code></a> on error.</div></li></ul></section></div></main></body></html>
