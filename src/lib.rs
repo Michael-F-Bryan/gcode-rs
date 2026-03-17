@@ -1,95 +1,92 @@
-//! A crate for parsing g-code programs, designed with embedded environments in
-//! mind.
+//! A parser for g-code programs, with both a convenient AST API and a
+//! zero-allocation visitor-based core designed for embedded environments.
 //!
 //! Some explicit design goals of this crate are:
 //!
 //! - **embedded-friendly:** users should be able to use this crate without
 //!   requiring access to an operating system (e.g. `#[no_std]` environments or
 //!   WebAssembly)
-//! - **deterministic memory usage:** the library can be tweaked to use no
-//!   dynamic allocation (see the [`crate::core`] module)
-//! - **error-resistant:** erroneous input won't abort parsing, instead
-//!   notifying the caller and continuing on (see [`crate::core::Diagnostics`])
+//! - **deterministic memory usage:** the [`crate::core`] parser can operate
+//!   without dynamic allocation
+//! - **error-resistant:** the parser attempts to recover from erroneous input,
+//!   reporting diagnostics and continuing where possible
 //! - **performance:** parsing should be reasonably fast, guaranteeing `O(n)`
 //!   time complexity with no backtracking
 //!
 //! # Getting Started
 //!
-//! ## Simple parsing (with `alloc`)
-//!
-//! With the [`alloc`] feature (enabled by default), use [`parse`] to get a
-//! [`Program`] and any [`Diagnostics`]. You can then walk [`Block`]s and
-//! inspect [`Code`]s (e.g. [`Code::General`]) and their [`Argument`]s.
+//! With the [`alloc`] feature (enabled by default), use [`parse`] to parse
+//! g-code into a [`Program`]. If any parse errors are emitted, [`parse`]
+//! returns `Err` with the collected [`Diagnostics`].
 //!
 //! ```rust
 //! # #[cfg(feature = "alloc")]
 //! # fn main() -> Result<(), gcode::Diagnostics> {
-//! # use std::collections::HashMap;
 //! use gcode::{Code, Value};
 //!
 //! let src = "G90 (absolute)\nG00 X50.0 Y-10";
-//! let result = gcode::parse(src)?;
+//! let program = gcode::parse(src)?;
 //!
-//! let program = result;
 //! assert!(program.blocks.len() >= 1);
 //!
 //! for block in &program.blocks {
 //!     for code in &block.codes {
 //!         if let Code::General(g) = code {
-//!             let args: HashMap<char, _> = g.args.iter()
-//!                 .map(|a| (a.letter, a.value.clone()))
-//!                 .collect();
-//!             let Some(x) = args.get(&'X') else { continue; };
-//!             let Some(y) = args.get(&'Y') else { continue; };
-//!             assert_eq!(x, &Value::Literal(50.0));
-//!             assert_eq!(y, &Value::Literal(-10.0));
+//!             for arg in &g.args {
+//!                 match (arg.letter, &arg.value) {
+//!                     ('X', Value::Literal(x)) => assert_eq!(*x, 50.0),
+//!                     ('Y', Value::Literal(y)) => assert_eq!(*y, -10.0),
+//!                     _ => {}
+//!                 }
+//!             }
 //!         }
 //!     }
 //! }
 //! # Ok(())
 //! # }
-//! # #[cfg(not(feature = "alloc"))] fn main() {}
+//! # #[cfg(not(feature = "alloc"))]
+//! # fn main() {}
 //! ```
 //!
-//! Parse errors are collected as [`Diagnostic`]s. The [`parse`] function fails
-//! if any parse errors were emitted.
+//! Parse errors are reported as [`Diagnostic`]s and collected in [`Diagnostics`].
 //!
-//! ## Push-based / zero-allocation parsing
+//! For more complex use cases, including zero-allocation or streaming parsing,
+//! refer to the [`core`] module.
 //!
-//! The [`core`] module is designed guaranteed to parse without requiring any
-//! heap allocations.
+//! # Document model
 //!
-//! Implement
-//! [`ProgramVisitor`](crate::core::ProgramVisitor): the parser calls
-//! [`ProgramVisitor::start_block`](crate::core::ProgramVisitor::start_block) and
-//! you return a [`ControlFlow::Continue`](crate::core::ControlFlow) with a
-//! [`BlockVisitor`](crate::core::BlockVisitor). That visitor receives
-//! [`BlockVisitor::line_number`](crate::core::BlockVisitor::line_number),
-//! [`BlockVisitor::comment`](crate::core::BlockVisitor::comment), and
-//! [`BlockVisitor::start_general_code`](crate::core::BlockVisitor::start_general_code)
-//! (and similar for M/O/T), returning a
-//! [`CommandVisitor`](crate::core::CommandVisitor) for each command. See
-//! [`crate::core`] for the full visitor model and [`resume`](crate::core::resume)
-//! for pause/resume.
+//! G-code is modelled as a sequence of *blocks*. A [`Program`] (from [`parse`])
+//! is the root: it has `blocks`. Each [`Block`] corresponds roughly to one line
+//! of source and contains an optional line number (N), comments, G/M/T
+//! commands ([`Code`] with [`Argument`]s), and bare word addresses
+//! ([`Block::word_addresses`]—e.g. `X10.5` without a preceding G/M/T).
 //!
-//! ```rust
-//! use gcode::core::{
-//!     BlockVisitor, CommandVisitor, ControlFlow, Noop, ProgramVisitor,
-//! };
+//! For example, this source:
 //!
-//! let src = "G90 G01 X5";
-//! gcode::core::parse(src, &mut Noop);
+//! ```text
+//! G1 X10.5 Y20.0 F1500
+//! M3 S1000
+//! ; start cutting
 //! ```
+//!
+//! is a document of three blocks: the first has one G-code (G1) with arguments
+//! X, Y, F; the second has one M-code (M3) with S; the third has a comment.
+//!
+//! Unlike JSON or XML, g-code has no single universal grammar; controllers and
+//! dialects differ, and the meaning of a block often depends on machine state
+//! or dialect rules. This crate therefore models g-code at the *syntactic*
+//! level: the parser represents what was written, not what the machine would
+//! do. Higher-level interpretation (e.g. whether X/Y are coordinates for a
+//! move) is left to downstream code.
 //!
 //! # Zero allocation
 //!
 //! To avoid dynamic allocation, do not enable the `alloc` feature and do not
-//! use the [`parse`] function (which builds an AST). Implement the
+//! use the [`parse`] function (which builds an AST). Implement
 //! [`ProgramVisitor`](crate::core::ProgramVisitor),
 //! [`BlockVisitor`](crate::core::BlockVisitor), and
-//! [`CommandVisitor`](crate::core::CommandVisitor) traits and pass your visitor
-//! to [`core::parse`]; the parser drives your visitor and
-//! does not allocate.
+//! [`CommandVisitor`](crate::core::CommandVisitor) and pass your visitor to
+//! [`core::parse`]; the parser drives your visitor and does not allocate.
 //!
 //! # Spans
 //!
@@ -108,7 +105,7 @@
 //! (with `alloc`) have a `span` field (e.g. [`Block::span`], [`Comment::span`],
 //! [`GeneralCode::span`], [`Argument::span`]).
 //!
-//! ## Feature Flags
+//! # Feature Flags
 //!
 #![doc = document_features::document_features!()]
 #![deny(
@@ -132,29 +129,35 @@
 
 pub mod core;
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "alloc")] {
-        extern crate alloc;
+#[cfg(feature = "alloc")]
+extern crate alloc;
 
-        mod diags;
-        mod types;
-        mod visitor;
+#[cfg(feature = "alloc")]
+mod diags;
+#[cfg(feature = "alloc")]
+mod types;
+#[cfg(feature = "alloc")]
+mod visitor;
 
-        pub use crate::{
-            diags::{Diagnostic, DiagnosticKind, Diagnostics},
-            types::*,
-            visitor::AstBuilder,
-        };
+#[cfg(feature = "alloc")]
+pub use crate::{
+    diags::{Diagnostic, DiagnosticKind, Diagnostics},
+    types::*,
+    visitor::AstBuilder,
+};
 
-        /// Parse G-code source into a [`Program`] or return [`Diagnostics`] on error.
-        pub fn parse(src: &str) -> Result<Program, Diagnostics> {
-            let mut visitor = AstBuilder::new();
-            core::parse(src, &mut visitor);
-            visitor.finish()
-        }
-
-        #[doc = include_str!("../README.md")]
-        #[doc(hidden)]
-        pub fn _assert_readme_code_examples_compile() {}
-    }
+/// Parse G-code source into a [`Program`] or return [`Diagnostics`] on error.
+///
+/// Requires the `alloc` feature. For zero-allocation or streaming parsing, use
+/// [`core::parse`] with a custom [`ProgramVisitor`](crate::core::ProgramVisitor).
+#[cfg(feature = "alloc")]
+pub fn parse(src: &str) -> Result<Program, Diagnostics> {
+    let mut visitor = AstBuilder::new();
+    core::parse(src, &mut visitor);
+    visitor.finish()
 }
+
+#[doc = include_str!("../README.md")]
+#[cfg(feature = "alloc")]
+#[doc(hidden)]
+pub fn _assert_readme_code_examples_compile() {}

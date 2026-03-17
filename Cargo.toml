@@ -20,7 +20,7 @@ maintenance = { status = "actively-developed" }
 
 [features]
 default = ["alloc", "serde"]
-## Enables the [`ast`] module and [`parse`], producing a [`Program`] and collecting [`Diagnostics`].
+## Enables the `alloc` crate, enabling [`parse`] and the heap-allocated AST ([`Program`], [`Diagnostics`], etc.).
 alloc = []
 ## Enables serialisation and deserialisation of core and AST types via `serde`.
 serde = ["dep:serde"]

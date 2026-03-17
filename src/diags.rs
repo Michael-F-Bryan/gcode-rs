@@ -1,8 +1,15 @@
+//! Diagnostics for alloc-based parsing; returned by [`parse`](crate::parse) when errors occur.
+//!
+//! The parser reports recoverable issues via the [`Diagnostics`](crate::core::Diagnostics) trait;
+//! this module provides a concrete implementation that collects them.
+#![allow(missing_docs)]
+
 use alloc::{string::String, string::ToString, vec::Vec};
 use core::fmt::{self, Display, Formatter};
 
 use crate::core::{Span, TokenType};
 
+/// A single recoverable parse issue with a [`DiagnosticKind`] and source [`Span`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Diagnostic {
@@ -22,13 +29,16 @@ impl Display for Diagnostic {
     }
 }
 
+/// Category of parse diagnostic emitted during recovery.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum DiagnosticKind {
+    /// text the parser could not interpret (e.g. invalid token).
     UnknownContent {
         text: String,
     },
+    /// the parser expected one of `expected` token types but found `actual`.
     Unexpected {
         actual: String,
         expected: Vec<TokenType>,
@@ -53,22 +63,29 @@ impl Display for DiagnosticKind {
     }
 }
 
+/// Collection of [`Diagnostic`]s produced by a parse.
+///
+/// Returned by [`parse`](crate::parse) in `Err` when any diagnostic was emitted.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Diagnostics(Vec<Diagnostic>);
 
 impl Diagnostics {
+    /// Creates an empty collection.
     pub const fn new() -> Self {
         Self(Vec::new())
     }
 
+    /// Returns true if no diagnostics were collected.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
+    /// Consumes self and returns the inner vector of diagnostics.
     pub fn into_inner(self) -> Vec<Diagnostic> {
         self.0
     }
 
+    /// Iterates over the collected diagnostics.
     pub fn iter(&self) -> impl Iterator<Item = &Diagnostic> {
         self.0.iter()
     }

@@ -81,6 +81,82 @@
 //! result, the behaviour of the entire crate is defined here; understanding
 //! `gcode::core` gives you a precise mental model for how parsing, spans, and
 //! diagnostics behave at every layer.
+//!
+//! Examples
+//!
+//! Implement [`ProgramVisitor`] to receive blocks as they are parsed. Each
+//! block is handled by a [`BlockVisitor`], which in turn creates a
+//! [`CommandVisitor`] for each G/M/T command.
+//!
+//! We don't care about errors in this example, so we use [`Noop`] as the
+//! diagnostics implementation.
+//!
+//! ```rust
+//! # #[allow(refining_impl_trait)]
+//! use gcode::core::{
+//!     BlockVisitor, CommandVisitor, ControlFlow, HasDiagnostics, Noop,
+//!     Number, ProgramVisitor,
+//! };
+//!
+//! #[derive(Default)]
+//! struct Counter {
+//!     blocks: usize,
+//!     commands: usize,
+//!     diag: Noop,
+//! }
+//!
+//! impl HasDiagnostics for Counter {
+//!     fn diagnostics(&mut self) -> &mut dyn gcode::core::Diagnostics {
+//!         &mut self.diag
+//!     }
+//! }
+//!
+//! struct BlockCounter<'a>(&'a mut Counter);
+//!
+//! impl ProgramVisitor for Counter {
+//!     fn start_block(&mut self) -> ControlFlow<BlockCounter<'_>> {
+//!         self.blocks += 1;
+//!         ControlFlow::Continue(BlockCounter(&mut *self))
+//!     }
+//! }
+//!
+//! impl HasDiagnostics for BlockCounter<'_> {
+//!     fn diagnostics(&mut self) -> &mut dyn gcode::core::Diagnostics {
+//!         &mut self.0.diag
+//!     }
+//! }
+//!
+//! struct CommandCounter<'a>(&'a mut Counter);
+//!
+//! impl BlockVisitor for BlockCounter<'_> {
+//!     fn start_general_code(&mut self, _number: Number) -> ControlFlow<CommandCounter<'_>> {
+//!         self.0.commands += 1;
+//!         ControlFlow::Continue(CommandCounter(&mut *self.0))
+//!     }
+//!     fn start_miscellaneous_code(&mut self, _number: Number) -> ControlFlow<CommandCounter<'_>> {
+//!         self.0.commands += 1;
+//!         ControlFlow::Continue(CommandCounter(&mut *self.0))
+//!     }
+//!     fn start_tool_change_code(&mut self, _number: Number) -> ControlFlow<CommandCounter<'_>> {
+//!         self.0.commands += 1;
+//!         ControlFlow::Continue(CommandCounter(&mut *self.0))
+//!     }
+//! }
+//!
+//! impl HasDiagnostics for CommandCounter<'_> {
+//!     fn diagnostics(&mut self) -> &mut dyn gcode::core::Diagnostics {
+//!         &mut self.0.diag
+//!     }
+//! }
+//!
+//! impl CommandVisitor for CommandCounter<'_> {}
+//!
+//! let src = "G90\nG01 X5\nM3";
+//! let mut counter = Counter::default();
+//! gcode::core::parse(src, &mut counter);
+//! assert_eq!(counter.blocks, 3);
+//! assert_eq!(counter.commands, 3);
+//! ```
 
 mod lexer;
 mod parser;

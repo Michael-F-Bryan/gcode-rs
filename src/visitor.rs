@@ -12,6 +12,9 @@ use crate::{
     },
 };
 
+/// [`ProgramVisitor`](crate::core::ProgramVisitor) that builds an owned [`Program`] and collects [`Diagnostics`].
+///
+/// Used by [`parse`](crate::parse); typically not constructed by users.
 #[derive(Debug)]
 pub struct AstBuilder {
     blocks: Vec<Block>,
@@ -19,6 +22,7 @@ pub struct AstBuilder {
 }
 
 impl AstBuilder {
+    /// Creates a new `AstBuilder`.
     pub const fn new() -> Self {
         Self {
             blocks: Vec::new(),
@@ -26,6 +30,7 @@ impl AstBuilder {
         }
     }
 
+    /// Returns the built [`Program`], or [`Err`] with the collected [`Diagnostics`] if any diagnostic was emitted.
     pub fn finish(self) -> Result<Program, Diagnostics> {
         let AstBuilder {
             blocks,

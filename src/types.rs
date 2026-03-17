@@ -1,8 +1,13 @@
+#![allow(missing_docs)]
+
 use alloc::{string::String, vec::Vec};
 use core::fmt;
 
 use crate::core::{Number, Span};
 
+/// Top-level parse result: a sequence of blocks.
+///
+/// Obtain via [`parse`](crate::parse).
 #[derive(Debug, Default, Clone, PartialEq)]
 #[non_exhaustive]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -27,6 +32,7 @@ impl core::str::FromStr for Program {
     }
 }
 
+/// One line of g-code: optional N number, comments, G/M/T codes, and word addresses.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -72,6 +78,9 @@ impl fmt::Display for Block {
     }
 }
 
+/// Modal bare address at block level (e.g. `X5.0`, `S12000`) without a G/M/T prefix.
+///
+/// See [`Block::word_addresses`].
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -87,6 +96,7 @@ impl fmt::Display for WordAddress {
     }
 }
 
+/// How the comment appears in source: semicolon (`;...`) or parentheses (`(...)`).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -95,6 +105,7 @@ pub enum CommentKind {
     Parentheses,
 }
 
+/// Comment text, kind, and source span.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -113,6 +124,9 @@ impl fmt::Display for Comment {
     }
 }
 
+/// One G, M, or T command (variant plus optional arguments).
+///
+/// Appears in [`Block::codes`].
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -132,6 +146,7 @@ impl fmt::Display for Code {
     }
 }
 
+/// G-code: motion, coordinate system, plane selection, etc.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -151,6 +166,7 @@ impl fmt::Display for GeneralCode {
     }
 }
 
+/// M-code: spindle, coolant, program control, etc.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -170,6 +186,7 @@ impl fmt::Display for MiscellaneousCode {
     }
 }
 
+/// T-code: tool selection.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -189,6 +206,9 @@ impl fmt::Display for ToolChangeCode {
     }
 }
 
+/// One address letter and its value (e.g. X, Y, Z, F, S).
+///
+/// On a G/M/T code; see e.g. [`GeneralCode::args`].
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -204,6 +224,7 @@ impl fmt::Display for Argument {
     }
 }
 
+/// Argument value: a literal number or a variable reference (e.g. `#1`).
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
