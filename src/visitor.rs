@@ -1,13 +1,14 @@
 use alloc::vec::Vec;
 
 use crate::{
-    ast::{
-        Argument, Block, Code, Comment, CommentKind, Diagnostics, GeneralCode,
-        MiscellaneousCode, Program, ToolChangeCode, WordAddress,
-    },
     core::{
         ControlFlow, Diagnostics as _, HasDiagnostics, Number, ProgramVisitor,
         Span, TokenType,
+    },
+    diags::Diagnostics,
+    types::{
+        Argument, Block, Code, Comment, CommentKind, GeneralCode,
+        MiscellaneousCode, Program, ToolChangeCode, WordAddress,
     },
 };
 

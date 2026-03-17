@@ -20,10 +20,10 @@ impl fmt::Display for Program {
 }
 
 impl core::str::FromStr for Program {
-    type Err = crate::ast::Diagnostics;
+    type Err = crate::Diagnostics;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        crate::ast::parse(s)
+        crate::parse(s)
     }
 }
 
@@ -458,5 +458,43 @@ mod tests {
         assert_eq!(v.to_string(), "#1");
         let v = Value::Variable("var".into());
         assert_eq!(v.to_string(), "#var");
+    }
+
+    #[test]
+    fn alloc_parse_captures_word_addresses() {
+        let program = crate::parse("X5.0 Y-3.0\n").unwrap();
+        assert_eq!(program.blocks.len(), 1);
+        assert_eq!(program.blocks[0].word_addresses.len(), 2);
+        assert_eq!(program.blocks[0].word_addresses[0].letter, 'X');
+        assert!(matches!(
+            program.blocks[0].word_addresses[0].value,
+            Value::Literal(n) if (n - 5.0).abs() < 1e-6
+        ));
+        assert_eq!(program.blocks[0].word_addresses[1].letter, 'Y');
+        assert!(matches!(
+            program.blocks[0].word_addresses[1].value,
+            Value::Literal(n) if (n - (-3.0)).abs() < 1e-6
+        ));
+    }
+
+    #[test]
+    fn ast_parse_captures_m_and_t_codes() {
+        let program = crate::parse("G0 X0\nM3 S1000\nT1\n").unwrap();
+        assert_eq!(program.blocks.len(), 3);
+
+        assert_eq!(program.blocks[0].codes.len(), 1);
+        assert!(matches!(&program.blocks[0].codes[0], Code::General(_)));
+
+        assert_eq!(program.blocks[1].codes.len(), 1);
+        assert!(matches!(
+            &program.blocks[1].codes[0],
+            Code::Miscellaneous(m) if m.number.major() == 3
+        ));
+
+        assert_eq!(program.blocks[2].codes.len(), 1);
+        assert!(matches!(
+            &program.blocks[2].codes[0],
+            Code::ToolChange(t) if t.number.major() == 1
+        ));
     }
 }

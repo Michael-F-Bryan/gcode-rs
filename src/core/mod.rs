@@ -6,9 +6,9 @@
 //! you need deterministic memory usage (e.g. embedded or `no_std`), when you
 //! want to stream g-code and act on it as it arrives, or when you want full
 //! control over how commands, numbers, and diagnostics are represented. If you
-//! prefer a ready-made AST and default diagnostics, use [`crate::parse`] and
-//! the [`crate::ast`] module instead; they are thin layers built on top of
-//! `gcode::core`.
+//! prefer a ready-made AST and default diagnostics, use [`crate::parse`]
+//! and the [`crate::Program`] type instead; they are thin layers built on top
+//! of [`crate::core`].
 //!
 //! ## How the API works
 //!
@@ -75,7 +75,7 @@
 //!
 //! ## Relationship to the rest of the crate
 //!
-//! The higher-level [`crate::ast`] module and the [`crate::parse`] convenience
+//! The higher-level [`crate`] module and the [`crate::parse`] convenience
 //! function are implemented in terms of `gcode::core`: they provide visitors
 //! that build an owned AST and collect diagnostics into a single value. As a
 //! result, the behaviour of the entire crate is defined here; understanding

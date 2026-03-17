@@ -23,9 +23,9 @@
 //!
 //! ```rust
 //! # #[cfg(feature = "alloc")]
-//! # fn main() -> Result<(), gcode::ast::Diagnostics> {
+//! # fn main() -> Result<(), gcode::Diagnostics> {
 //! # use std::collections::HashMap;
-//! use gcode::ast::{Code, Value};
+//! use gcode::{Code, Value};
 //!
 //! let src = "G90 (absolute)\nG00 X50.0 Y-10";
 //! let result = gcode::parse(src)?;
@@ -122,7 +122,7 @@
     unused_qualifications,
     unused_results,
     variant_size_differences,
-    // rustdoc::broken_intra_doc_links,
+    rustdoc::broken_intra_doc_links,
     missing_docs
 )]
 #![cfg_attr(not(test), no_std)]
@@ -130,21 +130,31 @@
 #![cfg_attr(feature = "unstable-doc-cfg", feature(doc_cfg))]
 #![cfg_attr(feature = "unstable-doc-cfg", doc(auto_cfg))]
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
-
-#[cfg(feature = "alloc")]
-pub mod ast;
-
 pub mod core;
 
-#[cfg(feature = "alloc")]
-pub use crate::ast::parse;
+cfg_if::cfg_if! {
+    if #[cfg(feature = "alloc")] {
+        extern crate alloc;
 
-#[cfg(all(doc, feature = "alloc"))]
-use crate::ast::*;
+        mod diags;
+        mod types;
+        mod visitor;
 
-#[cfg(feature = "alloc")]
-#[doc = include_str!("../README.md")]
-#[doc(hidden)]
-pub fn _assert_readme_code_examples_compile() {}
+        pub use crate::{
+            diags::{Diagnostic, DiagnosticKind, Diagnostics},
+            types::*,
+            visitor::AstBuilder,
+        };
+
+        /// Parse G-code source into a [`Program`] or return [`Diagnostics`] on error.
+        pub fn parse(src: &str) -> Result<Program, Diagnostics> {
+            let mut visitor = AstBuilder::new();
+            core::parse(src, &mut visitor);
+            visitor.finish()
+        }
+
+        #[doc = include_str!("../README.md")]
+        #[doc(hidden)]
+        pub fn _assert_readme_code_examples_compile() {}
+    }
+}

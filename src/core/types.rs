@@ -203,7 +203,7 @@ impl Display for ParseNumberError {
 ///
 /// The parser does not abort on these conditions; it reports via your
 /// implementation and continues. Override the default no-op implementations to
-/// collect or log diagnostics. The [`crate::ast`] module provides a
+/// collect or log diagnostics. The [`crate`] module provides a
 /// diagnostics type that implements this trait and accumulates messages.
 #[allow(unused_variables)]
 pub trait Diagnostics {
