@@ -24,13 +24,14 @@ impl Display for Diagnostic {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
 pub enum DiagnosticKind {
     UnknownContent {
         text: String,
     },
     Unexpected {
         actual: String,
-        expected: Vec<String>,
+        expected: Vec<TokenType>,
     },
 }
 
@@ -40,12 +41,14 @@ impl Display for DiagnosticKind {
             DiagnosticKind::UnknownContent { text } => {
                 write!(f, "Unknown content: {}", text)
             },
-            DiagnosticKind::Unexpected { actual, expected } => write!(
-                f,
-                "Unexpected: {} (expected: {})",
-                actual,
-                expected.join(", ")
-            ),
+            DiagnosticKind::Unexpected { actual, expected } => {
+                let expected = expected
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                write!(f, "Unexpected: {actual} (expected: {expected})")
+            },
         }
     }
 }
@@ -96,7 +99,7 @@ impl crate::core::Diagnostics for Diagnostics {
         self.0.push(Diagnostic {
             kind: DiagnosticKind::Unexpected {
                 actual: actual.to_string(),
-                expected: expected.iter().map(ToString::to_string).collect(),
+                expected: expected.to_vec(),
             },
             span,
         });
