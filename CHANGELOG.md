@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0-alpha](https://github.com/Michael-F-Bryan/gcode-rs/compare/v0.6.0...v0.7.0-alpha) (2026-03-17)
+
+
+### ⚠ BREAKING CHANGES
+
+* Public API replaced. Removed: parse(), full_parse_with_callbacks(), Parser, GCode, Line, Word, Callbacks, Buffers, Comment, Span, and related types. Use core::parse() with a ProgramVisitor for push-based parsing, or ast::parse() (with alloc feature) for an alloc-based Program and Diagnostics.
+* upgrade to Rust 1.85 and edition 2024
+
+### Features
+
+* **ast:** add alloc-based AST and parse() returning Program and Diagnostics ([63abac0](https://github.com/Michael-F-Bryan/gcode-rs/commit/63abac0a1bb23eee8b900f052ebd95aee7c177fe))
+* **core:** implement push-based parser in resume() ([029d5f5](https://github.com/Michael-F-Bryan/gcode-rs/commit/029d5f5d1efd06b251d6061adbfa340680636bc0))
+* **core:** implement push-based parser with TDD (empty input, single G-code) ([264b76f](https://github.com/Michael-F-Bryan/gcode-rs/commit/264b76fd95d4aa6aac07f77074d325a42073716b))
+* **examples:** add pretty-print visitor example ([c110e4b](https://github.com/Michael-F-Bryan/gcode-rs/commit/c110e4b7a6cbe40820fa2d0fee5353b735828d0f))
+* Introduced a `core` module which is based around a push-based parser ([5c0e230](https://github.com/Michael-F-Bryan/gcode-rs/commit/5c0e23091dcf7f3a7917937d26b76b9050b10f5d))
+* **parser:** add % delimiter, modal word addresses, G/M/T token types ([16ef482](https://github.com/Michael-F-Bryan/gcode-rs/commit/16ef48289d1f872fedd90a3feed054b10b14a48b))
+* upgrade to Rust 1.85 and edition 2024 ([fc94c1d](https://github.com/Michael-F-Bryan/gcode-rs/commit/fc94c1d8aef3ed47c229ae75c2298b8fb876925c))
+
+
+### Bug Fixes
+
+* **ast:** record M and T codes in BlockBuilder ([fd9f815](https://github.com/Michael-F-Bryan/gcode-rs/commit/fd9f8157775342f366edf7b8a8a9e85bcb92bca1))
+* **core:** silence unused_assignments in feed_line; add code+comment and regression tests ([bca2d87](https://github.com/Michael-F-Bryan/gcode-rs/commit/bca2d87da09e815df96629dcd42a6ff663409a1e))
+
+
+### Miscellaneous Chores
+
+* release 0.7.0-alpha ([bf076b5](https://github.com/Michael-F-Bryan/gcode-rs/commit/bf076b53264a25eb8b51035aaa077880fae7f363))
+
+
+### Code Refactoring
+
+* replace public API with core and ast, remove iterator/callback API ([a63fec1](https://github.com/Michael-F-Bryan/gcode-rs/commit/a63fec1bd529ef7c444eb8d2d394de7c03d95d72))
+
 ## [0.6.1]
 
 ### Added
