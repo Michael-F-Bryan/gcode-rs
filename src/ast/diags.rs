@@ -10,6 +10,18 @@ pub struct Diagnostic {
     pub span: Span,
 }
 
+impl Display for Diagnostic {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let Diagnostic {
+            kind,
+            span: Span { line, .. },
+        } = self;
+        let line = line + 1;
+
+        write!(f, "{kind} on line {line}")
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum DiagnosticKind {

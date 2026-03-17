@@ -1,16 +1,46 @@
-# gcode-rs
+# GCode
 
 [![Crates.io version](https://img.shields.io/crates/v/gcode.svg)](https://crates.io/crates/gcode)
 [![Docs](https://docs.rs/gcode/badge.svg)](https://docs.rs/gcode/)
 [![CI](https://github.com/Michael-F-Bryan/gcode-rs/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Michael-F-Bryan/gcode-rs/actions/workflows/ci.yml)
 
-A gcode parser designed for use in `#[no_std]` environments.
+A gcode parser designed for use in `#[no_std]` environments. G-code is the
+common name for the programming language used by CNC machines and 3D printers.
 
-For an example of the `gcode` crate in use, see
-[@etrombly][etrombly]'s [`gcode-yew`][gc-y].
+Design goals:
+- embedded-friendly (no_std / WebAssembly)
+- deterministic memory (optional zero allocation via the `core` visitor API)
+- error-resistant parsing with diagnostics, and
+- *O(n)* performance with no backtracking.
+
+Default features: `alloc`, `serde`. Omit `alloc` for zero-allocation parsing
+via the `core` visitor API. Requires Rust 1.85+.
+
+## Getting Started
+
+First, add `gcode` to your dependencies:
+
+```console
+$ cargo add gcode
+```
+
+Then, you can start using it. Here is a simple example that parses a G-code program using the `alloc` feature:
+
+```rust
+fn main() -> Result<(), gcode::ast::Diagnostics> {
+    let src = "G90 G00 X10 Y20";
+    let program = gcode::parse(src)?;
+    assert_eq!(program.blocks.len(), 1);
+    Ok(())
+}
+```
+
+For a visitor-based example, see the `pretty_print_visitor` example. Run it with
+`cargo run --example pretty_print_visitor`.
 
 ## Useful Links
 
+- [Full API and feature flags][docs.rs] (docs.rs)
 - [The thread that kicked this idea off][thread]
 - [Rendered Documentation][docs]
 - [NIST GCode Interpreter Spec][nist]
@@ -39,6 +69,7 @@ submitted for inclusion in the work by you, as defined in the Apache-2.0
 license, shall be dual licensed as above, without any additional terms or
 conditions.
 
+[docs.rs]: https://docs.rs/gcode/
 [thread]:https://users.rust-lang.org/t/g-code-interpreter/10930
 [docs]: https://michael-f-bryan.github.io/gcode-rs/
 [p3]: https://github.com/Michael-F-Bryan/gcode-rs/blob/main/tests/data/program_3.gcode
