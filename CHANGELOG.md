@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0-beta](https://github.com/Michael-F-Bryan/gcode-rs/compare/v0.7.0-alpha...v0.7.0-beta) (2026-03-17)
+
+
+### doc
+
+* Adding examples to the README ([bf4569f](https://github.com/Michael-F-Bryan/gcode-rs/commit/bf4569f826584ca00bd5054a0430c23ab23dbccb))
+
+
+### Features
+
+* feat:  ([bf4569f](https://github.com/Michael-F-Bryan/gcode-rs/commit/bf4569f826584ca00bd5054a0430c23ab23dbccb))
+* **ast:** add Display impls for g-code round-trip ([806699a](https://github.com/Michael-F-Bryan/gcode-rs/commit/806699a105197246d9ff08c28496dbc182f2bda2))
+
 ## [0.7.0-alpha](https://github.com/Michael-F-Bryan/gcode-rs/compare/v0.6.0...v0.7.0-alpha) (2026-03-17)
 
 
