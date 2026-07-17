@@ -24,7 +24,7 @@ default = ["alloc", "serde"]
 alloc = ["defmt?/alloc"]
 ## Enables serialisation and deserialisation of core and AST types via `serde`.
 serde = ["dep:serde"]
-## Enabled defmt formatting
+## Enables defmt format implementations.
 defmt = ["dep:defmt"]
 
 #! ### Internal Features
