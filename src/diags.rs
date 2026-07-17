@@ -29,6 +29,19 @@ impl Display for Diagnostic {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for Diagnostic {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        let Diagnostic {
+            kind,
+            span: Span { line, .. },
+        } = self;
+        let line = line + 1;
+
+        defmt::write!(fmt, "{} on line {}", kind, line)
+    }
+}
+
 /// Category of parse diagnostic emitted during recovery.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -61,10 +74,35 @@ impl Display for DiagnosticKind {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for DiagnosticKind {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        match self {
+            DiagnosticKind::UnknownContent { text } => {
+                defmt::write!(fmt, "Unknown content: {}", text)
+            },
+            DiagnosticKind::Unexpected { actual, expected } => {
+                let expected = expected
+                    .iter()
+                    .map(|s| s.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                defmt::write!(
+                    fmt,
+                    "Unexpected: {} (expected: {})",
+                    actual,
+                    expected
+                )
+            },
+        }
+    }
+}
+
 /// Collection of [`Diagnostic`]s produced by a parse.
 ///
 /// Returned by [`parse`](crate::parse) in `Err` when any diagnostic was emitted.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Diagnostics(Vec<Diagnostic>);
 
 impl Diagnostics {
