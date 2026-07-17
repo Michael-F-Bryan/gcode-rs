@@ -21,9 +21,11 @@ maintenance = { status = "actively-developed" }
 [features]
 default = ["alloc", "serde"]
 ## Enables the `alloc` crate, enabling [`parse`] and the heap-allocated AST ([`Program`], [`Diagnostics`], etc.).
-alloc = []
+alloc = ["defmt?/alloc"]
 ## Enables serialisation and deserialisation of core and AST types via `serde`.
 serde = ["dep:serde"]
+## Enabled defmt formatting
+defmt = ["dep:defmt"]
 
 #! ### Internal Features
 #! The following features are not intended for public use.
@@ -33,6 +35,7 @@ unstable-doc-cfg = []
 
 [dependencies]
 cfg-if = "1.0.4"
+defmt = { version = "1.1", optional = true }
 doc-cfg = "0.1.0"
 document-features = "0.2"
 libm = "0.2"
