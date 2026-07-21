@@ -178,9 +178,12 @@ impl Debug for Number {
     }
 }
 
+/// An error returned when parsing a number.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseNumberError {
+    /// Number integer parsing error.
     ParseInt(core::num::ParseIntError),
+    /// Number overflow error.
     Overflow,
 }
 
