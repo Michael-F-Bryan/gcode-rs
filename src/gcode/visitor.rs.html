@@ -229,7 +229,8 @@
 <a href="#228" id="228">228</a>
 <a href="#229" id="229">229</a>
 <a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a></pre></div><pre class="rust"><code><span class="kw">use </span>alloc::vec::Vec;
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a></pre></div><pre class="rust"><code><span class="kw">use </span>alloc::vec::Vec;
 
 <span class="kw">use crate</span>::{
     core::{
@@ -247,6 +248,7 @@
 ///
 /// Used by [`parse`](crate::parse); typically not constructed by users.
 </span><span class="attr">#[derive(Debug)]
+#[cfg_attr(feature = <span class="string">"defmt"</span>, derive(defmt::Format))]
 </span><span class="kw">pub struct </span>AstBuilder {
     blocks: Vec&lt;Block&gt;,
     diagnostics: Diagnostics,
