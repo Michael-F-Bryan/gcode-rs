@@ -165,7 +165,7 @@ mod types;
 pub use self::parser::{ParserState, resume};
 pub use self::types::{
     BlockVisitor, CommandVisitor, ControlFlow, Diagnostics, HasDiagnostics,
-    Noop, Number, ProgramVisitor, Span, TokenType, Value,
+    Noop, Number, ParseNumberError, ProgramVisitor, Span, TokenType, Value,
 };
 
 /// Parses `src` from start to finish, driving `visitor` for each block.
