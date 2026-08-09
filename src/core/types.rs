@@ -63,6 +63,13 @@ impl Display for TokenType {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for TokenType {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "{}", self.as_str())
+    }
+}
+
 /// Return type for visitor methods that may either continue with a child visitor
 /// or pause parsing. See the [module-level docs](crate::core) for the control-flow model.
 pub type ControlFlow<T> = core::ops::ControlFlow<(), T>;
@@ -74,6 +81,7 @@ pub type ControlFlow<T> = core::ops::ControlFlow<(), T>;
 /// refer into the same `&str` passed to [`parse`](crate::core::parse) or
 /// [`resume`](crate::core::resume).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[repr(C)]
 pub struct Span {
@@ -175,6 +183,18 @@ impl Display for Number {
 impl Debug for Number {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         Display::fmt(self, f)
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for Number {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        let major = self.major();
+        defmt::write!(fmt, "{}", major);
+
+        if let Some(minor) = self.minor() {
+            defmt::write!(fmt, ".{}", minor);
+        }
     }
 }
 
@@ -374,6 +394,16 @@ impl Display for Value<'_> {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for Value<'_> {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        match self {
+            Value::Literal(n) => defmt::write!(fmt, "{}", n),
+            Value::Variable(s) => defmt::write!(fmt, "#{}", s),
+        }
+    }
+}
+
 /// A no-op visitor that ignores all callbacks.
 ///
 /// Use when you only need to drive the parser (e.g. to validate syntax or
@@ -388,6 +418,7 @@ impl Display for Value<'_> {
 /// parse(src, &mut Noop);
 /// ```
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct Noop;
 
 impl ProgramVisitor for Noop {

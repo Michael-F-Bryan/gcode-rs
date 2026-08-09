@@ -16,6 +16,7 @@ use crate::{
 ///
 /// Used by [`parse`](crate::parse); typically not constructed by users.
 #[derive(Debug)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 pub struct AstBuilder {
     blocks: Vec<Block>,
     diagnostics: Diagnostics,

@@ -24,6 +24,15 @@ impl fmt::Display for Program {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for Program {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        for block in &self.blocks {
+            defmt::write!(fmt, "{}", block);
+        }
+    }
+}
+
 impl core::str::FromStr for Program {
     type Err = crate::Diagnostics;
 
@@ -78,6 +87,39 @@ impl fmt::Display for Block {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for Block {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        let mut need_space = false;
+        if let Some(n) = self.line_number {
+            defmt::write!(fmt, "N{}", n);
+            need_space = true;
+        }
+        for c in &self.comments {
+            if need_space {
+                defmt::write!(fmt, " ");
+            }
+            defmt::write!(fmt, "{}", c);
+            need_space = true;
+        }
+        for code in &self.codes {
+            if need_space {
+                defmt::write!(fmt, " ");
+            }
+            defmt::write!(fmt, "{}", code);
+            need_space = true;
+        }
+        for w in &self.word_addresses {
+            if need_space {
+                defmt::write!(fmt, " ");
+            }
+            defmt::write!(fmt, "{}", w);
+            need_space = true;
+        }
+        defmt::write!(fmt, "\n");
+    }
+}
+
 /// Modal bare address at block level (e.g. `X5.0`, `S12000`) without a G/M/T prefix.
 ///
 /// See [`Block::word_addresses`].
@@ -96,8 +138,16 @@ impl fmt::Display for WordAddress {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for WordAddress {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "{}{}", self.letter, self.value);
+    }
+}
+
 /// How the comment appears in source: semicolon (`;...`) or parentheses (`(...)`).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "defmt", derive(defmt::Format))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum CommentKind {
@@ -124,6 +174,16 @@ impl fmt::Display for Comment {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for Comment {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        match self.kind {
+            CommentKind::Semicolon => defmt::write!(fmt, ";{}", self.value),
+            CommentKind::Parentheses => defmt::write!(fmt, "({}", self.value),
+        }
+    }
+}
+
 /// One G, M, or T command (variant plus optional arguments).
 ///
 /// Appears in [`Block::codes`].
@@ -142,6 +202,17 @@ impl fmt::Display for Code {
             Code::General(g) => write!(f, "{}", g),
             Code::Miscellaneous(m) => write!(f, "{}", m),
             Code::ToolChange(t) => write!(f, "{}", t),
+        }
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for Code {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        match self {
+            Code::General(g) => defmt::write!(fmt, "{}", g),
+            Code::Miscellaneous(m) => defmt::write!(fmt, "{}", m),
+            Code::ToolChange(t) => defmt::write!(fmt, "{}", t),
         }
     }
 }
@@ -166,6 +237,16 @@ impl fmt::Display for GeneralCode {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for GeneralCode {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "G{}", self.number);
+        for arg in &self.args {
+            defmt::write!(fmt, "{}", arg);
+        }
+    }
+}
+
 /// M-code: spindle, coolant, program control, etc.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -183,6 +264,16 @@ impl fmt::Display for MiscellaneousCode {
             write!(f, "{}", arg)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for MiscellaneousCode {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "M{}", self.number);
+        for arg in &self.args {
+            defmt::write!(fmt, "{}", arg);
+        }
     }
 }
 
@@ -206,6 +297,16 @@ impl fmt::Display for ToolChangeCode {
     }
 }
 
+#[cfg(feature = "defmt")]
+impl defmt::Format for ToolChangeCode {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, "T{}", self.number);
+        for arg in &self.args {
+            defmt::write!(fmt, "{}", arg);
+        }
+    }
+}
+
 /// One address letter and its value (e.g. X, Y, Z, F, S).
 ///
 /// On a G/M/T code; see e.g. [`GeneralCode::args`].
@@ -221,6 +322,13 @@ pub struct Argument {
 impl fmt::Display for Argument {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, " {}{}", self.letter, self.value)
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for Argument {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        defmt::write!(fmt, " {}{}", self.letter, self.value)
     }
 }
 
@@ -247,6 +355,16 @@ impl fmt::Display for Value {
         match self {
             Value::Literal(n) => write!(f, "{}", n),
             Value::Variable(s) => write!(f, "#{}", s),
+        }
+    }
+}
+
+#[cfg(feature = "defmt")]
+impl defmt::Format for Value {
+    fn format(&self, fmt: defmt::Formatter<'_>) {
+        match self {
+            Value::Literal(n) => defmt::write!(fmt, "{}", n),
+            Value::Variable(s) => defmt::write!(fmt, "#{}", s),
         }
     }
 }
