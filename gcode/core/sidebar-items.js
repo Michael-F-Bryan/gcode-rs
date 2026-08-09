@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["TokenType","Value"],"fn":["parse","resume"],"struct":["Noop","Number","ParserState","Span"],"trait":["BlockVisitor","CommandVisitor","Diagnostics","HasDiagnostics","ProgramVisitor"],"type":["ControlFlow"]};
+window.SIDEBAR_ITEMS = {"enum":["ParseNumberError","TokenType","Value"],"fn":["parse","resume"],"struct":["Noop","Number","ParserState","Span"],"trait":["BlockVisitor","CommandVisitor","Diagnostics","HasDiagnostics","ProgramVisitor"],"type":["ControlFlow"]};
