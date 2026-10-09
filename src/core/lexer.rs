@@ -385,7 +385,7 @@ mod tests {
             ]
         );
     }
-    
+
     #[cfg(feature = "rep-rap-gcode")]
     #[test]
     fn asterisk_then_number_span_correctly() {

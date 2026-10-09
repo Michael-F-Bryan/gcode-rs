@@ -400,7 +400,7 @@ mod tests {
             codes: a_codes,
             word_addresses: a_word_addresses,
             #[cfg(feature = "rep-rap-gcode")]
-            checksum: a_checksum,
+                checksum: a_checksum,
             span: _,
         } = a;
         let Block {
@@ -409,7 +409,7 @@ mod tests {
             codes: b_codes,
             word_addresses: b_word_addresses,
             #[cfg(feature = "rep-rap-gcode")]
-            checksum: b_checksum,
+                checksum: b_checksum,
             span: _,
         } = b;
         assert_eq!(a_line_number, b_line_number);
@@ -711,9 +711,10 @@ X3.0 Y4.0
         assert_eq!(program.blocks[0].line_number.unwrap(), 1);
 
         assert_eq!(program.blocks[0].codes.len(), 1);
-        assert!(matches!(&program.blocks[0].codes[0], Code::Miscellaneous(m) if m.number.major() == 115));
+        assert!(
+            matches!(&program.blocks[0].codes[0], Code::Miscellaneous(m) if m.number.major() == 115)
+        );
 
         assert_eq!(program.blocks[0].checksum.unwrap(), 39);
     }
-
 }
