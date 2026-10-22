@@ -14,7 +14,17 @@ macro_rules! parser_tests {
 
                 #[cfg(feature = "alloc")] {
                     let program = gcode::parse(&src).unwrap();
-                    insta::assert_debug_snapshot!(program);
+                    cfg_if::cfg_if! {
+                        if #[cfg(feature = "rep-rap-gcode")] {
+                            insta::with_settings!({
+                                snapshot_path => "snapshots/rep-rap-gcode-enabled",
+                            }, {
+                                insta::assert_debug_snapshot!(program);
+                            });
+                        } else {
+                            insta::assert_debug_snapshot!(program);
+                        }
+                    }
                 }
             }
         )*
@@ -25,5 +35,7 @@ parser_tests! {
     parse_program_1 => "program_1.gcode",
     parse_program_2 => "program_2.gcode",
     parse_program_3 => "_program_3.gcode",
+    #[cfg(feature = "rep-rap-gcode")]
+    parse_program_4 => "rep-rap-gcode-enabled/program_4.gcode",
     parse_insulpro_piping => "_Insulpro.Piping.-.115mm.OD.-.40mm.WT.txt",
 }

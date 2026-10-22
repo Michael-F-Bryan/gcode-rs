@@ -99,29 +99,53 @@ fn is_block_item_start(tokens: &mut Tokens<'_>) -> bool {
 }
 
 /// True if the next token starts a command or line/program number (G/M/T by type, N/O by letter).
-fn at_command_letter(tokens: &mut Tokens<'_>) -> bool {
+fn at_command_letter(
+    tokens: &mut Tokens<'_>,
+    #[cfg(feature = "rep-rap-gcode")] is_m110: &bool,
+) -> bool {
     match tokens.peek_token() {
         Some(t) => {
+            #[cfg(not(feature = "rep-rap-gcode"))]
+            let is_line_or_program_number_char =
+                |c| matches!(c, 'N' | 'n' | 'O' | 'o');
+            #[cfg(feature = "rep-rap-gcode")]
+            let is_line_or_program_number_char = if *is_m110 {
+                // In RepRap GCode, M110 has N as a valid argument, so we should not match against
+                // it when determining when we are done parsing arguments.
+                |c| matches!(c, 'O' | 'o')
+            } else {
+                |c| matches!(c, 'N' | 'n' | 'O' | 'o')
+            };
             matches!(t.kind, TokenType::G | TokenType::M | TokenType::T)
                 || (t.kind == TokenType::Letter
                     && t.value.len() == 1
                     && t.value
                         .chars()
                         .next()
-                        .is_some_and(|c| matches!(c, 'N' | 'n' | 'O' | 'o')))
+                        .is_some_and(is_line_or_program_number_char))
         },
         None => false,
     }
 }
 
 /// First set for an argument: Letter token that is not N or O (G/M/T are separate token types).
-fn is_argument_start(tokens: &mut Tokens<'_>) -> Option<char> {
+fn is_argument_start(
+    tokens: &mut Tokens<'_>,
+    #[cfg(feature = "rep-rap-gcode")] is_m110: &bool,
+) -> Option<char> {
     let t = tokens.peek_token()?;
     if t.kind != TokenType::Letter || t.value.len() != 1 {
         return None;
     }
     let c = t.value.chars().next()?;
+    #[cfg(not(feature = "rep-rap-gcode"))]
     if matches!(c, 'N' | 'n' | 'O' | 'o') {
+        return None;
+    }
+    #[cfg(feature = "rep-rap-gcode")]
+    if (*is_m110 && matches!(c, 'O' | 'o'))
+        || (!*is_m110 && matches!(c, 'N' | 'n' | 'O' | 'o'))
+    {
         return None;
     }
     Some(c)
@@ -159,8 +183,13 @@ fn parse_argument<C: CommandVisitor>(
     tokens: &mut Tokens<'_>,
     cmd: &mut C,
     _line_start: Span,
+    #[cfg(feature = "rep-rap-gcode")] is_m110: &bool,
 ) -> Option<Span> {
-    let letter_c = is_argument_start(tokens)?;
+    let letter_c = is_argument_start(
+        tokens,
+        #[cfg(feature = "rep-rap-gcode")]
+        is_m110,
+    )?;
     let letter_tok = tokens.next_token()?;
     let letter_span = letter_tok.span;
 
@@ -222,15 +251,25 @@ fn parse_command_arguments<C: CommandVisitor>(
     tokens: &mut Tokens<'_>,
     cmd: &mut C,
     command_start_span: Span,
+    #[cfg(feature = "rep-rap-gcode")] is_m110: &bool,
 ) -> Span {
     let mut last_span = command_start_span;
     while !at_block_follow(tokens) {
         // Recovery: next command letter ends this command's arguments (G/M/T/N/O).
-        if at_command_letter(tokens) {
+        if at_command_letter(
+            tokens,
+            #[cfg(feature = "rep-rap-gcode")]
+            is_m110,
+        ) {
             break;
         }
-        if let Some(arg_span) = parse_argument(tokens, cmd, command_start_span)
-        {
+        if let Some(arg_span) = parse_argument(
+            tokens,
+            cmd,
+            command_start_span,
+            #[cfg(feature = "rep-rap-gcode")]
+            is_m110,
+        ) {
             last_span = span_from_to(command_start_span, arg_span);
         } else {
             break;
@@ -247,6 +286,7 @@ fn parse_command<B: BlockVisitor>(
     letter_tok: Token<'_>,
     cmd_letter: char,
     _line_start_span: Span,
+    #[cfg(feature = "rep-rap-gcode")] cmd_number: &mut i32,
 ) -> ControlFlow<()> {
     let number_tok = match tokens.next_token() {
         Some(t) => t,
@@ -282,14 +322,24 @@ fn parse_command<B: BlockVisitor>(
         },
     };
 
+    #[cfg(feature = "rep-rap-gcode")]
+    {
+        *cmd_number = number.major() as i32;
+    }
+
     let cmd_span = span_from_to(letter_tok.span, num_span);
 
     match cmd_letter {
         'G' => match block.start_general_code(number) {
             ControlFlow::Break(()) => ControlFlow::Break(()),
             ControlFlow::Continue(mut cmd) => {
-                let end_span =
-                    parse_command_arguments(tokens, &mut cmd, cmd_span);
+                let end_span = parse_command_arguments(
+                    tokens,
+                    &mut cmd,
+                    cmd_span,
+                    #[cfg(feature = "rep-rap-gcode")]
+                    &false,
+                );
                 cmd.end_command(end_span);
                 ControlFlow::Continue(())
             },
@@ -297,8 +347,13 @@ fn parse_command<B: BlockVisitor>(
         'M' => match block.start_miscellaneous_code(number) {
             ControlFlow::Break(()) => ControlFlow::Break(()),
             ControlFlow::Continue(mut cmd) => {
-                let end_span =
-                    parse_command_arguments(tokens, &mut cmd, cmd_span);
+                let end_span = parse_command_arguments(
+                    tokens,
+                    &mut cmd,
+                    cmd_span,
+                    #[cfg(feature = "rep-rap-gcode")]
+                    &(number.major() == 110),
+                );
                 cmd.end_command(end_span);
                 ControlFlow::Continue(())
             },
@@ -306,8 +361,13 @@ fn parse_command<B: BlockVisitor>(
         'T' => match block.start_tool_change_code(number) {
             ControlFlow::Break(()) => ControlFlow::Break(()),
             ControlFlow::Continue(mut cmd) => {
-                let end_span =
-                    parse_command_arguments(tokens, &mut cmd, cmd_span);
+                let end_span = parse_command_arguments(
+                    tokens,
+                    &mut cmd,
+                    cmd_span,
+                    #[cfg(feature = "rep-rap-gcode")]
+                    &false,
+                );
                 cmd.end_command(end_span);
                 ControlFlow::Continue(())
             },
@@ -406,6 +466,32 @@ fn parse_program_number<B: BlockVisitor>(
     }
 }
 
+#[cfg(feature = "rep-rap-gcode")]
+/// Checksum number: * number. Caller has already consumed the *; we only consume the number.
+fn parse_checksum_number<B: BlockVisitor>(
+    tokens: &mut Tokens<'_>,
+    block: &mut B,
+    asterisk_tok: Token<'_>,
+) {
+    match tokens.next_token() {
+        Some(Token {
+            kind: TokenType::Number,
+            value,
+            span,
+        }) => match parse_block_integer(value) {
+            Ok(n) => block.checksum(n, span_from_to(asterisk_tok.span, span)),
+            Err(e) => block.diagnostics().emit_parse_int_error(value, e, span),
+        },
+        _ => {
+            block.diagnostics().emit_unexpected(
+                "*",
+                &[TokenType::Number],
+                asterisk_tok.span,
+            );
+        },
+    }
+}
+
 /// Block-level word address: letter already in hand, consume optional sign + number from tokens.
 /// Returns true if number was present and word_address was called; false if no number (diagnostic emitted).
 fn try_parse_block_word_address<B: BlockVisitor>(
@@ -491,6 +577,9 @@ fn parse_block_body<'src, B: BlockVisitor>(
     let mut line_span;
     let mut seen_command = false;
 
+    #[cfg(feature = "rep-rap-gcode")]
+    let mut seen_command_number = -1;
+
     loop {
         line_span = span_from_to(line_start_span, current.span);
 
@@ -514,6 +603,10 @@ fn parse_block_body<'src, B: BlockVisitor>(
                     current,
                     cmd_letter,
                     line_start_span,
+                    #[cfg(feature = "rep-rap-gcode")]
+                    {
+                        &mut seen_command_number
+                    },
                 );
                 if flow.is_break() {
                     return (ControlFlow::Break(()), line_span);
@@ -541,8 +634,13 @@ fn parse_block_body<'src, B: BlockVisitor>(
                     };
                     continue;
                 }
+
+                #[cfg(not(feature = "rep-rap-gcode"))]
+                let should_match_n = true;
+                #[cfg(feature = "rep-rap-gcode")]
+                let should_match_n = seen_command_number != 110;
                 match c {
-                    'N' | 'n' => {
+                    'N' | 'n' if should_match_n => {
                         parse_line_number(tokens, block, current, seen_command);
                         current = match tokens.next_token() {
                             Some(t) => t,
@@ -595,6 +693,17 @@ fn parse_block_body<'src, B: BlockVisitor>(
                     &[TokenType::Letter, TokenType::Comment],
                     current.span,
                 );
+            },
+            #[cfg(feature = "rep-rap-gcode")]
+            TokenType::Asterisk => {
+                parse_checksum_number(tokens, block, current);
+                current = match tokens.next_token() {
+                    Some(t) => t,
+                    None => {
+                        return (ControlFlow::Continue(()), line_span);
+                    },
+                };
+                continue;
             },
             TokenType::Newline | TokenType::Eof => {},
         }
@@ -711,6 +820,8 @@ mod tests {
         Argument(char, EventValue, Span),
         UnknownContentError(String, Span),
         Unexpected(String, String, Span),
+        #[cfg(feature = "rep-rap-gcode")]
+        ChecksumNumber(u32, Span),
     }
 
     struct Recorder<'a>(&'a mut Vec<Event>);
@@ -760,6 +871,10 @@ mod tests {
         }
         fn word_address(&mut self, letter: char, value: Value<'_>, span: Span) {
             self.0.push(Event::WordAddress(letter, value.into(), span));
+        }
+        #[cfg(feature = "rep-rap-gcode")]
+        fn checksum(&mut self, checksum: u32, span: Span) {
+            self.0.push(Event::ChecksumNumber(checksum, span))
         }
         fn start_general_code(
             &mut self,
@@ -956,6 +1071,21 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "rep-rap-gcode")]
+    #[test]
+    fn line_number_then_g_code_then_checksum() {
+        let events = parse_and_record("N1 M115*39");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::LineNumber(1, sp(0, 2, 0)),
+                Event::MiscCode(Number::new(115)),
+                Event::ChecksumNumber(39, sp(7, 3, 0))
+            ]
+        );
+    }
+
     #[test]
     fn program_number_o_code() {
         let events = parse_and_record("O1000");
@@ -1110,6 +1240,21 @@ mod tests {
                     "letter, number".into(),
                     sp(4, 3, 0)
                 ),
+            ]
+        );
+    }
+
+    #[cfg(feature = "rep-rap-gcode")]
+    #[test]
+    fn m110_allows_n_argument() {
+        let events = parse_and_record("N0 M110 N0");
+        assert_eq!(
+            events,
+            vec![
+                Event::LineStarted,
+                Event::LineNumber(0, sp(0, 2, 0)),
+                Event::MiscCode(Number::new(110)),
+                Event::Argument('N', EventValue::Literal(0.0), sp(8, 2, 0)),
             ]
         );
     }

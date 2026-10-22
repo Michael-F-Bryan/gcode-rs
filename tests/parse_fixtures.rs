@@ -22,6 +22,21 @@ fn discover_tests() -> Vec<libtest_mimic::Trial> {
         .filter_map(|e| e.ok())
         .filter(|e| e.path().is_file())
         .collect();
+
+    #[cfg(feature = "rep-rap-gcode")]
+    {
+        let rep_rap_gcode_data_dir = data_dir.join("rep-rap-gcode-enabled");
+
+        let mut rep_rap_entries: Vec<_> = fs::read_dir(&rep_rap_gcode_data_dir)
+            .unwrap_or_else(|e| {
+                panic!("failed to read tests/data/rep-rap-gcode-enabled: {}", e)
+            })
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().is_file())
+            .collect();
+        entries.append(&mut rep_rap_entries);
+    }
+
     entries.sort_by_key(|e| e.file_name());
 
     entries
@@ -72,9 +87,20 @@ impl TestCase {
                     // take the first hundred blocks or so.
                     program.blocks.truncate(100);
 
-                    insta::with_settings!({ snapshot_suffix => &case.name }, {
-                        insta::assert_debug_snapshot!(program);
-                    });
+                    cfg_if::cfg_if! {
+                        if #[cfg(feature = "rep-rap-gcode")] {
+                            insta::with_settings!({
+                                snapshot_path => "snapshots/rep-rap-gcode-enabled",
+                                snapshot_suffix => &case.name
+                            }, {
+                                insta::assert_debug_snapshot!(program);
+                            });
+                        } else {
+                            insta::with_settings!({ snapshot_suffix => &case.name }, {
+                                insta::assert_debug_snapshot!(program);
+                            });
+                        }
+                    }
 
                     Ok(())
                 }

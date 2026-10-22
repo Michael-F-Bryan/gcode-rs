@@ -65,6 +65,8 @@ impl<'src> Tokens<'src> {
             '-' => self.scan_single_char(TokenType::MinusSign),
             '+' => self.scan_single_char(TokenType::PlusSign),
             '/' => self.scan_single_char(TokenType::Slash),
+            #[cfg(feature = "rep-rap-gcode")]
+            '*' => self.scan_single_char(TokenType::Asterisk),
             ';' => self.scan_semicolon_comment(),
             '(' => self.scan_paren_comment(),
             _ if c.is_ascii_digit() || c == '.' => self.scan_number(),
@@ -384,6 +386,50 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "rep-rap-gcode")]
+    #[test]
+    fn asterisk_then_number_span_correctly() {
+        let src = "*71";
+        let tokens: Vec<_> = Tokens::from_start(src).collect();
+        assert_eq!(
+            tokens,
+            [
+                Token {
+                    kind: TokenType::Asterisk,
+                    value: "*",
+                    span: Span::new(0, 1, 0),
+                },
+                Token {
+                    kind: TokenType::Number,
+                    value: "71",
+                    span: Span::new(1, 2, 0),
+                },
+            ]
+        );
+    }
+
+    #[cfg(feature = "rep-rap-gcode")]
+    #[test]
+    fn number_then_asterisk_span_correctly() {
+        let src = "71*";
+        let tokens: Vec<_> = Tokens::from_start(src).collect();
+        assert_eq!(
+            tokens,
+            [
+                Token {
+                    kind: TokenType::Number,
+                    value: "71",
+                    span: Span::new(0, 2, 0),
+                },
+                Token {
+                    kind: TokenType::Asterisk,
+                    value: "*",
+                    span: Span::new(2, 1, 0),
+                },
+            ]
+        );
+    }
+
     #[test]
     fn number_integer() {
         let src = "42";
@@ -642,6 +688,48 @@ mod tests {
                     kind: TokenType::Newline,
                     value: "\n",
                     span: Span::new(6, 1, 0),
+                },
+            ]
+        );
+    }
+
+    #[cfg(feature = "rep-rap-gcode")]
+    #[test]
+    fn mixed_n1_m115_asterisk_39() {
+        let src = "N1 M115*39";
+        let tokens: Vec<_> = Tokens::from_start(src).collect();
+        assert_eq!(
+            tokens,
+            [
+                Token {
+                    kind: TokenType::Letter,
+                    value: "N",
+                    span: Span::new(0, 1, 0),
+                },
+                Token {
+                    kind: TokenType::Number,
+                    value: "1",
+                    span: Span::new(1, 1, 0),
+                },
+                Token {
+                    kind: TokenType::M,
+                    value: "M",
+                    span: Span::new(3, 1, 0),
+                },
+                Token {
+                    kind: TokenType::Number,
+                    value: "115",
+                    span: Span::new(4, 3, 0),
+                },
+                Token {
+                    kind: TokenType::Asterisk,
+                    value: "*",
+                    span: Span::new(7, 1, 0),
+                },
+                Token {
+                    kind: TokenType::Number,
+                    value: "39",
+                    span: Span::new(8, 2, 0),
                 },
             ]
         );

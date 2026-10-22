@@ -51,6 +51,8 @@ pub struct Block {
     pub codes: Vec<Code>,
     /// Modal bare word addresses (e.g. `X5.0`, `S12000`) at block level without a G/M/T prefix.
     pub word_addresses: Vec<WordAddress>,
+    #[cfg(feature = "rep-rap-gcode")]
+    pub checksum: Option<u32>,
     pub span: Span,
 }
 
@@ -81,6 +83,10 @@ impl fmt::Display for Block {
             }
             write!(f, "{}", w)?;
             need_space = true;
+        }
+        #[cfg(feature = "rep-rap-gcode")]
+        if let Some(n) = self.checksum {
+            write!(f, "*{}", n)?;
         }
         writeln!(f)?;
         Ok(())
@@ -115,6 +121,10 @@ impl defmt::Format for Block {
             }
             defmt::write!(fmt, "{}", w);
             need_space = true;
+        }
+        #[cfg(feature = "rep-rap-gcode")]
+        if let Some(n) = self.checksum {
+            defmt::write!(fmt, "*{}", n);
         }
         defmt::write!(fmt, "\n");
     }
@@ -389,6 +399,8 @@ mod tests {
             comments: a_comments,
             codes: a_codes,
             word_addresses: a_word_addresses,
+            #[cfg(feature = "rep-rap-gcode")]
+                checksum: a_checksum,
             span: _,
         } = a;
         let Block {
@@ -396,12 +408,16 @@ mod tests {
             comments: b_comments,
             codes: b_codes,
             word_addresses: b_word_addresses,
+            #[cfg(feature = "rep-rap-gcode")]
+                checksum: b_checksum,
             span: _,
         } = b;
         assert_eq!(a_line_number, b_line_number);
         comments_semantic_eq(a_comments, b_comments);
         codes_semantic_eq(a_codes, b_codes);
         word_addresses_semantic_eq(a_word_addresses, b_word_addresses);
+        #[cfg(feature = "rep-rap-gcode")]
+        assert_eq!(a_checksum, b_checksum);
     }
 
     fn comments_semantic_eq(a: &[Comment], b: &[Comment]) {
@@ -587,6 +603,8 @@ mod tests {
         roundtrip_two_comments_same_line => "(first) ; second\n",
         #[ignore = "parser does not yet parse # variable syntax"]
         roundtrip_variable => "G0 X#1\n",
+        #[cfg(feature = "rep-rap-gcode")]
+        roundtrip_line_number_g_code_checksum => "N1 M115*39\n",
     }
 
     /// Parser does not yet support # variable syntax, so roundtrip cannot be tested.
@@ -682,5 +700,21 @@ X3.0 Y4.0
             2,
             "second block should have two word addresses (X3.0 Y4.0)"
         );
+    }
+
+    #[cfg(feature = "rep-rap-gcode")]
+    #[test]
+    fn ast_parse_captures_checksum() {
+        let program = crate::parse("N1 M115*39\n").unwrap();
+        assert_eq!(program.blocks.len(), 1);
+
+        assert_eq!(program.blocks[0].line_number.unwrap(), 1);
+
+        assert_eq!(program.blocks[0].codes.len(), 1);
+        assert!(
+            matches!(&program.blocks[0].codes[0], Code::Miscellaneous(m) if m.number.major() == 115)
+        );
+
+        assert_eq!(program.blocks[0].checksum.unwrap(), 39);
     }
 }

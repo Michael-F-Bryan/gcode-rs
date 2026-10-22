@@ -26,6 +26,8 @@ alloc = ["defmt?/alloc"]
 serde = ["dep:serde"]
 ## Enables defmt format implementations.
 defmt = ["dep:defmt"]
+## Enables RepRap Gcode parsing features.
+rep-rap-gcode = []
 
 #! ### Internal Features
 #! The following features are not intended for public use.

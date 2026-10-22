@@ -76,6 +76,8 @@ struct BlockBuilder<'a> {
     codes: Vec<Code>,
     word_addresses: Vec<WordAddress>,
     line_number: Option<u32>,
+    #[cfg(feature = "rep-rap-gcode")]
+    checksum: Option<u32>,
 }
 
 impl<'a> BlockBuilder<'a> {
@@ -87,6 +89,8 @@ impl<'a> BlockBuilder<'a> {
             codes: Vec::new(),
             word_addresses: Vec::new(),
             line_number: None,
+            #[cfg(feature = "rep-rap-gcode")]
+            checksum: None,
         }
     }
 }
@@ -127,6 +131,11 @@ impl crate::core::BlockVisitor for BlockBuilder<'_> {
             value: value.into(),
             span,
         });
+    }
+
+    #[cfg(feature = "rep-rap-gcode")]
+    fn checksum(&mut self, checksum: u32, _: Span) {
+        self.checksum = Some(checksum);
     }
 
     fn start_general_code(
@@ -183,6 +192,8 @@ impl crate::core::BlockVisitor for BlockBuilder<'_> {
             comments: self.comments,
             codes: self.codes,
             word_addresses: self.word_addresses,
+            #[cfg(feature = "rep-rap-gcode")]
+            checksum: self.checksum,
             span,
         };
         self.blocks.push(block);
